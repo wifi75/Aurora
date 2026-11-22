@@ -2468,6 +2468,8 @@ export interface WefaxSettings {
   afc: boolean;
   /** Limite globale dell'AFC in Hz dall'ultima sottoportante scelta (20..400, 150 di base). Assente con un motore vecchio. */
   afc_range_hz?: number;
+  /** «AFC corregge la radio»: lo scarto dell'AFC si porta sulla frequenza della radio tra una cartina e l'altra (spento di base). */
+  afc_radio?: boolean;
   /** Squelch: l'immagine parte col segnale sopra `squelch_level` e si chiude dopo 3 s sotto. */
   squelch: boolean;
   /** Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore). */

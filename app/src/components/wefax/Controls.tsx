@@ -294,6 +294,10 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           <NumberField label={t('wefax.set.shift')} value={settings.shift_hz} min={200} max={1500} onCommit={(v) => save({ shift_hz: v })} />
           <NumberField label={t('wefax.set.afcRange')} value={settings.afc_range_hz ?? 150} min={20} max={400} onCommit={(v) => save({ afc_range_hz: v })} />
         </div>
+        <label className="sstv-check" title={t('wefax.set.afcRadioHint')}>
+          <input type="checkbox" checked={settings.afc_radio ?? false} disabled={!settings.afc} onChange={(e) => save({ afc_radio: e.target.checked })} />
+          {t('wefax.set.afcRadio')}
+        </label>
         <label className="sstv-check">
           <input type="checkbox" checked={settings.manual} onChange={(e) => save({ manual: e.target.checked })} />
           {t('wefax.set.manual')}

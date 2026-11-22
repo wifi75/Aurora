@@ -557,6 +557,13 @@ impl Decoder {
     }
 
     /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o frequenza di campionamento).
+    /// La radio e' stata ritoccata di `afc_hz` dall'AFC (opzione «AFC corregge la radio»): l'audio e' scivolato dello stesso scarto e la correzione
+    /// del decodificatore riparte da zero.
+    pub fn retuned(&mut self) {
+        self.afc_hz = 0.0;
+        self.afc.reset();
+    }
+
     pub fn reset_learned(&mut self) {
         self.learned_ppm = 0.0;
         self.learned_weight = 0.0;

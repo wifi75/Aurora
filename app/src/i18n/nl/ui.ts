@@ -5679,6 +5679,8 @@ export const NL_UI: Record<string, string> = {
   "wefax.scope.aria": "WEFAX-audiospectrum",
   "wefax.scope.sqlTip": "Met SQL aan is de balk rechts het signaalniveau (0-100) en de rode stippellijn de drempel: het beeld start wanneer de balk boven de lijn komt. De balk heeft een eigen schaal, anders dan die van de curve.",
   "wefax.scope.tip": "Spectrum: de rode lijnen zijn zwart (1500 Hz) en wit (2300 Hz), de donkere het midden. Het signaal hoort op de rode lijnen te vallen; een klik zet het midden daar.",
+  "wefax.set.afcRadio": "De AFC corrigeert ook de radio",
+  "wefax.set.afcRadioHint": "Met de AFC aan en de radio verbonden wordt tussen twee kaarten (nooit in het beeld) de door de AFC gemeten afwijking naar de radiofrequentie overgebracht, hoogstens elke 20 seconden: de afstemming blijft gecentreerd, ook als het station wegdrijft. Het verandert de radiofrequentie en de gelogde: standaard uit.",
   "wefax.set.afcRange": "AFC-grens (Hz)",
   "wefax.set.autoCenter": "Beeld automatisch centreren",
   "wefax.set.autoIoc": "IOC uit de starttoon",

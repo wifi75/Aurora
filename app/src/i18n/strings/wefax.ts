@@ -202,6 +202,15 @@ export const wefaxStrings = {
     'La radio va a la frecuencia de la estación (USB, 1,9 kHz por debajo de la frecuencia asignada). Lista del National Weather Service (marzo de 2025) y del Deutscher Wetterdienst: los horarios y las frecuencias cambian.',
     'O rádio vai para a frequência da estação (USB, 1,9 kHz abaixo da frequência atribuída). Lista do National Weather Service (março de 2025) e do Deutscher Wetterdienst: os horários e as frequências mudam.',
   ],
+  'wefax.set.afcRadio': ['L’AFC corregge anche la radio', 'AFC also corrects the radio', 'Die AFC korrigiert auch das Funkgerät', 'L’AFC corrige aussi la radio', 'El AFC corrige también la radio', 'O AFC corrige também o rádio'],
+  'wefax.set.afcRadioHint': [
+    'Con l’AFC acceso e la radio collegata, tra una cartina e l’altra (mai dentro l’immagine) lo scarto misurato dall’AFC si porta sulla frequenza della radio, a passi non più frequenti di ogni 20 secondi: la sintonia resta centrata anche se la stazione deriva. Cambia la frequenza della radio e quella registrata: spento di fabbrica.',
+    'With AFC on and the radio connected, between charts (never inside the picture) the offset measured by the AFC is moved onto the radio frequency, no more often than every 20 seconds: the tuning stays centred even if the station drifts. It changes the radio frequency and the logged one: off by default.',
+    'Bei eingeschalteter AFC und verbundenem Funkgerät wird zwischen zwei Karten (nie im Bild) die von der AFC gemessene Abweichung auf die Funkfrequenz übertragen, höchstens alle 20 Sekunden: die Abstimmung bleibt zentriert, auch wenn die Station driftet. Es ändert die Funkfrequenz und die geloggte: werkseitig aus.',
+    'Avec l’AFC activé et la radio connectée, entre deux cartes (jamais dans l’image) l’écart mesuré par l’AFC est reporté sur la fréquence de la radio, au plus toutes les 20 secondes : l’accord reste centré même si la station dérive. Cela change la fréquence de la radio et celle enregistrée : désactivé par défaut.',
+    'Con el AFC encendido y la radio conectada, entre una carta y otra (nunca dentro de la imagen) el desvío medido por el AFC se pasa a la frecuencia de la radio, como mucho cada 20 segundos: la sintonía sigue centrada aunque la estación derive. Cambia la frecuencia de la radio y la registrada: apagado de fábrica.',
+    'Com o AFC ligado e o rádio ligado, entre uma carta e outra (nunca dentro da imagem) o desvio medido pelo AFC passa para a frequência do rádio, no máximo de 20 em 20 segundos: a sintonia fica centrada mesmo que a estação derive. Muda a frequência do rádio e a registada: desligado de origem.',
+  ],
   'wefax.set.calibrate': ['Calibra la scheda audio', 'Calibrate the sound card', 'Soundkarte kalibrieren', 'Calibrer la carte son', 'Calibrar la tarjeta de sonido', 'Calibrar a placa de som'],
   'wefax.set.calibrateHint': [
     'Dopo aver ricevuto bene una cartina da una stazione con tempi precisi (per esempio DDK3 del servizio meteorologico tedesco), porta l’errore appreso nel campo dell’inclinazione e lo azzera: la correzione resta fissa e non cambia il totale.',

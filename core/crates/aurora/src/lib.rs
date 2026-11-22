@@ -2426,6 +2426,15 @@ pub async fn run(
             let _ = events.send(Event::Wefax(ev));
         }));
     }
+    // «AFC corregge la radio» (WEFAX, spento di base): lo scarto dell'AFC si porta sulla frequenza della radio con un solo `F`
+    {
+        let cat = Arc::clone(&cat);
+        wefax.set_tuner(Arc::new(move |delta: i32| {
+            let rig = cat.hamlib().map_err(|e| e.0)?;
+            let now = rig.status().frequency_hz.ok_or_else(|| "frequenza della radio non letta".to_string())?;
+            rig.set_tracking_frequency(now.saturating_add_signed(i64::from(delta))).map_err(|e| e.0)
+        }));
+    }
     // modi testuali (crate mode-digi): stesso schema dell'SSTV, ascolto acceso solo a richiesta
     let digi = Arc::new(mode_digi::DigiService::open(&config.data_dir));
     {

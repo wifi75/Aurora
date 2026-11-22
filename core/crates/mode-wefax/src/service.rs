@@ -26,6 +26,19 @@ use crate::{
 
 pub type Emitter = Arc<dyn Fn(WefaxEvent) + Send + Sync>;
 
+/// Chi ritocca la frequenza della radio di tanti Hz (con il segno): lo fornisce il programma (Hamlib).
+pub type Tuner = Arc<dyn Fn(i32) -> Result<(), String> + Send + Sync>;
+
+/// Sotto questo scarto (Hz) l'AFC non ritocca la radio.
+const RETUNE_MIN_HZ: f32 = 30.0;
+/// La radio si ritocca al massimo ogni tanto.
+const RETUNE_EVERY: Duration = Duration::from_secs(20);
+
+/// L'AFC deve ritoccare la radio adesso? Solo fuori dall'immagine (un salto di frequenza la rovinerebbe), con uno scarto netto e non troppo spesso.
+fn should_retune(afc_hz: f32, state: &str, since_last: Option<Duration>) -> bool {
+    state != "image" && afc_hz.abs() >= RETUNE_MIN_HZ && since_last.is_none_or(|d| d >= RETUNE_EVERY)
+}
+
 /// Blocchi audio che la coda verso il ricevitore tiene prima di perderne (qualche secondo fino a un quarto di minuto, secondo la grandezza
 /// dei blocchi della scheda): un PC carico che rallenta il ricevitore per un po' non fa perdere audio, e chi alimenta non aspetta mai.
 const QUEUE_BLOCKS: usize = 512;
@@ -81,6 +94,10 @@ pub struct WefaxSettings {
     pub afc: bool,
     /// Limite globale dell'AFC: la correzione non va oltre questi Hz dall'ultima sottoportante scelta a mano (20..400, 150 di base).
     pub afc_range_hz: f32,
+    /// «AFC corregge la radio»: con l'AFC acceso e la radio collegata, tra una cartina e l'altra (mai dentro l'immagine) lo scarto misurato dall'AFC
+    /// si porta sulla frequenza della radio (a passi non piu' frequenti di ogni 20 s), e la correzione del decodificatore riparte da zero. Spento di base.
+    #[serde(default)]
+    pub afc_radio: bool,
     /// Squelch (SQL): l'immagine parte quando il segnale supera `squelch_level` e si chiude quando sparisce per 3 secondi.
     pub squelch: bool,
     /// Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore).
@@ -121,6 +138,7 @@ impl Default for WefaxSettings {
             folder: String::new(),
             afc: d.afc,
             afc_range_hz: d.afc_range_hz,
+            afc_radio: false,
             squelch: d.squelch,
             squelch_level: d.squelch_level,
             record_audio: true,
@@ -285,6 +303,7 @@ struct Inner {
     rx: Mutex<RxStatus>,
     current: Mutex<Option<GrayImage>>,
     emit: Mutex<Option<Emitter>>,
+    tuner: Mutex<Option<Tuner>>,
     store: Mutex<ImageStore>,
     /// Le pagine WEFAX aperte: lasciata l'ultima, l'ascolto si spegne.
     users: aurora_core::users::PageUsers,
@@ -385,6 +404,7 @@ impl WefaxService {
             rx: Mutex::new(RxStatus { listening: settings.auto_receive, state: "apt".into(), ioc: settings.ioc, width: crate::width_of(settings.ioc), ..RxStatus::default() }),
             current: Mutex::new(None),
             emit: Mutex::new(None),
+            tuner: Mutex::new(None),
             store: Mutex::new(store),
             users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
@@ -398,6 +418,11 @@ impl WefaxService {
 
     pub fn set_emitter(&self, emitter: Emitter) {
         *lock(&self.inner.emit) = Some(emitter);
+    }
+
+    /// Chi ritocca la radio per l'opzione «AFC corregge la radio».
+    pub fn set_tuner(&self, tuner: Tuner) {
+        *lock(&self.inner.tuner) = Some(tuner);
     }
 
     /// Una copia dell'audio d'ingresso (frequenza della scheda). Con l'ascolto spento non costa niente.
@@ -716,6 +741,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut file: Option<FileJob> = None;
     let mut last_status = Instant::now();
     let mut last_users = Instant::now();
+    let mut last_retune: Option<Instant> = None;
     // la registrazione dell'audio delle cartine (solo dal vivo, mai dei file): all'avvio si puliscono le registrazioni vecchie
     let mut recorder = Recorder::new();
     {
@@ -825,6 +851,21 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 inner.persist_learned(0.0, 0.0, rate_seen);
             }
             None => {}
+        }
+        // «AFC corregge la radio»: lo scarto misurato dall'AFC si porta sulla radio, tra una cartina e l'altra
+        if file.is_none() && lock(&inner.settings).afc_radio && decoder.config().afc && should_retune(decoder.afc_hz(), decoder.rx_state(), last_retune.map(|t| t.elapsed())) {
+            let delta = decoder.afc_hz().round() as i32;
+            let tuner = lock(&inner.tuner).clone();
+            last_retune = Some(Instant::now());
+            if let Some(tune) = tuner {
+                match tune(delta) {
+                    Ok(()) => {
+                        tracing::info!("WEFAX: l'AFC ritocca la radio di {delta:+} Hz");
+                        decoder.retuned();
+                    }
+                    Err(e) => tracing::warn!("WEFAX: l'AFC non ha potuto ritoccare la radio ({e})"),
+                }
+            }
         }
         for ev in events {
             let finished = matches!(ev, DecoderEvent::Finished(_));
@@ -986,6 +1027,17 @@ fn end_recording(inner: &Arc<Inner>, recorder: &mut Recorder, saved: Option<Stri
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn l_afc_ritocca_la_radio_solo_fuori_dall_immagine_con_uno_scarto_netto_e_non_troppo_spesso() {
+        use super::should_retune;
+        use std::time::Duration;
+        assert!(should_retune(37.0, "apt", None));
+        assert!(should_retune(-45.0, "phasing", Some(Duration::from_secs(25))));
+        assert!(!should_retune(37.0, "image", None), "dentro l'immagine mai");
+        assert!(!should_retune(12.0, "apt", None), "sotto la soglia");
+        assert!(!should_retune(37.0, "apt", Some(Duration::from_secs(5))), "troppo presto");
+    }
+
     use super::*;
 
     fn temp(name: &str) -> PathBuf {
