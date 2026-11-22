@@ -58,6 +58,20 @@ unsafe extern "C" {
     fn aurora_fldigi_cw_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
     fn aurora_fldigi_cw_wpm(rx: *mut c_void) -> f64;
     fn aurora_fldigi_cw_free(rx: *mut c_void);
+    fn aurora_fldigi_olivia_encode_block(bits_per_symbol: i32, contestia: i32, chars: *const u8, out: *mut u8, out_cap: usize) -> usize;
+}
+
+/// Un blocco FEC di Olivia (o Contestia) codificato dalla libreria di fldigi: `chars` ha un carattere per ogni bit del simbolo.
+pub fn olivia_encode_block(bits_per_symbol: usize, contestia: bool, chars: &[u8]) -> Vec<u8> {
+    let mut input = [0u8; 8];
+    for (slot, ch) in input.iter_mut().zip(chars) {
+        *slot = *ch;
+    }
+    let mut out = vec![0u8; 256];
+    // SAFETY: `input` ha 8 byte (come il blocco della libreria) e `out` 256: la funzione scrive al piu' `out_cap` byte.
+    let n = unsafe { aurora_fldigi_olivia_encode_block(bits_per_symbol as i32, i32::from(contestia), input.as_ptr(), out.as_mut_ptr(), out.len()) };
+    out.truncate(n);
+    out
 }
 
 /// Svuota la coda dei caratteri di un ricevitore di fldigi con la funzione `take` data.

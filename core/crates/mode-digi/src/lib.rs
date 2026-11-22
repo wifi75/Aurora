@@ -35,6 +35,7 @@ pub mod macro_files;
 #[cfg(feature = "mmtty-oracle")]
 pub mod mmtty_oracle;
 pub mod notch;
+pub mod olivia;
 pub mod psk;
 pub mod psk_viterbi;
 pub mod recorder;

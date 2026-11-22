@@ -50,7 +50,7 @@ mod oracle {
                 fftfilt.display()
             );
         }
-        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp")];
+        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp"), manifest.join("oracle/fldigi_olivia.cpp")];
         // dai sorgenti di fldigi, compilati cosi' come sono: filtro FFT (RTTY), filtro FIR e media mobile (PSK, CW), varicode (PSK)
         let theirs = [fftfilt, fldigi.join("filters/filters.cxx"), fldigi.join("psk/pskvaricode.cxx")];
         for f in ours.iter().chain(theirs.iter()) {
@@ -66,6 +66,7 @@ mod oracle {
             .files(ours.iter().chain(theirs.iter()))
             .include(manifest.join("oracle/stub"))
             .include(fldigi.join("include"))
+            .include(fldigi.join("include/jalocha"))
             .define("_USE_MATH_DEFINES", None)
             .flag_if_supported("/EHsc")
             .flag_if_supported("-std=c++14")
