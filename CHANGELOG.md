@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- SSTV, Guida e suggerimento di «Calibra la scheda audio»: spiegano passo per passo come si calibra e con quali fonti (cartine WEFAX DWD di Pinneberg, DDK3: 3855, 7880 e 13882,5 kHz; il «ppm appreso» del WEFAX si puo' copiare nel campo dell'SSTV); in tutte le lingue.
 - WEFAX: il suggerimento del pulsante AFC spiega che il valore mostrato (per esempio +36 Hz) e' la correzione in corso e non un guasto, e non cita piu' i 150 Hz di base (il limite sta nelle impostazioni WEFAX); in tutte le lingue.
 - Mappa DX e propagazione: zoomando le tessere della cartina non lampeggiano piu' (le tessere si aggiornano a zoom finito e quelle del livello precedente restano finche' arrivano le nuove). Non provato a schermo.
 ## 0.11.329 - 2026-11-22

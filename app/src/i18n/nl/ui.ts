@@ -4367,7 +4367,7 @@ export const NL_UI: Record<string, string> = {
   "sstv.bg.zoom": "Zoom",
   "sstv.cal.button": "De geluidskaart kalibreren",
   "sstv.cal.found": "Laatste goed ontvangen beeld: {ppm} ppm",
-  "sstv.cal.hint": "Ontvang een beeld van een betrouwbare bron (een referentie-uitzending of een station met een nauwkeurige klok), druk dan hier en sla op: de correctie komt in het veld hierboven.",
+  "sstv.cal.hint": "Ontvang een compleet beeld van een bron met nauwkeurige timing (bijvoorbeeld de WEFAX-kaarten van DDK3, 3855 / 7880 / 13882,5 kHz, of een station met een nauwkeurige klok), druk dan hier en sla op.",
   "sstv.cal.none": "Geen goed ontvangen beeld om op te meten",
   "sstv.clean.cleaned": "Opgeschoond",
   "sstv.clean.hint": "Verwijdert ruis zonder details te vervagen; het origineel wordt niet gewijzigd. “Opslaan” schrijft het beeld dat je ziet.",
