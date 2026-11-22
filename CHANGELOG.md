@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.334 - 2026-11-22
+
 - Olivia e Contestia hanno le frequenze nel selettore delle bande: dal piano IARU Regione 1 (PDF dell'ARI del 2020), che non ha frequenze di chiamata per loro, una frequenza per banda dentro i tratti dei digimodi a banda stretta (500 Hz al massimo), cosi' il segnale con 500 Hz di banda resta nel tratto. Entrando nel modo da un'altra pagina la radio va sulla loro banda (prima restava dov'era). Con la banda di 1000 Hz il segnale esce da quei tratti. Provato con una prova automatica sui limiti dei tratti.
 
 - Olivia e Contestia nell'ADIF: Olivia si scrive `OLIVIA` col sottomodo (per esempio `OLIVIA 8/250`) solo se e' uno dei sette definiti da ADIF 3.1.4, Contestia si scrive `CONTESTI` (senza sottomodi); l'importazione rilegge `CONTESTI` come Contestia. Toni e banda il cui tono piu' basso starebbe sotto lo zero non entrano nell'audio: ricevitore e trasmettitore li rifiutano invece di spostare in silenzio il centro. Provato con prove automatiche.
