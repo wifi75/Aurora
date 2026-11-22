@@ -1837,7 +1837,8 @@ struct CatPtt {
     cat: Arc<rig_control::cat::CatService>,
     /// La radio per cui e' stata costruita la catena (`cat_target` alla costruzione): se il profilo cambia, i comandi di questa catena non
     /// devono arrivare alla radio nuova (e la vecchia, ancora in trasmissione, diventa un orfano con il suo avviso).
-    target: String,
+    /// Con il PTT spento la catena adotta la radio nuova (`adopt_radio`): cambiare radio in Impostazioni non obbliga a riavviare Aurora.
+    target: std::sync::Mutex<String>,
     controls: Arc<engine_native::NativeControls>,
     free_tx: FreeTx,
     on: std::sync::atomic::AtomicBool,
@@ -1845,7 +1846,7 @@ struct CatPtt {
 
 impl tx_native::Ptt for CatPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
-        radio_guard(&self.target, &cat_target(&self.cat))?;
+        adopt_radio(&self.target, self.is_on(), &cat_target(&self.cat))?;
         if on {
             cat_tx_split(&self.cat, &self.controls, &self.free_tx);
         }
@@ -1859,20 +1860,34 @@ impl tx_native::Ptt for CatPtt {
     }
 
     fn recover_off(&self) -> Result<(), tx_native::TxError> {
-        radio_guard(&self.target, &cat_target(&self.cat))?;
+        adopt_radio(&self.target, self.is_on(), &cat_target(&self.cat))?;
         cat_recover_off(&self.cat)?;
         self.on.store(false, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     fn target(&self) -> Option<String> {
-        Some(self.target.clone())
+        self.target.lock().ok().map(|t| t.clone())
     }
 }
 
 /// Il profilo della radio e' cambiato dopo la costruzione della catena: niente comandi alla radio nuova a nome di quella vecchia.
 fn radio_guard(stored: &str, live: &str) -> Result<(), tx_native::TxError> {
     if stored == live { Ok(()) } else { Err(tx_native::TxError::Ptt("radio cambiata".into())) }
+}
+
+/// Come `radio_guard`, ma con il PTT spento la catena passa alla radio scelta nel frattempo (Impostazioni › Stazione › Radio cambiata dopo
+/// l'avvio): nessun tasto e' giù su quella vecchia, quindi nulla da proteggere. Con il PTT acceso sulla radio vecchia i comandi si rifiutano
+/// ancora (la vecchia diventa un orfano con il suo avviso).
+fn adopt_radio(stored: &std::sync::Mutex<String>, keyed: bool, live: &str) -> Result<(), tx_native::TxError> {
+    let mut stored = stored.lock().map_err(|_| tx_native::TxError::Ptt("radio cambiata".into()))?;
+    if keyed {
+        return radio_guard(&stored, live);
+    }
+    if stored.as_str() != live {
+        *stored = live.to_string();
+    }
+    Ok(())
 }
 
 /// A cosa comanda il PTT dal CAT: il sistema di controllo e la radio scelta (per capire se una catena ricostruita parla con la stessa radio).
@@ -2261,7 +2276,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
         controls.set_split_probe(Arc::new(move || cat_split_active(&probe_cat)));
     }
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
-        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), target: cat_target(cat), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx), on: std::sync::atomic::AtomicBool::new(false) }),
+        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), target: std::sync::Mutex::new(cat_target(cat)), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx), on: std::sync::atomic::AtomicBool::new(false) }),
         // nessun PTT da JTDX e nessuna radio ancora scelta all'avvio: si decide a ogni trasmissione
         "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), keyed_on: std::sync::Mutex::new(None), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
@@ -3862,12 +3877,23 @@ fn port_owner(_port: u16) -> Option<String> {
 
 #[cfg(test)]
 mod ptt_radio_guard_tests {
-    use super::radio_guard;
+    use super::{adopt_radio, radio_guard};
 
     #[test]
     fn a_changed_radio_profile_refuses_the_commands_of_the_old_chain() {
         assert!(radio_guard("cat:Hamlib:1:COM3", "cat:Hamlib:1:COM3").is_ok());
         let e = radio_guard("cat:Hamlib:1:COM3", "cat:Hamlib:2:COM4").expect_err("radio cambiata");
         assert!(e.to_string().contains("radio cambiata"), "{e}");
+    }
+
+    #[test]
+    fn with_the_ptt_off_the_chain_follows_a_radio_changed_after_the_start() {
+        let stored = std::sync::Mutex::new("cat:Hamlib:3034:COM3".to_string());
+        assert!(adopt_radio(&stored, false, "cat:Hamlib:3032:COM3").is_ok(), "nessun tasto giu': si passa alla radio nuova");
+        assert_eq!(stored.lock().expect("radio").as_str(), "cat:Hamlib:3032:COM3");
+        let e = adopt_radio(&stored, true, "cat:Hamlib:3034:COM3").expect_err("PTT acceso sulla vecchia");
+        assert!(e.to_string().contains("radio cambiata"), "{e}");
+        assert_eq!(stored.lock().expect("radio").as_str(), "cat:Hamlib:3032:COM3", "il rifiuto non cambia la radio ricordata");
+        assert!(adopt_radio(&stored, true, "cat:Hamlib:3032:COM3").is_ok());
     }
 }
