@@ -621,7 +621,7 @@ impl Receiver {
     /// rapporto segnale/rumore per mandare in uscita i caratteri (minimo 3). `None` se i parametri non stanno nella banda audio.
     pub fn new(params: Params, sync_margin: usize, sync_integ_len: usize, sync_threshold: f64) -> Option<Receiver> {
         let bits = params.bits_per_symbol();
-        if !(1..=8).contains(&bits) {
+        if !(1..=8).contains(&bits) || params.lower_edge_hz() < 0.0 {
             return None;
         }
         let symbol_len = params.symbol_len();
@@ -1015,5 +1015,21 @@ mod tests {
             println!("Olivia {tones}/{bw}: 60 s di audio in {elapsed:.3} s ({:.0} volte il tempo reale)", 60.0 / elapsed);
             assert!(elapsed < 60.0, "{tones}/{bw}: piu' lento del tempo reale ({elapsed:.1} s)");
         }
+    }
+
+    /// Toni e banda il cui tono piu' basso starebbe sotto lo zero non entrano nell'audio: ricevitore e trasmettitore li rifiutano, senza
+    /// spostare in silenzio il centro (prima il primo tono diventava il bin 1).
+    #[test]
+    fn tones_that_would_start_below_zero_hertz_are_refused() {
+        use crate::olivia::{BlockStream, Transmitter};
+        let low = Params { variant: Variant::Olivia, tones: 32, bandwidth: 1000, center_hz: 300.0 };
+        assert!(low.lower_edge_hz() < 0.0);
+        assert!(Receiver::new(low, 8, 4, 3.0).is_none());
+        assert!(Transmitter::new(low).is_none());
+        assert!(BlockStream::new(low).is_none());
+        let ok = Params { center_hz: 1500.0, ..low };
+        assert!(ok.lower_edge_hz() > 900.0);
+        assert!(Receiver::new(ok, 8, 4, 3.0).is_some());
+        assert!(Transmitter::new(ok).is_some());
     }
 }

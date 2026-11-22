@@ -72,6 +72,10 @@ pub fn parse_records(text: &str) -> Vec<HashMap<String, String>> {
 
 /// Il modo come lo conta JTDX (`ADIF::load`): `MFSK` vale il suo sottomodo, `JT9*` e `JT65*` il modo base.
 fn normalize_mode(mode: &str, submode: &str) -> String {
+    // il modo di Contestia in ADIF e' CONTESTI: in Aurora si chiama come il modo, CONTESTIA
+    if mode.trim().eq_ignore_ascii_case("CONTESTI") {
+        return "CONTESTIA".to_string();
+    }
     let mut m = mode.trim().to_uppercase();
     if m == "MFSK" {
         let sub = submode.trim().to_uppercase();
@@ -257,5 +261,14 @@ mod tests {
         assert_eq!(band_from_freq_hz(144_174_000), Some("2m"));
         assert_eq!(band_from_freq_hz(432_100_000), Some("70cm"));
         assert_eq!(band_from_freq_hz(15_000_000), None);
+    }
+
+    /// Il `CONTESTI` di ADIF e' il modo che in Aurora si chiama CONTESTIA; `OLIVIA` resta com'e'.
+    #[test]
+    fn the_adif_contesti_mode_is_read_as_contestia() {
+        let q = parse_qsos("<CALL:5>K1ABC<MODE:8>CONTESTI<BAND:3>20M<EOR><CALL:5>K1ABD<MODE:6>OLIVIA<SUBMODE:12>OLIVIA 8/250<BAND:3>20M<EOR>");
+        assert_eq!(q.len(), 2);
+        assert_eq!(q[0].mode, "CONTESTIA");
+        assert_eq!(q[1].mode, "OLIVIA");
     }
 }

@@ -861,13 +861,13 @@ pub fn adif_with_edit(text: &str, change: &LogChange) -> (String, usize) {
         }
         if new.mode != old.mode {
             // i sottomodi ADIF (FT4, PSK31...) si scrivono come modo padre piu' SUBMODE, come nei record nuovi
-            match adif::adif_parent_mode(&new.mode) {
-                Some(parent) => {
-                    r = record_with(&r, "mode", parent, true);
-                    r = record_with(&r, "submode", &new.mode, true);
+            match adif::adif_mode_fields(&new.mode) {
+                (parent, Some(sub)) => {
+                    r = record_with(&r, "mode", &parent, true);
+                    r = record_with(&r, "submode", &sub, true);
                 }
-                None => {
-                    r = record_with(&r, "mode", &new.mode, true);
+                (parent, None) => {
+                    r = record_with(&r, "mode", &parent, true);
                     r = record_with(&r, "submode", "", false);
                 }
             }

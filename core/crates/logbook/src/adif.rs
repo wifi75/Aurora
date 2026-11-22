@@ -169,14 +169,34 @@ pub fn adif_parent_mode(mode: &str) -> Option<&'static str> {
     }
 }
 
+/// I sottomodi di Olivia che ADIF 3.1.4 definisce (tabella «Submode Enumeration»): gli altri toni e bande non hanno un sottomodo valido.
+const OLIVIA_SUBMODES: &[&str] = &["OLIVIA 4/125", "OLIVIA 4/250", "OLIVIA 8/250", "OLIVIA 8/500", "OLIVIA 16/500", "OLIVIA 16/1000", "OLIVIA 32/1000"];
+
+/// Come si scrive un modo nell'ADIF: il `MODE` e, se c'e', il `SUBMODE`. I sottomodi ADIF (FT4, PSK31...) escono come modo padre con
+/// `SUBMODE`; Olivia e' `OLIVIA` (con il sottomodo, per esempio `OLIVIA 8/250`, solo se e' uno di quelli di ADIF); Contestia e' `CONTESTI`
+/// e per ADIF non ha sottomodi; gli altri col proprio nome.
+pub fn adif_mode_fields(mode: &str) -> (String, Option<String>) {
+    if let Some(parent) = adif_parent_mode(mode) {
+        return (parent.to_string(), Some(mode.to_string()));
+    }
+    let upper = mode.trim().to_ascii_uppercase();
+    if upper.starts_with("OLIVIA") {
+        let sub = OLIVIA_SUBMODES.iter().find(|s| **s == upper).map(|s| (*s).to_string());
+        return ("OLIVIA".to_string(), sub);
+    }
+    if upper.starts_with("CONTESTI") {
+        return ("CONTESTI".to_string(), None);
+    }
+    (mode.to_string(), None)
+}
+
 /// Il modo come lo scrive JTDX: i sottomodi ADIF (FT4, Q65, PSK31...) come modo padre con `SUBMODE`, gli altri col proprio nome. Prima solo FT4: PSK31,
 /// PSK63 e Q65 uscivano come `MODE`, che per ADIF 3.1 non e' un modo valido (LoTW, ClubLog e QRZ potevano rifiutarli).
 fn jtdx_mode(out: &mut String, mode: &str, upper: bool) {
-    if let Some(parent) = adif_parent_mode(mode) {
-        jtdx_field(out, if upper { "MODE" } else { "mode" }, parent);
-        jtdx_field(out, if upper { "SUBMODE" } else { "submode" }, mode);
-    } else {
-        jtdx_field(out, if upper { "MODE" } else { "mode" }, mode);
+    let (parent, sub) = adif_mode_fields(mode);
+    jtdx_field(out, if upper { "MODE" } else { "mode" }, &parent);
+    if let Some(sub) = sub {
+        jtdx_field(out, if upper { "SUBMODE" } else { "submode" }, &sub);
     }
 }
 
@@ -513,5 +533,26 @@ mod tests {
         assert_eq!(utc_date(0), "19700101");
         assert_eq!(utc_date(951_782_400), "20000229");
         assert_eq!(utc_date(1_793_000_000), "20261026");
+    }
+
+    /// Olivia e Contestia come ADIF 3.1.4: `OLIVIA` col sottomodo solo se e' uno dei sette definiti, `CONTESTI` senza sottomodi.
+    #[test]
+    fn olivia_and_contestia_use_the_adif_mode_names() {
+        use super::adif_mode_fields;
+        assert_eq!(adif_mode_fields("OLIVIA"), ("OLIVIA".to_string(), None));
+        assert_eq!(adif_mode_fields("OLIVIA 8/250"), ("OLIVIA".to_string(), Some("OLIVIA 8/250".to_string())));
+        assert_eq!(adif_mode_fields("olivia 32/1000"), ("OLIVIA".to_string(), Some("OLIVIA 32/1000".to_string())));
+        // toni e banda che ADIF non ha come sottomodo: solo il modo padre, mai un sottomodo non valido
+        assert_eq!(adif_mode_fields("OLIVIA 8/1000"), ("OLIVIA".to_string(), None));
+        assert_eq!(adif_mode_fields("CONTESTIA"), ("CONTESTI".to_string(), None));
+        assert_eq!(adif_mode_fields("CONTESTIA 16/500"), ("CONTESTI".to_string(), None));
+        // gli altri modi come prima
+        assert_eq!(adif_mode_fields("PSK31"), ("PSK".to_string(), Some("PSK31".to_string())));
+        assert_eq!(adif_mode_fields("FT8"), ("FT8".to_string(), None));
+        let r = jtdx_record(&sample("CONTESTIA"), &station(), "20000101");
+        assert!(r.contains("<MODE:8>CONTESTI "), "{r}");
+        assert!(!r.contains("SUBMODE"), "{r}");
+        let r = jtdx_record(&sample("OLIVIA 8/250"), &station(), "20000101");
+        assert!(r.contains("<MODE:6>OLIVIA <SUBMODE:12>OLIVIA 8/250 "), "{r}");
     }
 }

@@ -193,6 +193,13 @@ impl Params {
         1usize << (self.bits_per_symbol() + 7 - bw_log)
     }
 
+    /// Dove sta il tono piu' basso in Hz (il centro meno meta' dell'ampiezza dei toni). Sotto lo zero i toni non entrano nell'audio:
+    /// senza questo controllo il primo tono diventava il bin 1 e il centro si spostava in silenzio.
+    pub fn lower_edge_hz(&self) -> f64 {
+        let bandwidth = (1usize << (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2()) * 125;
+        self.center_hz - bandwidth as f64 * (1.0 - 0.5 / self.tones.max(2) as f64) / 2.0
+    }
+
     /// Il primo tono, in bin della FFT di un simbolo.
     pub(crate) fn first_carrier(&self) -> usize {
         let bandwidth = (1usize << (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2()) * 125;
@@ -287,6 +294,9 @@ pub struct Transmitter {
 
 impl Transmitter {
     pub fn new(params: Params) -> Option<Transmitter> {
+        if params.lower_edge_hz() < 0.0 {
+            return None;
+        }
         let encoder = Encoder::new(params.variant, params.bits_per_symbol())?;
         Some(Transmitter { params, encoder })
     }
@@ -324,6 +334,9 @@ pub struct BlockStream {
 
 impl BlockStream {
     pub fn new(params: Params) -> Option<BlockStream> {
+        if params.lower_edge_hz() < 0.0 {
+            return None;
+        }
         let encoder = Encoder::new(params.variant, params.bits_per_symbol())?;
         Some(BlockStream::from_parts(params, encoder))
     }
