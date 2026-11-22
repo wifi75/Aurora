@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.329',
-    released: '2026-11-22T08:30:00Z',
+    released: '2026-11-22T07:21:16Z',
     kind: 'new',
     featured: false,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.329',
-    released: '2026-11-22T08:30:00Z',
+    released: '2026-11-22T07:21:16Z',
     kind: 'fixed',
     title: [
       'IC-820H, PTT, orologio e controllo aggiornamenti',
