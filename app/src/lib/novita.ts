@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'fixed',
     title: [
       'WEFAX: la cartina si chiude quando finisce davvero',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'changed',
     title: [
       'WEFAX: la vista riparte da zero con una cartina nuova',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'fixed',
     title: [
       'Pagina Log sempre aggiornata',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'new',
     title: [
       'Display della radio: Pannello FT-2000 con ROS, ALC e potenza',
@@ -107,7 +107,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'changed',
     title: [
       '«Rimanda i QSO persi» senza doppioni',
@@ -128,7 +128,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'changed',
     title: [
       'Riquadri uguali a quelli della Stazione',
@@ -149,7 +149,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.332',
-    released: '2026-11-22T16:00:00Z',
+    released: '2026-11-22T14:03:08Z',
     kind: 'fixed',
     title: [
       'Menu a tendina leggibili e barra del WEFAX senza tagli',
