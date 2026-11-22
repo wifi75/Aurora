@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Impostazioni › Aspetto: la tendina della lingua non ha piu' una doppia cornice (il pulsante interno non disegna un secondo bordo e l'anello di focus sta dentro il riquadro). Non provato a schermo.
 - WEFAX, stazioni senza tono d'inizio e con la fasatura corta (DDK3 su 7880 kHz: bianco fisso, solo due barre di fasatura da circa il 90% di nero, poi subito la cartina): la ricezione restava in «In attesa» per sempre e la cartina andava persa. Ora la fasatura si cerca anche aspettando il tono d'inizio, una riga di fasatura vale con il 80% di nero (prima il 94%) e con poche righe ci si allinea sull'ultima buona (con il periodo di riga nominale, non misurato su una sola riga); inoltre, se un falso tono d'inizio porta in attesa della fasatura che non arriva, dopo 90 s si torna ad aspettare il tono. Provato con due prove sintetiche e sul WAV reale di una cartina di DDK3 (ora parte, esce dritta e intera); resta da verificare lo spostamento laterale di quella cartina.
 - SSTV, Guida e suggerimento di «Calibra la scheda audio»: spiegano passo per passo come si calibra e con quali fonti (cartine WEFAX DWD di Pinneberg, DDK3: 3855, 7880 e 13882,5 kHz; il «ppm appreso» del WEFAX si puo' copiare nel campo dell'SSTV); in tutte le lingue.
 - WEFAX: il suggerimento del pulsante AFC spiega che il valore mostrato (per esempio +36 Hz) e' la correzione in corso e non un guasto, e non cita piu' i 150 Hz di base (il limite sta nelle impostazioni WEFAX); in tutte le lingue.

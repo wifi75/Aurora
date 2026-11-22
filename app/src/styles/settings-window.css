@@ -78,6 +78,9 @@
 .sw-grid--4{align-items:start}
 .sw-field{align-content:start;justify-items:start}
 .sw-field .lang-select{justify-self:start}
+/* tendina della lingua: una sola cornice (quella del riquadro); il pulsante interno non ne disegna un'altra e l'anello della tastiera sta dentro */
+.sw-panel .lang-menu .lang-trigger{border:0;background:transparent;box-shadow:none}
+.sw-panel .lang-menu .lang-trigger:focus-visible{outline-offset:-3px}
 @media (max-width:760px){.sw-grid--2{grid-template-columns:1fr}}
 
 /* le voci non disponibili restano spente e senza il lungo perche': il perche' sta nel suggerimento */
