@@ -111,9 +111,11 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
       maxZoom: 10,
       // niente animazione dello zoom: con l'animazione di Leaflet i pulsanti +, - e la rotella non cambiavano il livello
       zoomAnimation: false,
-      zoomSnap: 0.25,
+      // zoom continuo con la rotella (a scatti di un quarto di livello sembrava a scatti): piccoli passi, raccolti ogni 25 ms
+      zoomSnap: 0,
       zoomDelta: 0.5,
-      wheelPxPerZoomLevel: 100,
+      wheelPxPerZoomLevel: 140,
+      wheelDebounceTime: 25,
       maxBounds: WORLD,
       maxBoundsViscosity: 1,
     });

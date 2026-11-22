@@ -197,7 +197,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     const m = whole
       ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
         L.map(el, { fadeAnimation: false, zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
-      : L.map(el, { fadeAnimation: false, zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
+      : L.map(el, { fadeAnimation: false, zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, zoomDelta: 0.5, wheelPxPerZoomLevel: 140, wheelDebounceTime: 25, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
