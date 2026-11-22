@@ -57,8 +57,15 @@ export function OutputLevel({ horizontal = false }: Props) {
           void commit(v);
         }}
       />
-      <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{pct}%</span>
+      {/* come in WSJT-X: i dB di attenuazione si leggono subito sul cursore («Transmit drive -30.9 dB»); la percentuale resta nel suggerimento */}
+      <span className="data muted out-level-value" title={t('out.value', { pct, db: attenuationFromPercent(pct).toFixed(1) })}>{dbText(attenuationFromPercent(pct))}</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
   );
+}
+
+/** «−22.5 dB»; sotto il decimo di dB (anche lo zero) «0 dB», mai «−0.0». */
+function dbText(attenuation: number): string {
+  const v = attenuation.toFixed(1);
+  return v === '0.0' ? '0 dB' : `−${v} dB`;
 }

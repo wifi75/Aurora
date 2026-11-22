@@ -2,6 +2,40 @@ import type { Entry } from '../core';
 
 /** Scheda Audio con il motore proprio: ingresso e uscita a scelta, canali, file audio. [it, en, de, fr, es, pt] */
 export const audioSetStrings = {
+  'aud.bandMem.title': ['Potenza per banda', 'Power by band', 'Leistung pro Band', 'Puissance par bande', 'Potencia por banda', 'Potência por banda'],
+  'aud.bandMem.on': [
+    'Ricorda la potenza di trasmissione per ogni banda e modo',
+    'Remember the transmit power for each band and mode',
+    'Sendeleistung für jedes Band und jeden Modus merken',
+    'Mémoriser la puissance d’émission pour chaque bande et chaque mode',
+    'Recordar la potencia de transmisión para cada banda y modo',
+    'Lembrar a potência de transmissão para cada banda e modo',
+  ],
+  'aud.bandMem.hint': [
+    'Come «Remember power settings by band» di WSJT-X: cambiando banda o modo il cursore «Lvl TX» torna al livello (in dB) che avevi su quella banda; la prima volta che usi una banda vale il livello di adesso. Spenta di fabbrica.',
+    'Like WSJT-X “Remember power settings by band”: when you change band or mode the “TX Lvl” slider goes back to the level (in dB) you had on that band; the first time you use a band it keeps the current level. Off by default.',
+    'Wie „Remember power settings by band“ in WSJT-X: beim Wechsel von Band oder Modus springt der Regler „TX-Pegel“ auf den Pegel (in dB) zurück, den Sie auf diesem Band hatten; beim ersten Mal bleibt der aktuelle Pegel. Werkseitig aus.',
+    'Comme « Remember power settings by band » de WSJT-X : en changeant de bande ou de mode, le curseur « Niv TX » revient au niveau (en dB) que vous aviez sur cette bande ; la première fois, le niveau actuel est gardé. Désactivé par défaut.',
+    'Como «Remember power settings by band» de WSJT-X: al cambiar de banda o de modo el control «Niv TX» vuelve al nivel (en dB) que tenías en esa banda; la primera vez se mantiene el nivel actual. Apagada de fábrica.',
+    'Como «Remember power settings by band» do WSJT-X: ao mudar de banda ou de modo o cursor «Niv TX» volta ao nível (em dB) que tinha nessa banda; da primeira vez mantém-se o nível atual. Desligada de origem.',
+  ],
+  'aud.keepVol.title': ['Volumi di Windows', 'Windows volumes', 'Windows-Lautstärken', 'Volumes de Windows', 'Volúmenes de Windows', 'Volumes do Windows'],
+  'aud.keepVol.on': [
+    'Non toccare i volumi di Windows',
+    'Do not touch the Windows volumes',
+    'Windows-Lautstärken nicht verändern',
+    'Ne pas toucher aux volumes de Windows',
+    'No tocar los volúmenes de Windows',
+    'Não mexer nos volumes do Windows',
+  ],
+  'aud.keepVol.hint': [
+    'Aurora non cambia i livelli di ingresso e di uscita della scheda audio, come JTDX: sparisce il cursore del volume di registrazione, AUTO si spegne e «Lvl TX» resta solo l’attenuazione digitale del segnale (in dB). I livelli restano quelli che hai messo in Windows e negli altri programmi.',
+    'Aurora does not change the sound card input and output levels, like JTDX: the recording volume slider disappears, AUTO is switched off and “TX Lvl” stays only the digital attenuation of the signal (in dB). The levels stay as you set them in Windows and in the other programs.',
+    'Aurora ändert die Ein- und Ausgangspegel der Soundkarte nicht, wie JTDX: der Regler für die Aufnahmelautstärke verschwindet, AUTO wird ausgeschaltet und „TX-Pegel“ bleibt nur die digitale Dämpfung des Signals (in dB). Die Pegel bleiben so, wie Sie sie in Windows und in den anderen Programmen eingestellt haben.',
+    'Aurora ne change pas les niveaux d’entrée et de sortie de la carte son, comme JTDX : le curseur du volume d’enregistrement disparaît, AUTO s’éteint et « Niv TX » reste seulement l’atténuation numérique du signal (en dB). Les niveaux restent ceux réglés dans Windows et dans les autres logiciels.',
+    'Aurora no cambia los niveles de entrada y salida de la tarjeta de sonido, como JTDX: desaparece el control del volumen de grabación, AUTO se apaga y «Niv TX» queda solo como atenuación digital de la señal (en dB). Los niveles siguen como los pusiste en Windows y en los otros programas.',
+    'O Aurora não muda os níveis de entrada e de saída da placa de som, como o JTDX: desaparece o cursor do volume de gravação, o AUTO desliga-se e «Niv TX» fica só como atenuação digital do sinal (em dB). Os níveis ficam como os pôs no Windows e nos outros programas.',
+  ],
   'aud.intro': [
     'Qui scegli da dove Aurora riceve (cascata e decodificatore) e dove esce l’audio della trasmissione. Il cambio si applica subito, senza riavviare: l’ingresso riparte in un attimo, l’uscita cambia tra una trasmissione e l’altra. Se il dispositivo nuovo non si apre, resta quello di prima e la scelta non viene salvata.',
     'Choose where Aurora receives from (waterfall and decoder) and where the transmit audio goes. A change applies at once, with no restart: the input restarts in a moment, the output changes between two transmissions. If the new device does not open, the previous one stays and the choice is not saved.',

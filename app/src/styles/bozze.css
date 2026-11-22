@@ -528,6 +528,12 @@ html[data-theme='light'] .cq-chip:hover { background: rgba(0, 0, 0, .1); }
 .tx-levels .in-level-meter, .tx-levels .in-level-state, .tx-levels .live-note { display: none !important; }
 .tx-levels .in-level-title, .tx-levels .out-level-title { font-size: 10px; }
 .tx-levels .in-level-value, .tx-levels .out-level-value { font-size: 10px; min-width: 26px; }
+.tx-levels .out-level-value { min-width: 46px; white-space: nowrap; }
+/* i dB scritti sui livelli («−22.5 dB», «−38 dB»): mai a capo, mai schiacciati dal cursore, cifre a larghezza fissa perche' non ballino */
+.out-level-value, .in-level-db { white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; text-align: center; }
+.in-level-db { font-size: var(--text-xs); }
+.tx-levels .out-level-value { min-width: 5.2em; text-align: right; overflow: visible; }
+.tx-levels .in-level-db { font-size: 10px; min-width: 3.6em; text-align: right; }
 .tx-levels .in-level-auto { height: 18px !important; min-height: 18px !important; padding: 0 5px !important; font-size: 9.5px !important; }
 
 /* come nella bozza: le sei righe dei messaggi restano compatte e i comandi QSO seguono subito sotto (lo spazio in piu' resta in fondo) */
@@ -1720,3 +1726,11 @@ html:root:root[data-bozza]:not([data-theme='light']) .wefax-history > .sstv-hist
 /* pagina Fox (resta «neon» per scelta): stessa forma dei controlli delle altre pagine (angoli di 8, testo a 600) e menu con la stessa freccia */
 html:root:root[data-bozza] .foxc :is(button.foxc-btn, select.foxc-input, input.foxc-input, button.rx-seg-item, button.chip) { border-radius: 8px !important; font-weight: 600; }
 html:root:root[data-bozza] .foxc select.foxc-input { appearance: none; -webkit-appearance: none; padding-right: 22px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9b8ff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; background-size: 12px; }
+
+/* testata WEFAX e SSTV: nessuna casella sovrapposta ne' testo tagliato (menu del modo e frequenza con spazio per la freccia, stesso carattere ovunque) */
+html:root:root[data-bozza] .sstv-head select.sstv-modesel:not(.wefax-freq) { width: auto !important; min-width: 5.4rem; padding: 0 24px 0 10px; text-align: left; text-align-last: left; }
+html:root:root[data-bozza] .sstv-head .wefax-freq { padding: 0 24px 0 10px; text-align: left; text-align-last: left; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+html:root:root[data-bozza] .sstv-head :is(label, .wefax-step, .wefax-afcsql, .sstv-check) { font-size: 12px; }
+html:root:root[data-bozza] .sstv-head input[type='number'] { min-width: 3.4rem; padding: 0 8px; text-align: center; font-variant-numeric: tabular-nums; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini { gap: 0.5rem; margin-right: 0.5rem; overflow: hidden; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker { margin-left: 0.5rem; }

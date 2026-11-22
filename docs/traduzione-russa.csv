@@ -995,7 +995,7 @@ tip.acc.preview,"This is Aurora running right now, with real data, as a phone (3
 acc.previewPhone,Phone,Телефон
 acc.previewTablet,Landscape tablet,Планшет (альбомный)
 out.label,Audio output level (TX Lvl),Уровень выхода аудио (Pwr)
-out.value,{pct} % · attenuation {db} dB,{pct} % · ослабление {db} dB
+out.value,Digital transmit gain: attenuation {db} dB ({pct} %),Цифровое усиление передачи: ослабление {db} дБ ({pct} %)
 out.unavailable,Output level not available (needs radio control and Aurora running).,Уровень выхода недоступен (нужны управление радио и запущенная Aurora).
 out.saved,Output level set.,Уровень выхода установлен.
 tip.out,"Audio output level to the radio. With the ALC at zero or barely visible the level is right; if the ALC is high, lower this level, do not raise the power. The watts are set with RF Power on the radio. It can be set with transmission stopped too.","Регулирует уровень звукового выхода. Если трансивер выходит из ALC, уменьшите этот уровень. Для оптимального излучения уровень ALC должен оставаться на 0. Можно задать и при остановленной передаче."
@@ -2593,6 +2593,12 @@ not2.muteTx,Do not play while transmitting,Не проигрывать во вр
 not2.alertHelp,"Alerts play the chosen sound for: a call to me, the chosen DX call, a new CQ/ITU zone, country, grid or prefix (and, with «per band», the new-on-band/mode of that kind). «Per band» follows the boxes above: it fires if the message carries that label. «Also a sound» is the usual short note. They only work with «Sound alerts» on and the page open; they stay silent while you transmit. The browser asks for a tap on the page before it lets anything play.","Оповещения проигрывают выбранный звук для: вызова меня, выбранного позывного DX, новой зоны CQ/ITU, страны, локатора или префикса (а при «по диапазону» — нового на диапазоне или в режиме этого типа). «По диапазону» соответствует полям выше: срабатывает, если в сообщении есть эта метка. «Также звуком» — это обычный короткий сигнал. Они работают только при включённых «Звуковых оповещениях» и открытой странице; во время передачи молчат. Браузер требует нажатия на страницу, прежде чем что-либо проиграть."
 not2.cyan,cyan,голубой
 not2.yellow,yellow,жёлтый
+aud.bandMem.title,Power by band,Мощность по диапазонам
+aud.bandMem.on,Remember the transmit power for each band and mode,Запоминать мощность передачи для каждого диапазона и режима
+aud.bandMem.hint,Like WSJT-X “Remember power settings by band”: when you change band or mode the “TX Lvl” slider goes back to the level (in dB) you had on that band; the first time you use a band it keeps the current level. Off by default.,"Как «Remember power settings by band» в WSJT-X: при смене диапазона или режима ползунок «Уровень TX» возвращается к уровню (в дБ), который был на этом диапазоне; в первый раз остаётся текущий уровень. По умолчанию выключено."
+aud.keepVol.title,Windows volumes,Громкость Windows
+aud.keepVol.on,Do not touch the Windows volumes,Не менять громкость Windows
+aud.keepVol.hint,"Aurora does not change the sound card input and output levels, like JTDX: the recording volume slider disappears, AUTO is switched off and “TX Lvl” stays only the digital attenuation of the signal (in dB). The levels stay as you set them in Windows and in the other programs.","Aurora не меняет уровни входа и выхода звуковой карты, как JTDX: ползунок громкости записи исчезает, AUTO выключается, а «TX Lvl» остаётся только цифровым ослаблением сигнала (в дБ). Уровни остаются такими, какими вы их задали в Windows и в других программах."
 aud.intro,"Choose where Aurora receives from (waterfall and decoder) and where the transmit audio goes. A change applies at once, with no restart: the input restarts in a moment, the output changes between two transmissions. If the new device does not open, the previous one stays and the choice is not saved.","Выберите, откуда Aurora принимает (водопад и декодер) и куда идёт звук передачи. Изменение применяется сразу, без перезапуска: вход перезапускается через мгновение, выход меняется между двумя передачами. Если новое устройство не открывается, остаётся предыдущее и выбор не сохраняется."
 aud.input,Audio input,Вход звука
 aud.output,Audio output (transmit),Выход звука (передача)

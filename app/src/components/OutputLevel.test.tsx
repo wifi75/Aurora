@@ -25,8 +25,8 @@ describe('OutputLevel', () => {
     show();
     const slider = await screen.findByRole('slider', { name: /livello audio di uscita/i });
     await waitFor(() => expect(slider).toHaveAttribute('aria-valuenow', '50'));
-    const value = screen.getByText('50%');
-    expect(value).toHaveAttribute('title', expect.stringMatching(/50 % · attenuazione 22.5 dB/));
+    const value = screen.getByText('−22.5 dB');
+    expect(value).toHaveAttribute('title', expect.stringContaining('attenuazione 22.5 dB (50 %)'));
   });
 
   it('sends the new level only when released, and up means more level, as in JTDX', async () => {
@@ -43,7 +43,7 @@ describe('OutputLevel', () => {
     fireEvent.pointerUp(slider, { pointerId: 1 });
     await waitFor(() => expect(putOutputLevel).toHaveBeenCalledTimes(1));
     expect(putOutputLevel).toHaveBeenCalledWith(13.5);
-    expect(screen.getByText('70%')).toBeInTheDocument();
+    expect(screen.getByText('−13.5 dB')).toBeInTheDocument();
   });
 
   it('the top of the track is full power (0 dB) and the bottom the minimum (45 dB), like JTDX', async () => {

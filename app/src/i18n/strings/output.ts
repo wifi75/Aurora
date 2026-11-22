@@ -3,7 +3,7 @@ import type { Entry } from '../core';
 /** Livello audio di uscita (cursore «Lvl TX» (prima «Pwr») del motore). [it, en, de, fr, es, pt] */
 export const outputStrings = {
   'out.label': ['Livello audio di uscita (Lvl TX)', 'Audio output level (TX Lvl)', 'Audio-Ausgangspegel (TX-Pegel)', 'Niveau audio de sortie (Niv TX)', 'Nivel de audio de salida (Niv TX)', 'Nível de áudio de saída (Niv TX)'],
-  'out.value': ['{pct} % · attenuazione {db} dB', '{pct} % · attenuation {db} dB', '{pct} % · Dämpfung {db} dB', '{pct} % · atténuation {db} dB', '{pct} % · atenuación {db} dB', '{pct} % · atenuação {db} dB'],
+  'out.value': ['Guadagno digitale di trasmissione: attenuazione {db} dB ({pct} %)', 'Digital transmit gain: attenuation {db} dB ({pct} %)', 'Digitale Sendeverstärkung: Dämpfung {db} dB ({pct} %)', 'Gain numérique d’émission : atténuation {db} dB ({pct} %)', 'Ganancia digital de transmisión: atenuación {db} dB ({pct} %)', 'Ganho digital de transmissão: atenuação {db} dB ({pct} %)'],
   'out.unavailable': [
     'Livello di uscita non disponibile (serve il comando radio e Aurora acceso).',
     'Output level not available (needs radio control and Aurora running).',

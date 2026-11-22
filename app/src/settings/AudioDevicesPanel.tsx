@@ -1,9 +1,12 @@
 import { DeviceVolume } from './DeviceVolume';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { ApiError, getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
+import { ApiError, getAudioDevices, postControlValue, putAudioSettings, putInputLevel, type AudioDevice, type AudioDevices, type AudioPart, type AudioResult, type AudioValues } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { Help } from './common';
+import { usePrefs } from '../lib/prefs';
+import { useControlValues } from '../state/controlValues';
+import { isWindowsOs, useEngineOs } from '../i18n/os';
 import { useAutosave } from './useAutosave';
 import { Actions, Field, Group, Message, Notes, Page } from './layout';
 import { coreText } from '../lib/coreText';
@@ -131,6 +134,9 @@ export function resultLines(result: AudioResult, t: T): { text: string; bad: boo
 /** Scheda Audio con il motore proprio: ingresso e uscita a tendina, canali, file audio; l'esito dell'applicazione si legge subito sotto. */
 /** `notes`: altre note della scheda, nello stesso riquadro «Note» invece che sciolte sotto la pagina. */
 export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
+  const keepWindows = usePrefs((p) => p.prefs.keepWindowsVolume);
+  const onWindows = isWindowsOs(useEngineOs((v) => v.os));
+  const bandMemory = (useControlValues((v) => v.values.pwr_band_memory) ?? 0) === 1;
   const t = useT();
   const client = useQueryClient();
   const devices = useQuery({ queryKey: ['audio-devices'], queryFn: getAudioDevices, retry: false });
@@ -263,6 +269,35 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
           </div>
         ) : null}
       </Group>
+
+      <Group title={t('aud.bandMem.title')} span={3}>
+        <label className="sx-check" title={t('aud.bandMem.hint')}>
+          <input type="checkbox" checked={bandMemory} onChange={(e) => void postControlValue('pwr_band_memory', e.target.checked ? 1 : 0).catch(() => undefined)} />{' '}
+          <span>{t('aud.bandMem.on')}</span>
+        </label>
+        <Message kind="muted">{t('aud.bandMem.hint')}</Message>
+      </Group>
+
+      {onWindows ? (
+      <Group title={t('aud.keepVol.title')} span={3}>
+        <label className="sx-check" title={t('aud.keepVol.hint')}>
+          <input
+            type="checkbox"
+            checked={keepWindows}
+            onChange={(e) => {
+              usePrefs.getState().set({ keepWindowsVolume: e.target.checked });
+              if (e.target.checked) {
+                // AUTO spento e «Lvl TX» come attenuazione del segnale: Aurora non muove piu' i volumi di Windows
+                void putInputLevel({ auto: false }).catch(() => undefined);
+                void postControlValue('tx_level_windows', 0).catch(() => undefined);
+              }
+            }}
+          />{' '}
+          <span>{t('aud.keepVol.on')}</span>
+        </label>
+        <Message kind="muted">{t('aud.keepVol.hint')}</Message>
+      </Group>
+      ) : null}
 
       <Notes span={3}>
         <Help>{t('aud.intro')}</Help>

@@ -995,7 +995,7 @@ tip.acc.preview,"This is Aurora running right now, with real data, as a phone (3
 acc.previewPhone,Phone,Telefoon
 acc.previewTablet,Landscape tablet,Tablet liggend
 out.label,Audio output level (TX Lvl),Uitgangsniveau audio (TX-niv)
-out.value,{pct} % · attenuation {db} dB,{pct} % · demping {db} dB
+out.value,Digital transmit gain: attenuation {db} dB ({pct} %),Digitale zendversterking: demping {db} dB ({pct} %)
 out.unavailable,Output level not available (needs radio control and Aurora running).,Uitgangsniveau niet beschikbaar (vereist radiobesturing en een draaiende Aurora).
 out.saved,Output level set.,Uitgangsniveau ingesteld.
 tip.out,"Audio output level to the radio. With the ALC at zero or barely visible the level is right; if the ALC is high, lower this level, do not raise the power. The watts are set with RF Power on the radio. It can be set with transmission stopped too.","Audio-uitgangsniveau naar de radio. Staat de ALC op nul of nauwelijks zichtbaar, dan is het niveau goed; is de ALC hoog, verlaag dan dit niveau en verhoog niet het vermogen. De watts stel je in met RF Power op de radio. Ook instelbaar terwijl het zenden gestopt is."
@@ -2593,6 +2593,12 @@ not2.muteTx,Do not play while transmitting,Niet afspelen tijdens het zenden
 not2.alertHelp,"Alerts play the chosen sound for: a call to me, the chosen DX call, a new CQ/ITU zone, country, grid or prefix (and, with «per band», the new-on-band/mode of that kind). «Per band» follows the boxes above: it fires if the message carries that label. «Also a sound» is the usual short note. They only work with «Sound alerts» on and the page open; they stay silent while you transmit. The browser asks for a tap on the page before it lets anything play.","Meldingen spelen het gekozen geluid af voor: een oproep aan mij, de gekozen DX-roepnaam, een nieuwe CQ-/ITU-zone, land, locator of prefix (en, met «per band», het nieuw-op-band/mode van die soort). «Per band» volgt de vakjes hierboven: het gaat af als het bericht dat label draagt. «Ook een geluid» is de gebruikelijke korte noot. Ze werken alleen met «Geluidsmeldingen» aan en de pagina open; ze zwijgen terwijl je zendt. De browser vraagt om een tik op de pagina voordat hij iets laat afspelen."
 not2.cyan,cyan,cyaan
 not2.yellow,yellow,geel
+aud.bandMem.title,Power by band,Vermogen per band
+aud.bandMem.on,Remember the transmit power for each band and mode,Onthoud het zendvermogen voor elke band en elke modus
+aud.bandMem.hint,Like WSJT-X “Remember power settings by band”: when you change band or mode the “TX Lvl” slider goes back to the level (in dB) you had on that band; the first time you use a band it keeps the current level. Off by default.,"Zoals “Remember power settings by band” in WSJT-X: als je van band of modus wisselt, springt de schuif “TX-niveau” terug naar het niveau (in dB) dat je op die band had; de eerste keer blijft het huidige niveau. Standaard uit."
+aud.keepVol.title,Windows volumes,Windows-volumes
+aud.keepVol.on,Do not touch the Windows volumes,Windows-volumes niet aanpassen
+aud.keepVol.hint,"Aurora does not change the sound card input and output levels, like JTDX: the recording volume slider disappears, AUTO is switched off and “TX Lvl” stays only the digital attenuation of the signal (in dB). The levels stay as you set them in Windows and in the other programs.","Aurora verandert de ingangs- en uitgangsniveaus van de geluidskaart niet, zoals JTDX: de schuifregelaar voor het opnamevolume verdwijnt, AUTO gaat uit en „TX-niv” blijft alleen de digitale demping van het signaal (in dB). De niveaus blijven zoals je ze in Windows en in de andere programma's hebt ingesteld."
 aud.intro,"Choose where Aurora receives from (waterfall and decoder) and where the transmit audio goes. A change applies at once, with no restart: the input restarts in a moment, the output changes between two transmissions. If the new device does not open, the previous one stays and the choice is not saved.","Kies waarvan Aurora ontvangt (waterval en decoder) en waarheen de zendaudio gaat. Een wijziging geldt meteen, zonder herstart: de ingang start binnen een moment opnieuw, de uitgang wisselt tussen twee zendingen. Als het nieuwe apparaat niet opent, blijft het vorige in gebruik en wordt de keuze niet opgeslagen."
 aud.input,Audio input,Audio-ingang
 aud.output,Audio output (transmit),Audio-uitgang (zenden)

@@ -52,6 +52,8 @@ export interface Prefs {
   supportEmail: string;
   /** SSTV, «Ingrandimento morbido»: l'immagine ingrandita nel visore sfumata invece che a pixel netti (spento di base). */
   sstvSmooth: boolean;
+  /** «Non toccare i volumi di Windows»: niente cursori del volume di registrazione ne' AUTO ne' «Lvl TX = volume di Windows» (spento di base). */
+  keepWindowsVolume: boolean;
 }
 
 const KEY = 'aurora-prefs';
@@ -60,7 +62,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, confirmUnseenCall: true, confirmListCall: false, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: true, cmdLogQso: true, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, confirmUnseenCall: true, confirmListCall: false, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: true, cmdLogQso: true, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false, keepWindowsVolume: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -70,7 +72,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'confirmUnseenCall', 'confirmListCall', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'confirmUnseenCall', 'confirmListCall', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth', 'keepWindowsVolume'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     // «Tune» e «Log QSO» nei Comandi: prima erano nascosti di base e nessuno li trovava (proprietario, 2026-11-13). Le preferenze salvate

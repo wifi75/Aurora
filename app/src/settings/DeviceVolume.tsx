@@ -5,6 +5,7 @@ import { useT } from '../i18n';
 import { isWindowsOs, useEngineOs } from '../i18n/os';
 import { useControlValues } from '../state/controlValues';
 import { attenuationFromPercent, levelPercent } from '../lib/outputLevel';
+import { usePrefs } from '../lib/prefs';
 
 /**
  * Il cursore del volume di Windows del dispositivo scelto, accanto alla sua scelta: per l'ingresso il volume di registrazione (quello del
@@ -14,6 +15,7 @@ export function DeviceVolume({ kind }: { kind: 'input' | 'output' }) {
   const t = useT();
   const client = useQueryClient();
   const windows = isWindowsOs(useEngineOs((v) => v.os));
+  const keepWindows = usePrefs((p) => p.prefs.keepWindowsVolume);
   const levelInWindows = (useControlValues((v) => v.values.tx_level_windows) ?? 0) === 1;
   const input = useQuery({ queryKey: ['input-level'], queryFn: getInputLevel, retry: false, enabled: kind === 'input', refetchInterval: 3000 });
   const output = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, enabled: kind === 'output', refetchInterval: 3000 });
@@ -24,6 +26,8 @@ export function DeviceVolume({ kind }: { kind: 'input' | 'output' }) {
     if (!moving && served !== undefined) setPct(Math.round(served));
   }, [served, moving]);
   const failed = kind === 'input' ? input.isError : output.isError;
+  // «Non toccare i volumi di Windows»: niente cursore del volume di registrazione
+  if (kind === 'input' && keepWindows) return null;
   if (failed) return <p className="muted dev-vol-off">{t('aud.vol.off')}</p>;
   if (pct === null) return null;
   const commit = async (value: number) => {
@@ -38,7 +42,7 @@ export function DeviceVolume({ kind }: { kind: 'input' | 'output' }) {
   };
   const id = `dev-vol-${kind}`;
   // «Lvl TX» come volume di Windows o come attenuazione del segnale (di fabbrica: attenuazione, Aurora non tocca il volume di Windows)
-  const modeToggle = kind === 'output' && windows ? (
+  const modeToggle = kind === 'output' && windows && !keepWindows ? (
     <label className="dev-vol-mode" title={t('tip.out.mode')}>
       <input type="checkbox" checked={levelInWindows} onChange={(e) => void postControlValue('tx_level_windows', e.target.checked ? 1 : 0).catch(() => undefined)} /> {t('out.mode')}
     </label>

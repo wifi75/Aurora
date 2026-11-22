@@ -4,6 +4,7 @@ import { getInputLevel, putInputLevel } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { LEVEL_STALE_MS, meterPercent, toDb } from '../lib/audioLevel';
 import { replyErrorMessage } from '../lib/replyError';
+import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { VerticalSlider } from './VerticalSlider';
 
@@ -16,6 +17,7 @@ export function InputLevel({ horizontal = false }: { horizontal?: boolean } = {}
   const client = useQueryClient();
   const level = useStation((s) => s.audioLevel);
   const at = useStation((s) => s.audioLevelAt);
+  const keepWindows = usePrefs((p) => p.prefs.keepWindowsVolume);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -32,7 +34,7 @@ export function InputLevel({ horizontal = false }: { horizontal?: boolean } = {}
   const detail = t('rxl.value', { peak: toDb(level.peak).toFixed(0), rms: toDb(level.rms).toFixed(0) });
   const hint = t(`rxl.hint.${level.state}` as Key);
   const warn = level.state === 'overdrive' || level.state === 'silent' || level.state === 'low';
-  const control = volume.data;
+  const control = keepWindows ? undefined : volume.data;
   const shown = draft ?? control?.volume_pct ?? 0;
 
   const change = async (body: { volume_pct?: number; auto?: boolean }) => {
@@ -67,6 +69,8 @@ export function InputLevel({ horizontal = false }: { horizontal?: boolean } = {}
           </button>
         </>
       ) : null}
+      {/* come in WSJT-X: il livello in dB scritto sotto la barra (valore medio) */}
+      <span className="data muted in-level-db">{Math.round(toDb(level.rms)) || 0} dB</span>
       <span className="in-level-state" role={warn ? 'status' : undefined}>{t(`rxl.state.${level.state}` as Key)}</span>
       {note ? <span className="live-note" role="status">{note}</span> : null}
     </div>
