@@ -4,15 +4,16 @@ import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
 import { FldigiImportDialog } from '../components/FldigiImportDialog';
 import { applyImport, buildImport, parseFldigiFile, type ImportReport } from '../lib/fldigiMacros';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso, type OliviaSettings } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
+import { effectiveTxHz, isOliviaMode, OLIVIA_BANDWIDTHS, OLIVIA_TONES, oliviaLabel, oliviaModePatch, oliviaOf, oliviaPatch, oliviaProblem } from '../lib/olivia';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type LogMarks, type Qso } from '../components/digi/DigiLog';
-import { applyAvailability } from '../lib/menuModi';
+import { applyAvailability, MODI_IN_ARRIVO } from '../lib/menuModi';
 import { SsbContestView } from '../components/digi/SsbContestView';
 import { ContestWorkspace } from '../components/digi/ContestWorkspace';
 import { composeReceived, composeSent, readSection } from '../lib/contestSection';
@@ -50,7 +51,7 @@ import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar, followRxPatch, followRxTarget, wpmStepPatch } from '../components/digi/StatusBar';
-import { useT } from '../i18n';
+import { useT, type T } from '../i18n';
 import { ListenGate } from '../components/ListenGate';
 import { REMOTE_HOST } from '../lib/phone';
 import { appendDigiNote, clearDigiText, getDigiText, onDigi, onDigiText, removeDigiLines } from '../lib/digiBus';
@@ -84,7 +85,7 @@ import '../styles/digi-log-corta.css';
 import '../styles/digi-band.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -596,6 +597,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     [client, onChanged, t],
   );
 
+  // Olivia e Contestia: toni o banda dal menu o dalla barra; se non entrano nella banda audio lo si dice subito (il motore li salva ma non
+  // trasmette e non riceve)
+  const saveOlivia = (part: Partial<OliviaSettings>) => {
+    const cur = live.current.snap.settings;
+    if (!isOliviaMode(cur.mode)) return;
+    const patch = oliviaPatch(cur, cur.mode, part);
+    save(patch);
+    const next = { ...cur, ...patch };
+    const o = oliviaOf(next, cur.mode);
+    const bad = oliviaProblem(next);
+    if (bad) toast(t(bad === 'tx' ? 'digi.olivia.noFit' : 'digi.olivia.noFitRx', { tones: o.tones, bw: o.bandwidth_hz, hz: Math.round(bad === 'tx' ? effectiveTxHz(next) : next.rx_freq_hz) }), 'error');
+  };
 
   // il divisore fra ricezione e trasmissione si trascina: la parte alta della colonna (0,2-0,8), ricordata
   // l'altezza della cascata si regola dalla barra sul suo bordo alto (da 50 a 400 px), ricordata
@@ -797,7 +810,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         },
         (e: unknown) => {
           const code = e instanceof ApiError ? e.code : '';
-          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
+          setProblem(txProblem(code, live.current.snap.settings, t));
           return false;
         },
       );
@@ -829,7 +842,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         },
         (e: unknown) => {
           const code = e instanceof ApiError ? e.code : '';
-          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
+          setProblem(txProblem(code, live.current.snap.settings, t));
           return { ok: false, latest: macroSeq.current.isLatest(r.gen) };
         },
       );
@@ -854,7 +867,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       },
       (e: unknown) => {
         const code = e instanceof ApiError ? e.code : '';
-        setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
+        setProblem(txProblem(code, live.current.snap.settings, t));
       },
     );
   };
@@ -868,8 +881,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
     // in PSK la portante e' al centro del segnale: la riga piu' forte e' una delle due a mezzo baud, fuori di quanto l'AFC recupera
     const pskHalf = l.snap.settings.mode === 'psk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
+    // Olivia e Contestia: il segnale e' largo quanto la banda e la frequenza e' il centro, Snap non aggancia un tono (resta il clic)
     const snapped =
-      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current
+      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode)
         ? rttyShift > 0
           ? snapToPair(avg.current.values(), lastRow.current, hz, rttyShift)
           : pskHalf > 0
@@ -1029,7 +1043,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       rxHz: l.rxHz,
       snr: l.snap.rx.snr_db ?? null,
       imd: l.snap.rx.imd_db ?? null,
-      rate: l.snap.settings.mode === 'cw' ? String(Math.round(l.snap.rx.wpm ?? l.snap.settings.cw_wpm)) : l.snap.settings.mode === 'rtty' ? String(l.snap.settings.rtty_baud) : l.snap.settings.mode === 'psk63' ? '62.5' : '31.25',
+      rate: l.snap.settings.mode === 'cw' ? String(Math.round(l.snap.rx.wpm ?? l.snap.settings.cw_wpm)) : l.snap.settings.mode === 'rtty' ? String(l.snap.settings.rtty_baud) : l.snap.settings.mode === 'psk63' ? '62.5' : isOliviaMode(l.snap.settings.mode) ? oliviaLabel(oliviaOf(l.snap.settings, l.snap.settings.mode)) : '31.25',
       inContest: l.inContest || textContest !== null,
     };
   };
@@ -1323,8 +1337,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             toast(t('digi.run.modeLocked'), 'info');
             break;
           }
+          const named = oliviaModePatch(l.snap.settings, a.mode);
           const m = modeFromName(a.mode);
-          if (m) save({ mode: m });
+          if (named) save(named);
+          else if (m) save({ mode: m });
           else toast(t('digi.run.modeUnsupported', { mode: a.mode }), 'info');
           break;
         }
@@ -1775,8 +1791,19 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               { label: rxWpm != null ? t('digi.mi.txAtRx', { wpm: rxWpm }) : t('digi.mi.txAtRxNone'), title: t('digi.mi.txAtRxTip'), disabled: rxWpm == null, onSelect: txAtRx },
             ]
           : []),
+        // Olivia e Contestia: toni e banda scelti dal menu (e nelle Impostazioni del modo)
+        ...(isOliviaMode(s.mode)
+          ? (() => {
+              const o = oliviaOf(s, s.mode);
+              return [
+                'sep' as const,
+                { label: `${t('digi.olivia.tones')}: ${o.tones}`, title: t('digi.olivia.tonesTip'), items: OLIVIA_TONES.map((v) => ({ label: String(v), checked: v === o.tones, onSelect: () => saveOlivia({ tones: v }) })) },
+                { label: `${t('digi.olivia.bandwidth')}: ${o.bandwidth_hz} Hz`, title: t('digi.olivia.bandwidthTip'), items: OLIVIA_BANDWIDTHS.map((v) => ({ label: `${v} Hz`, checked: v === o.bandwidth_hz, onSelect: () => saveOlivia({ bandwidth_hz: v }) })) },
+              ];
+            })()
+          : []),
         'sep' as const,
-        ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
+        ...MODI_IN_ARRIVO.map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
         { label: t('digi.mi.modeSettings'), onSelect: () => openSettingsWindow('digi') },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
@@ -1893,13 +1920,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // le misure del segnale per la barra: S/N in tutti i modi, IMD nel PSK (durante le inversioni), velocita' capita nel CW
   const measures = [
-    snap.rx.snr_db != null ? `S/N ${Math.round(snap.rx.snr_db)} dB` : 'S/N —',
+    isOliviaMode(s.mode)
+      ? snap.rx.snr_db != null ? t('digi.olivia.syncSnr', { db: Math.round(snap.rx.snr_db) }) : t('digi.olivia.syncSnrNone')
+      : snap.rx.snr_db != null ? `S/N ${Math.round(snap.rx.snr_db)} dB` : 'S/N —',
     s.mode === 'psk31' || s.mode === 'psk63' ? (snap.rx.imd_db != null ? `IMD ${Math.round(snap.rx.imd_db)} dB` : 'IMD —') : null,
     s.mode === 'cw' && snap.rx.wpm != null ? `${Math.round(snap.rx.wpm)} WPM` : null,
   ]
     .filter((v) => v !== null)
     .join(' · ');
-  const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'cw' ? `${Math.round(s.cw_wpm)} WPM` : s.mode === 'psk63' ? '63 bd' : '31 bd';
+  const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'cw' ? `${Math.round(s.cw_wpm)} WPM` : isOliviaMode(s.mode) ? `${oliviaLabel(oliviaOf(s, s.mode))} Hz` : s.mode === 'psk63' ? '63 bd' : '31 bd';
 
   // la colonna DUPE / Mult del log nel contest SSB: doppi dal log, moltiplicatori nuovi dalle statistiche del contest
   // entrando in SSB i rapporti di partenza sono 59 (non 599 dei modi digitali)
@@ -2271,7 +2300,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}
             mode={s.mode.toUpperCase()}
-            rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
+            rows={isOliviaMode(s.mode) ? [] : bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
             locked={sending}
             onPick={(hz) => {
               setManualBand(bandOf(hz) ?? '');
@@ -2429,6 +2458,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 }
               : undefined
           }
+          olivia={
+            isOliviaMode(s.mode)
+              ? { tones: oliviaOf(s, s.mode).tones, bandwidthHz: oliviaOf(s, s.mode).bandwidth_hz, onTones: (n) => saveOlivia({ tones: n }), onBandwidth: (hz) => saveOlivia({ bandwidth_hz: hz }) }
+              : undefined
+          }
           cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }), rxWpm, followRx: s.cw_wpm_follow_rx === true, onFollowRx: (on) => save(followRxPatch(on, rxWpm)), txWpm: s.cw_wpm, onTxWpm: (wpm) => save(wpmStepPatch(wpm)) } : undefined}
           modeName={MODE_NAMES[s.mode]}
           onModeClick={s.mode === 'rtty' ? () => setRttyOpen(true) : undefined}
@@ -2536,6 +2570,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   );
 }
 
+/** Il messaggio di una trasmissione rifiutata; in Olivia e Contestia `bad_value` vuol dire toni e banda fuori dalla banda audio. */
+function txProblem(code: string, s: DigiSettings, t: T): string {
+  if (code === 'bad_value' && isOliviaMode(s.mode)) {
+    const o = oliviaOf(s, s.mode);
+    return t('digi.olivia.noFit', { tones: o.tones, bw: o.bandwidth_hz, hz: Math.round(effectiveTxHz(s)) });
+  }
+  return code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error');
+}
+
 /** La larghezza del filtro BPF (Hz), come la calcola il core: la sua se impostata, altrimenti secondo il modo. */
 function passbandWidth(s: DigiSettings): number {
   if ((s.passband_hz ?? 0) > 0) return s.passband_hz ?? 0;
@@ -2543,6 +2586,8 @@ function passbandWidth(s: DigiSettings): number {
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   if (s.mode === 'ssb') return 2400;
+  // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo, come nel core
+  if (isOliviaMode(s.mode)) return oliviaOf(s, s.mode).bandwidth_hz * 1.2;
   return 80;
 }
 

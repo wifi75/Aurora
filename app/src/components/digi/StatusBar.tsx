@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../i18n';
 import { PopupMenu } from '../PopupMenu';
 import { CW_BANDWIDTHS, CW_WIDE_HZ, RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from './ModeSettings';
+import { OLIVIA_BANDWIDTHS, OLIVIA_TONES } from '../../lib/olivia';
 import '../../styles/call-menu.css';
 
 /** In RTTY la barra ha le tendine di spostamento e velocita' e il tasto «Rev», che salvano subito come il menu Modo. */
@@ -29,6 +30,14 @@ export interface CwStatus {
   /** Velocita' di trasmissione CW (WPM) e minimo/massimo: i pulsanti − e + accanto ai dati del modo la cambiano di 1 (con Maiuscolo di 5). */
   txWpm?: number;
   onTxWpm?(wpm: number): void;
+}
+
+/** In Olivia e Contestia la barra ha le tendine dei toni e della banda, che salvano subito come il menu Modo. */
+export interface OliviaStatus {
+  tones: number;
+  bandwidthHz: number;
+  onTones(n: number): void;
+  onBandwidth(hz: number): void;
 }
 
 export const CW_WPM_MIN = 5;
@@ -87,6 +96,8 @@ interface Props {
   rtty?: RttyStatus;
   /** Solo in CW: la tendina della banda del filtro accanto ai dati del modo. */
   cw?: CwStatus;
+  /** Solo in Olivia e Contestia: al posto dei dati del modo, le tendine dei toni e della banda. */
+  olivia?: OliviaStatus;
   modeName: string;
   /** Clic sul nome del modo (in RTTY: la finestra «Impostazioni RTTY»); senza, il nome non si clicca. */
   onModeClick?(): void;
@@ -263,7 +274,29 @@ export function DigiStatusBar(p: Props) {
           {t('digi.st.txAtRx')}
         </button>
       ) : null}
-      {p.rtty ? null : p.modeData !== '' ? (
+      {p.olivia ? (
+        <>
+          <label className="digi-st digi-st--select" title={t('digi.olivia.tonesTip')}>
+            <select aria-label={t('digi.olivia.tones')} value={p.olivia.tones} onChange={(e) => p.olivia?.onTones(Number(e.target.value))}>
+              {OLIVIA_TONES.map((v) => (
+                <option key={v} value={v}>
+                  {t('digi.olivia.tonesN', { n: v })}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="digi-st digi-st--select" title={t('digi.olivia.bandwidthTip')}>
+            <select aria-label={t('digi.olivia.bandwidth')} value={p.olivia.bandwidthHz} onChange={(e) => p.olivia?.onBandwidth(Number(e.target.value))}>
+              {OLIVIA_BANDWIDTHS.map((v) => (
+                <option key={v} value={v}>
+                  {v} Hz
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : null}
+      {p.rtty || p.olivia ? null : p.modeData !== '' ? (
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>
           {p.modeData}
         </button>

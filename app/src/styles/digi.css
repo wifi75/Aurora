@@ -206,3 +206,8 @@ button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0b
 .digi-wk-pair { display: flex; gap: 6px; }
 .digi-wk-pair input { width: 5.5em; }
 .digi-wk-test { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Olivia e Contestia: toni e banda fuori dalla banda audio */
+.sstv-hint.digi-olivia-warn,
+.digi-classica .sstv-hint.digi-olivia-warn,
+.sw-fields .sstv-hint.digi-olivia-warn { color: var(--danger); opacity: 1; font-weight: 600; }

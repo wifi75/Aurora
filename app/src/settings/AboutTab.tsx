@@ -82,6 +82,7 @@ export function AboutTab() {
         <section className="about-fact">
           <h3>{t('about.derived')}</h3>
           <p>{t('about.derivedText')}</p>
+          <p>{t('about.derivedOlivia')}</p>
         </section>
         <section className="about-fact">
           <h3>{t('about.thanks')}</h3>

@@ -1029,13 +1029,14 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modifica › Pulisci la finestra di ricezione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Pulisci la finestra di trasmissione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Copia il testo ricevuto | PRC › Modifica | t-digi-menu-fe |
-| Modo › PSK31, PSK63, RTTY, CW (scelta del modo) | PRC › Modo | t-digi-menu-mode |
+| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia |
 | Modo › SSTV | PRC › Modo | t-digi-menu-mode |
 | Modo › Spostamento (Hz) e Velocità (baud) (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Inverti mark/space (Rev) e UOS (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Banda del filtro CW (solo CW) | PRC › Modo | t-digi-menu-mode, t-digi-cw |
 | Modo › TX alla velocità ricevuta (solo CW) | PRC › Modo | t-digi-menu-mode, digicw |
-| Modo › modi «in arrivo» (QPSK31, FSK31, MFSK, Olivia, Contestia, MT63, Throb, Hellschreiber, Packet, Pactor, Amtor) | PRC › Modo | t-digi-menu-mode |
+| Modo › Toni e Banda (solo Olivia e Contestia) | PRC › Modo, barra di stato | t-digi-olivia |
+| Modo › modi «in arrivo» (QPSK31, FSK31, MFSK, MT63, Throb, Hellschreiber, Packet, Pactor, Amtor) | PRC › Modo | t-digi-menu-mode |
 | Modo › Impostazioni del modo… (apre le Impostazioni) | PRC › Modo | t-digi-menu-mode |
 | Modo › Soglia dello squelch… (apre la finestra Impostazioni del modo) | PRC › Modo | t-digi-menu-mode, t-digi-modeset |
 | Opzioni › Ascolto | PRC › Opzioni | t-digi-menu-opt |
@@ -1115,6 +1116,7 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Barra di stato › clic destro (menu: squelch, AFC, Lock, Snap, soglia, UTC, TX lampeggiante) | PRC › barra di stato | t-digi-status, rttyrx |
 | Finestra Impostazioni del modo › Ricezione (frequenza, AFC, Snap, Squelch, voci per modo) | PRC › Impostazioni del modo | t-digi-modeset |
 | Finestra Impostazioni del modo › soglie dello squelch (PSK, CW, RTTY) | PRC › Impostazioni del modo | t-digi-modeset, t-digi-cw |
+| Finestra Impostazioni del modo › Olivia e Contestia: toni, banda, margine e integrazione del sincronismo, soglia dello squelch, avviso fuori banda audio | PRC › Impostazioni del modo, Impostazioni › Per modo | t-digi-olivia |
 | Finestra Impostazioni del modo › Trasmissione (Lock, frequenza Tx, WPM, spostamento, velocità, Ascolto acceso all'avvio) | PRC › Impostazioni del modo | t-digi-modeset |
 | Finestra Impostazioni del modo › Dati personali (nome, QTH) | PRC › Impostazioni del modo | t-digi-modeset |
 | Finestra Impostazioni RTTY › profili Set 1-4, caselle, soglia, frequenze, ricevitore, spostamento, velocità, set di caratteri | PRC › Impostazioni RTTY | t-digi-modeset, rttyrx |

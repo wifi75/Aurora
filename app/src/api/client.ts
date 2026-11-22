@@ -1945,9 +1945,25 @@ export interface RttyProfile {
   squelch_snr_db: number;
 }
 
+/** Olivia o Contestia: toni (4-64), banda (250-2000 Hz, centrata sulla frequenza di ricezione e di trasmissione), sincronismo e squelch. */
+export interface OliviaSettings {
+  tones: number;
+  bandwidth_hz: number;
+  /** Di quanti bin si cerca il segnale attorno alla frequenza scelta (2-32, 8 di base). */
+  sync_margin: number;
+  /** Su quanti blocchi si integra il sincronismo (2-32, 4 di base). */
+  sync_integration: number;
+  /** Soglia dello squelch sul rapporto segnale/rumore del sincronismo (dB, 0-40, 12 di base). */
+  squelch_snr_db: number;
+}
+
 export interface DigiSettings {
   /** `ssb`: fonia, senza decodifica ne' testo trasmesso (log e contest). */
-  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb';
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia';
+  /** Olivia: 8 toni in 250 Hz di base (assente nei motori di prima). */
+  olivia?: OliviaSettings;
+  /** Contestia: 16 toni in 500 Hz di base (assente nei motori di prima). */
+  contestia?: OliviaSettings;
   /** Velocita' della CW in parole al minuto. */
   cw_wpm: number;
   /** CW: la velocita' di trasmissione segue quella misurata in ricezione (interruttore «TX = RX»). */
@@ -2063,7 +2079,7 @@ export async function clearDigiBand(): Promise<void> {
 }
 
 export interface DigiSnapshot {
-  /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz); `imd_db` e `quality` (0-100) solo
+  /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz, Olivia e Contestia quello del sincronismo); `imd_db` e `quality` (0-100) solo
    * in PSK; `wpm` la velocita' capita in CW; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
   rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; /** Segnale presente sulla frequenza di ricezione (indipendente dallo squelch). */ carrier?: boolean; snr_db?: number; imd_db?: number; quality?: number; wpm?: number; radio_lsb?: boolean };
   /** `open`: trasmissione aperta a levetta (resta in trasmissione, il testo scritto parte mentre si scrive). */

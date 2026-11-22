@@ -29,6 +29,7 @@ import {
   type DigiSettings,
 } from '../api/client';
 import { txLiveOptions } from './digiTxLive';
+import { oliviaRounded, oliviaSetPatch } from './olivia';
 
 /** Quello che la pagina mette a disposizione dei comandi. */
 export interface MacroDeps {
@@ -228,7 +229,7 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'LOCKRXTOGGLE': macroState.rxLocked = !macroState.rxLocked; return;
     case 'MODEMACROS': {
       const m = arg.trim().toLowerCase().replace(/\.mc$/, '').replace(/^bpsk/, 'psk');
-      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw', 'ssb'].includes(m) ? m : null);
+      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw', 'ssb', 'olivia', 'contestia'].includes(m) ? m : null);
       return;
     }
     case 'WORDMODE': macroState.wordMode = on(arg); txLiveOptions.wordMode = macroState.wordMode; return;
@@ -257,7 +258,13 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       const v = Number(value.replace(',', '.'));
       const key = what.trim().toUpperCase();
       const val = value.trim().toUpperCase();
-      if (key === 'BW' && Number.isFinite(v) && v > 0) {
+      // Olivia e Contestia: TONES e BW vanno ai toni e alla banda del modo, SUBMODE sceglie il modo con toni e banda (OLIVIA-8-250, 8/250)
+      const olivia = key === 'SUBMODE' && macroState.modeLocked ? null : oliviaSetPatch(s, key, val);
+      if (olivia) {
+        d.save(olivia);
+        if (key === 'SUBMODE' && oliviaRounded(val)) notInAurora(d, `SET SUBMODE:${val}`, val);
+      }
+      else if (key === 'BW' && Number.isFinite(v) && v > 0) {
         if (s.mode === 'cw') d.save({ cw_bandwidth_hz: [50, 100, 150, 250, 500].reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a)) });
         else d.save({ passband_on: true, passband_hz: Math.round(Math.min(1000, Math.max(20, v))) });
       } else if (key === 'SHIFT' && v > 0) d.save({ rtty_shift_hz: v });
@@ -270,7 +277,7 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
         if (mode) d.save({ mode });
         else notInAurora(d, `SET SUBMODE:${val}`, val);
       }
-      // TONES, FILTER e FONT di Hell e MFSK: modi che Aurora non ha, si saltano
+      // TONES fuori da Olivia e Contestia, FILTER e FONT di Hell e MFSK: modi che Aurora non ha, si saltano
       return;
     }
     case 'SPZOOM': d.view('wideWaterfall', num !== null && num >= 2 ? 'show' : 'hide'); return;

@@ -2,6 +2,8 @@ import { Fragment, useState, type ReactNode } from 'react';
 import type { DigiSettings, KeyerStatus } from '../../api/client';
 import { useT } from '../../i18n';
 import { WinKeyerFields } from './WinKeyerFields';
+import { OliviaFields } from './OliviaFields';
+import { isOliviaMode } from '../../lib/olivia';
 
 /** Gli spostamenti e le velocita' RTTY piu' usati (gli stessi elenchi di fldigi, piu' 450 Hz). */
 export const RTTY_SHIFTS = [23, 85, 160, 170, 182, 200, 240, 350, 425, 450, 850];
@@ -47,7 +49,7 @@ const fieldset: Section = (title, children) => (
 );
 
 /**
- * Ricezione e trasmissione di PSK, RTTY e CW: frequenze, spostamento e velocita' RTTY, banda e SOM del CW, AFC, Lock, Snap, squelch con
+ * Ricezione e trasmissione di PSK, RTTY, CW, Olivia e Contestia (toni, banda, sincronismo e squelch in `OliviaFields`): frequenze, spostamento e velocita' RTTY, banda e SOM del CW, AFC, Lock, Snap, squelch con
  * la soglia del modo (qualita' della fase in PSK, rapporto segnale/rumore in RTTY e CW: mai il livello, che dipende dal volume).
  * Nel dialogo della pagina si vedono solo le voci del modo in uso; nelle Impostazioni (`allModes`) quelle di tutti i modi, in un riquadro
  * «Per modo». `section` disegna ogni parte (riquadro del dialogo o riquadro delle Impostazioni).
@@ -82,6 +84,7 @@ export function ModeSettingsFields({
   const [cwSnr, setCwSnr] = useState(s.cw_squelch_snr_db);
   const isRtty = !allModes && s.mode === 'rtty';
   const isCw = !allModes && s.mode === 'cw';
+  const isOlivia = !allModes && isOliviaMode(s.mode);
   // PSK in ricezione: la soglia dello squelch sulla qualita' della fase (0-100, come fldigi), che non dipende dal volume
   const pskRx = (
     <Fragment key="pskRx">
@@ -231,7 +234,7 @@ export function ModeSettingsFields({
             <input type="checkbox" checked={s.squelch_on} onChange={(e) => onSave({ squelch_on: e.target.checked })} />
             {t('digi.mi.squelch')}
           </label>
-          {allModes ? null : isRtty ? rttyRx : isCw ? cwRx : pskRx}
+          {allModes ? null : isRtty ? rttyRx : isCw ? cwRx : isOlivia && isOliviaMode(s.mode) ? <OliviaFields key="olivia" settings={s} mode={s.mode} snrDb={snrDb} onSave={onSave} /> : pskRx}
         </>,
       )}
       {section(
@@ -265,6 +268,10 @@ export function ModeSettingsFields({
               <b className="sw-digi-mode">CW</b>
               {cw}
               {cwRx}
+              <b className="sw-digi-mode">Olivia</b>
+              <OliviaFields key="olivia" settings={s} mode="olivia" snrDb={snrDb} onSave={onSave} />
+              <b className="sw-digi-mode">Contestia</b>
+              <OliviaFields key="contestia" settings={s} mode="contestia" snrDb={snrDb} onSave={onSave} />
             </>,
           )
         : null}

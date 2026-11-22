@@ -197,6 +197,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
       // in SSB la radio resta dov'e': il piano delle frequenze dei modi testuali non vale per la fonia
       if (digi.settings.mode === 'ssb') return;
+      // Olivia e Contestia non hanno frequenze nel piano presente: la radio resta dov'e' (non va sulle frequenze del PSK31)
+      if (digi.settings.mode === 'olivia' || digi.settings.mode === 'contestia') return;
       const text = TEXT_MODES[digi.settings.mode] ?? 'PSK31';
       name = text;
       await retuneForText(client, text);
