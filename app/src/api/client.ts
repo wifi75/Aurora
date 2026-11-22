@@ -2598,6 +2598,12 @@ export async function postWefaxSlant(body: { ppm?: number; points?: WefaxSlantPo
   return (await (await request('/wefax/slant', jsonInit(body))).json()) as WefaxSlantResult;
 }
 
+/** «Imposta inizio riga»: la colonna `x` (pixel dell'immagine) diventa l'inizio delle righe. Senza `id` vale per l'immagine in corso e le prossime righe;
+ *  con `id` sposta quella cartina salvata (nuova versione, o al posto dell'originale con `replace`). */
+export async function postWefaxLineStart(body: { x: number; id?: string; replace?: boolean }): Promise<{ ok?: boolean; image?: WefaxImageEntry }> {
+  return (await (await request('/wefax/line-start', jsonInit(body))).json()) as { ok?: boolean; image?: WefaxImageEntry };
+}
+
 /** Dimensione massima di un file da decodificare (come nel core). */
 export const WEFAX_FILE_MAX_BYTES = 200 * 1024 * 1024;
 

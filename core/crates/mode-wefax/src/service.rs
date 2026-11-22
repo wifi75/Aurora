@@ -245,6 +245,8 @@ enum Msg {
     Cancel,
     Config(DecoderConfig),
     ResetLearned,
+    /// «Imposta inizio riga»: la colonna scelta diventa l'inizio della riga dell'immagine in corso e delle prossime.
+    LineStart(u32),
     /// Comincia la decodifica di un file: la ricezione dal vivo si sospende e si parte con un decodificatore nuovo.
     FileStart,
     /// Un blocco del file (campioni mono alla frequenza del file); `done` e `total` sono i campioni per canale mandati e totali.
@@ -551,6 +553,25 @@ impl WefaxService {
         self.inner.file_stop.store(true, Ordering::SeqCst);
     }
 
+    /// Porta la colonna `x` (pixel dell'immagine in corso) all'inizio di ogni riga, da adesso in poi: la cartina che arriva spostata di lato si
+    /// rimette a posto senza ricominciare.
+    pub fn set_line_start(&self, x: u32) {
+        let _ = self.inner.queue.send(Msg::LineStart(x));
+    }
+
+    /// Sposta una cartina salvata: la colonna `x` diventa l'inizio delle righe. Come nuova versione o, con `replace`, al posto dell'originale.
+    pub fn shift_saved_image(&self, id: &str, x: u32, replace: bool) -> Result<ImageEntry, WefaxError> {
+        let mut store = lock(&self.inner.store);
+        let entry = store.entry(id).ok_or(WefaxError::NotFound)?;
+        let img = crate::image_io::decode_png(&store.png(id)?)?;
+        let out = crate::slant::shift_left(&img, x);
+        if replace {
+            return store.replace(id, &out);
+        }
+        let extra = EntryExtra { ioc: entry.ioc, lpm: entry.lpm, correlation: entry.correlation, reason: entry.reason, source: entry.source, complete: entry.complete };
+        store.add(&out, extra)
+    }
+
     /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o impostazioni del sistema).
     pub fn reset_learned(&self) {
         let _ = self.inner.queue.send(Msg::ResetLearned);
@@ -795,6 +816,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 }
                 inner.file_active.store(false, Ordering::SeqCst);
                 inner.rx_status_event();
+            }
+            Some(Msg::LineStart(x)) => {
+                decoder.set_line_start(x);
             }
             Some(Msg::ResetLearned) => {
                 decoder.reset_learned();

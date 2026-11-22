@@ -279,6 +279,40 @@ pub(crate) async fn wefax_slant(State(state): State<AppState>, _: Authed, Json(b
     .map(Json)
 }
 
+/// Inizio della riga scelto a mano.
+#[derive(Deserialize)]
+pub(crate) struct LineStartBody {
+    /// La colonna (pixel dell'immagine) che deve diventare l'inizio della riga.
+    x: u32,
+    /// La cartina salvata da spostare. Senza: l'immagine in corso e le prossime righe.
+    #[serde(default)]
+    id: Option<String>,
+    /// Con `id`: sostituisce la cartina salvata invece di scriverne una nuova versione.
+    #[serde(default)]
+    replace: bool,
+}
+
+/// «Imposta inizio riga»: la colonna `x` diventa l'inizio delle righe. Senza `id` vale subito per l'immagine in corso (e le righe che
+/// arrivano); con `id` sposta quella cartina salvata (nuova versione, o `replace`). Risponde `{ok}` o `{image}`.
+#[utoipa::path(post, path = "/api/v1/wefax/line-start", responses((status = 200, description = "`{ok}` o `{image}`"), (status = 404, description = "Cartina non trovata (not_found)")))]
+pub(crate) async fn wefax_line_start(State(state): State<AppState>, _: Authed, Json(body): Json<LineStartBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    blocking(move || -> Result<Value, ApiError> {
+        match body.id {
+            Some(id) => {
+                let entry = svc.shift_saved_image(&id, body.x, body.replace).map_err(api_error)?;
+                Ok(json!({ "image": entry }))
+            }
+            None => {
+                svc.set_line_start(body.x);
+                Ok(json!({ "ok": true }))
+            }
+        }
+    })
+    .await?
+    .map(Json)
+}
+
 /// Verso della rotazione.
 #[derive(Deserialize)]
 pub(crate) struct RotateBody {

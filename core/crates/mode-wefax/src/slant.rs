@@ -67,9 +67,33 @@ pub fn straighten(img: &GrayImage, ppm: f32, ref_row: f64) -> GrayImage {
     GrayImage { width: img.width, height: img.height, data }
 }
 
+/// Sposta la colonna `x` all'inizio di ogni riga (le colonne a sinistra vanno in fondo, a capo): la cartina che e' partita a meta' riga si
+/// rimette con il bordo sinistro dove deve stare. `x` oltre la larghezza si riporta dentro.
+pub fn shift_left(img: &GrayImage, x: u32) -> GrayImage {
+    let w = img.width as usize;
+    let mut data = img.data.clone();
+    if w > 0 {
+        let k = (x as usize) % w;
+        for row in data.chunks_mut(w) {
+            row.rotate_left(k);
+        }
+    }
+    GrayImage { width: img.width, height: img.height, data }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shift_left_brings_the_chosen_column_to_the_start_of_every_row() {
+        let img = GrayImage { width: 4, height: 2, data: vec![1, 2, 3, 4, 5, 6, 7, 8] };
+        let out = shift_left(&img, 1);
+        assert_eq!(out.data, vec![2, 3, 4, 1, 6, 7, 8, 5]);
+        assert_eq!(shift_left(&img, 0).data, img.data);
+        assert_eq!(shift_left(&img, 5).data, out.data, "oltre la larghezza si riporta dentro");
+        assert_eq!((out.width, out.height), (4, 2));
+    }
 
     #[test]
     fn two_points_give_the_ppm_with_the_sign_of_slant_ppm() {

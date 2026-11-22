@@ -1408,3 +1408,37 @@ fn un_falso_tono_d_inizio_non_blocca_l_attesa_per_sempre() {
     let e = ricevi(cfg(576, 120), &audio, 1024);
     assert!(e.fatte.iter().any(|d| d.image.height as usize >= h), "nessuna cartina completa: {} immagini, scartate {:?}", e.fatte.len(), e.scartate);
 }
+
+#[test]
+fn imposta_inizio_riga_sposta_le_righe_dell_immagine_in_corso_e_quelle_che_arrivano() {
+    let (w, h) = (1809usize, 120usize);
+    let img = immagine(w, h);
+    let s = Segnale { apt: false, ..Segnale::standard(576, 120) };
+    let audio = genera(&s, &img, w, h);
+    let decodifica = |inizio: Option<(usize, u32)>| -> Vec<u8> {
+        let mut d = decoder_manuale();
+        let mut n = 0usize;
+        let mut fatto = false;
+        for chunk in audio.chunks(1024) {
+            d.push(chunk);
+            n += chunk.len();
+            if let Some((dopo_s, x)) = inizio
+                && !fatto
+                && n >= dopo_s * RATE as usize
+            {
+                d.set_line_start(x);
+                fatto = true;
+            }
+        }
+        d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done.image.data) } else { None }).expect("immagine chiusa")
+    };
+    let normale = decodifica(None);
+    let spostata = decodifica(Some((20, 300)));
+    // una riga lontana dal punto in cui si e' fatto lo spostamento: e' quella normale con la colonna 300 all'inizio
+    let r = 100usize;
+    let mut atteso = normale[r * w..(r + 1) * w].to_vec();
+    atteso.rotate_left(300);
+    let ottenuta = &spostata[r * w..(r + 1) * w];
+    let uguali = atteso.iter().zip(ottenuta).filter(|(a, b)| a == b).count();
+    assert!(uguali * 100 / w >= 98, "solo {uguali} colonne su {w} sono quelle attese");
+}

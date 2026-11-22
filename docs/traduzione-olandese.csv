@@ -4366,6 +4366,13 @@ wefax.freq.label,Station and frequency,Station en frequentie
 wefax.freq.choose,Choose a frequency…,Kies een frequentie…
 wefax.freq.band,{mhz} MHz,{mhz} MHz
 wefax.freq.tip,"The radio goes to the station frequency (USB, 1.9 kHz below the assigned frequency). List from the National Weather Service (March 2025) and the Deutscher Wetterdienst: schedules and frequencies change.","De radio gaat naar de frequentie van het station (USB, 1,9 kHz onder de toegewezen frequentie). Lijst van de National Weather Service (maart 2025) en de Deutscher Wetterdienst: schema’s en frequenties veranderen."
+wefax.start.button,Set line start,Regelstart instellen
+wefax.start.tip,"One click on the column that should become the left edge of the chart (for example the frame, if the chart came in shifted sideways): the chart moves there, for the incoming one and the lines that follow, or on a copy of the saved one.","Eén klik op de kolom die de linkerrand van de kaart moet worden (bijvoorbeeld het kader, als de kaart zijwaarts verschoven binnenkwam): de kaart schuift daarheen, bij de binnenkomende kaart en de regels die volgen, of op een kopie van de opgeslagen kaart."
+wefax.start.pick,Click the left edge of the chart (Esc cancels),Klik op de linkerrand van de kaart (Esc annuleert)
+wefax.start.done,Line start set: it applies to the incoming chart and to the lines that follow.,Regelstart ingesteld: geldt voor de binnenkomende kaart en de regels die volgen.
+wefax.start.copied,"Line start set: the shifted chart is a new copy, the original stays.","Regelstart ingesteld: de verschoven kaart is een nieuwe kopie, het origineel blijft."
+wefax.start.replaced,Line start set: the saved chart has been replaced.,Regelstart ingesteld: de opgeslagen kaart is vervangen.
+wefax.start.error,Could not shift the chart.,De kaart kon niet worden verschoven.
 wefax.slant.measure,Measure slant,Helling meten
 wefax.slant.measureTip,Click the start and the end of a line that should be vertical: the shift gives the correction and the chart is straightened at once.,Klik op het begin en het einde van een lijn die verticaal zou moeten zijn: uit de verschuiving volgt de correctie en de kaart wordt meteen rechtgezet.
 wefax.slant.first,Click the start of a line that should be vertical (Esc cancels),Klik op het begin van een lijn die verticaal zou moeten zijn (Esc annuleert)

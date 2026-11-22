@@ -474,3 +474,6 @@ html[data-theme='light'] .wefax-page .sstv-head .wefax-step .wefax-step-btn { co
 
 /* visore adattato alla larghezza: mai la barra orizzontale (il foglio e' largo quanto il riquadro) */
 .wefax-box--fit { overflow-x: hidden; }
+
+/* «Imposta inizio riga»: il filo verticale che segue il mouse sulla cartina */
+.wefax-start-guide { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #34d399; box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); pointer-events: none; }

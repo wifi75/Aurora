@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { postWefaxRotate, postWefaxSlant, wefaxAudioUrl, wefaxImageUrl, type WefaxImageEntry, type WefaxSlantPoints } from '../../api/client';
+import { postWefaxLineStart, postWefaxRotate, postWefaxSlant, wefaxAudioUrl, wefaxImageUrl, type WefaxImageEntry, type WefaxSlantPoints } from '../../api/client';
 import { useT } from '../../i18n';
 import { fitBoxScale, stepZoom } from '../../lib/wefax';
 import { askConfirm } from '../ConfirmHost';
+import { LineStartOverlay } from './LineStartOverlay';
 import { SlantOverlay } from './SlantOverlay';
 import '../../styles/wefax-ruota.css';
 import '../../styles/wefax-grande.css';
@@ -53,6 +54,7 @@ export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxIm
   const [dragging, setDragging] = useState(false);
   // misura dell'inclinazione a due clic sulla cartina salvata: si raddrizza e si salva come nuova copia (o si sostituisce, dopo conferma)
   const [measuring, setMeasuring] = useState(false);
+  const [placing, setPlacing] = useState(false);
   const [replace, setReplace] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
@@ -187,6 +189,24 @@ export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxIm
     }
   };
 
+  const placeStart = async (x: number) => {
+    setPlacing(false);
+    if (replace && !(await askConfirm(t('wefax.slant.replaceAsk')))) return;
+    setBusy(true);
+    try {
+      const r = await postWefaxLineStart({ x, id: entry.id, replace });
+      setNote({ ok: true, text: t(replace ? 'wefax.start.replaced' : 'wefax.start.copied') });
+      if (r.image) {
+        setVersion((v) => v + 1);
+        onFixed(r.image);
+      }
+    } catch {
+      setNote({ ok: false, text: t('wefax.start.error') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // il fuoco alla finestra: i tasti funzionano subito
   useEffect(() => {
     root.current?.focus({ preventScroll: true });
@@ -271,6 +291,7 @@ export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxIm
           <div className="wefax-lb-sheet" style={{ width: sheetW, height: sheetH }}>
             <img src={src} alt="" width={entry.width} height={entry.height} draggable={false} className={`wefax-lb-img${scale >= 1 ? ' wefax-lb-img--crisp' : ''}`} style={{ width: sheetW, height: sheetH }} />
             {measuring ? <SlantOverlay width={entry.width} height={entry.height} onMeasure={(p) => void measure(p)} onCancel={() => setMeasuring(false)} /> : null}
+            {placing ? <LineStartOverlay width={entry.width} height={entry.height} onPick={(x) => void placeStart(x)} onCancel={() => setPlacing(false)} /> : null}
           </div>
         </div>
         {note ? (
@@ -325,6 +346,9 @@ export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxIm
             </span>
             <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={busy} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
               {t('wefax.slant.measure')}
+            </button>
+            <button type="button" className={`glass sstv-btn${placing ? ' sstv-btn--primary' : ''}`} disabled={busy} aria-pressed={placing} title={t('wefax.start.tip')} onClick={() => setPlacing((m) => !m)}>
+              {t('wefax.start.button')}
             </button>
             <label className="sstv-check" title={t('wefax.slant.replaceTip')}>
               <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />

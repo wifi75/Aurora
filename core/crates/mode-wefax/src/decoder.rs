@@ -1350,6 +1350,15 @@ impl Decoder {
         Some(idx + CENTER_BAND as i32 / 2)
     }
 
+    /// Porta la colonna `x` all'inizio di ogni riga dell'immagine in corso e di quelle che arriveranno (a mano, «Imposta inizio riga»).
+    pub fn set_line_start(&mut self, x: u32) {
+        let w = self.width.max(1) as u32;
+        let x = (x % w) as i32;
+        if x != 0 {
+            self.shift_image(-x);
+        }
+    }
+
     /// Sposta tutta l'immagine a destra di `delta` colonne (a capo), e anche i pixel che arriveranno.
     fn shift_image(&mut self, delta: i32) {
         let w = self.width;
