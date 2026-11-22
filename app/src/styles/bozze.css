@@ -1734,3 +1734,12 @@ html:root:root[data-bozza] .sstv-head :is(label, .wefax-step, .wefax-afcsql, .ss
 html:root:root[data-bozza] .sstv-head input[type='number'] { min-width: 3.4rem; padding: 0 8px; text-align: center; font-variant-numeric: tabular-nums; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini { gap: 0.5rem; margin-right: 0.5rem; overflow: hidden; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker { margin-left: 0.5rem; }
+
+/* pagine testuali (PSK, RTTY, CW): barra dei menu e pulsanti con lo stesso carattere e gli stessi angoli degli altri modi (i colori dei tasti macro restano quelli della loro funzione) */
+html:root:root[data-bozza] .digi-menubar .digi-menu > button { font-size: 12px; font-weight: 600; border-radius: 8px; min-height: 24px; }
+html:root:root[data-bozza] .digi-classica .digi-key { font-size: 12px; font-weight: 600; border-radius: 8px; }
+html:root:root[data-bozza] .digi-classica :is(.digi-rxbar-btn, .digi-tool) { border-radius: 8px; font-size: 12px; font-weight: 600; }
+
+/* barra in basso delle pagine testuali: i numeri (frequenza, larghezza, baud) si leggono per intero nelle caselle */
+html:root:root[data-bozza] .digi-status input:not([type='checkbox']):not([type='range']) { padding: 0 6px; min-width: 5.4rem; text-align: center; font-variant-numeric: tabular-nums; }
+html:root:root[data-bozza] .digi-status select { padding: 0 22px 0 8px; min-width: 5.4rem; }
