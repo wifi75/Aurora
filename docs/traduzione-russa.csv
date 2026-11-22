@@ -4366,6 +4366,8 @@ wefax.freq.label,Station and frequency,Станция и частота
 wefax.freq.choose,Choose a frequency…,Выберите частоту…
 wefax.freq.band,{mhz} MHz,{mhz} MHz
 wefax.freq.tip,"The radio goes to the station frequency (USB, 1.9 kHz below the assigned frequency). List from the National Weather Service (March 2025) and the Deutscher Wetterdienst: schedules and frequencies change.","Радио переходит на частоту станции (USB, на 1,9 kHz ниже назначенной частоты). Список составлен по данным National Weather Service (март 2025) и Deutscher Wetterdienst: расписания и частоты меняются."
+wefax.set.calibrate,Calibrate the sound card,Калибровать звуковую карту
+wefax.set.calibrateHint,"After receiving a chart well from a station with accurate timing (for example DDK3 of the German weather service), moves the learned error into the slant field and clears it: the correction stays fixed and the total does not change.","После хорошего приёма карты от станции с точной развёрткой (например, DDK3 немецкой метеослужбы) переносит выученную ошибку в поле наклона и обнуляет её: поправка становится постоянной, а общая сумма не меняется."
 wefax.start.button,Set line start,Задать начало строки
 wefax.start.tip,"One click on the column that should become the left edge of the chart (for example the frame, if the chart came in shifted sideways): the chart moves there, for the incoming one and the lines that follow, or on a copy of the saved one.","Один щелчок по столбцу, который должен стать левым краем карты (например, по рамке, если карта пришла сдвинутой вбок): карта сдвинется туда — для принимаемой карты и следующих строк или для копии сохранённой."
 wefax.start.pick,Click the left edge of the chart (Esc cancels),Щёлкните по левому краю карты (Esc — отмена)

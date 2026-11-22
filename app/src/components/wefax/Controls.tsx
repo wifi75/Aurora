@@ -343,6 +343,19 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
             <button type="button" className="glass sstv-btn" disabled={!settings.learned_ppm} onClick={act(() => wefaxRx('reset_learned'))}>
               {t('wefax.set.slantReset')}
             </button>
+            <button
+              type="button"
+              className="glass sstv-btn"
+              disabled={!settings.learned_ppm}
+              title={t('wefax.set.calibrateHint')}
+              onClick={act(async () => {
+                // l'errore appreso diventa la correzione fissa dell'inclinazione (come «Calibra la scheda audio» dell'SSTV) e si azzera: il totale non cambia
+                save({ slant_ppm: Math.round((latest.current.slant_ppm + (latest.current.learned_ppm ?? 0)) * 10) / 10 });
+                await wefaxRx('reset_learned');
+              })}
+            >
+              {t('wefax.set.calibrate')}
+            </button>
           </span>
         </div>
       </fieldset>

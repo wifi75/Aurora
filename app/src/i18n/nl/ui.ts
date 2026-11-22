@@ -5687,6 +5687,8 @@ export const NL_UI: Record<string, string> = {
   "wefax.set.autoSave": "Elke kaart automatisch opslaan",
   "wefax.set.autoSlant": "Automatische scheefstand",
   "wefax.set.autoSlantTip": "Elke 40 regels (tot regel 400) meet Aurora hoe schuin de verticale lijnen van de kaart lopen en corrigeert zelf de regelperiode, ook voor de al ontvangen regels. Dit komt bovenop de handmatige correctie.",
+  "wefax.set.calibrate": "Geluidskaart kalibreren",
+  "wefax.set.calibrateHint": "Zet na een goed ontvangen kaart van een station met nauwkeurige timing (bijvoorbeeld DDK3 van de Duitse weerdienst) de geleerde fout in het veld voor de scheefstand en zet die op nul: de correctie blijft vast en het totaal verandert niet.",
   "wefax.set.center": "Subdraaggolf (Hz)",
   "wefax.set.filter": "Ingangsfilter",
   "wefax.set.filter.medium": "Middel",

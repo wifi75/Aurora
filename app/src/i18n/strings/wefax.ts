@@ -202,6 +202,15 @@ export const wefaxStrings = {
     'La radio va a la frecuencia de la estación (USB, 1,9 kHz por debajo de la frecuencia asignada). Lista del National Weather Service (marzo de 2025) y del Deutscher Wetterdienst: los horarios y las frecuencias cambian.',
     'O rádio vai para a frequência da estação (USB, 1,9 kHz abaixo da frequência atribuída). Lista do National Weather Service (março de 2025) e do Deutscher Wetterdienst: os horários e as frequências mudam.',
   ],
+  'wefax.set.calibrate': ['Calibra la scheda audio', 'Calibrate the sound card', 'Soundkarte kalibrieren', 'Calibrer la carte son', 'Calibrar la tarjeta de sonido', 'Calibrar a placa de som'],
+  'wefax.set.calibrateHint': [
+    'Dopo aver ricevuto bene una cartina da una stazione con tempi precisi (per esempio DDK3 del servizio meteorologico tedesco), porta l’errore appreso nel campo dell’inclinazione e lo azzera: la correzione resta fissa e non cambia il totale.',
+    'After receiving a chart well from a station with accurate timing (for example DDK3 of the German weather service), moves the learned error into the slant field and clears it: the correction stays fixed and the total does not change.',
+    'Überträgt nach gutem Empfang einer Karte von einer Station mit genauem Zeitbezug (zum Beispiel DDK3 des Deutschen Wetterdienstes) den gelernten Fehler in das Schräglagenfeld und setzt ihn zurück: die Korrektur bleibt fest, die Summe ändert sich nicht.',
+    'Après avoir bien reçu une carte d’une station à la cadence précise (par exemple DDK3 du service météo allemand), reporte l’erreur apprise dans le champ d’inclinaison et la remet à zéro : la correction reste fixe et le total ne change pas.',
+    'Tras recibir bien una carta de una estación con tiempos precisos (por ejemplo DDK3 del servicio meteorológico alemán), pasa el error aprendido al campo de inclinación y lo pone a cero: la corrección queda fija y el total no cambia.',
+    'Depois de receber bem uma carta de uma estação com tempos precisos (por exemplo a DDK3 do serviço meteorológico alemão), passa o erro aprendido para o campo da inclinação e põe-no a zero: a correção fica fixa e o total não muda.',
+  ],
   'wefax.start.button': ['Imposta inizio riga', 'Set line start', 'Zeilenanfang setzen', 'Définir le début de ligne', 'Fijar el inicio de línea', 'Definir o início da linha'],
   'wefax.start.tip': [
     'Un clic sulla colonna che deve diventare il bordo sinistro della cartina (per esempio la cornice, se la cartina è arrivata spostata di lato): la cartina si sposta lì, su quella in arrivo e sulle righe che seguono, oppure su una copia di quella salvata.',
