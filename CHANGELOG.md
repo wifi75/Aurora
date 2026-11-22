@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Menu a tendina aperti: le voci hanno sempre sfondo e testo propri (scuro con testo chiaro nel tema scuro, bianco con testo scuro nel chiaro): prima, con il testo chiaro del menu su uno sfondo chiaro, non si leggeva niente (per esempio il menu dei modi dell'SSTV).
+- Barra del WEFAX: il misuratore accanto alla frequenza e il nome della stazione non sono piu' tagliati (se manca spazio la riga va a capo); la scritta «RX» in ricezione e' un riquadro verde pieno ben visibile, nei due temi (anche nella barra dell'SSTV).
+
 - Display della radio, nuovo stile «Pannello Yaesu FT-2000 con ROS, ALC e potenza» (richiesta di Pascal): come il pannello FT-2000 ma con tre righe grandi tra il VFO A e l'S-meter (ROS 1:x, ALC in percentuale, potenza in trasmissione in W) e solo le due frequenze VFO A e VFO B; piu' largo (792 punti). Si sceglie in Impostazioni › Radio › Stile del display; non cambia gli altri stili.
 
 - Riquadri di tutte le pagine identici a quelli della Stazione (FT8), nei due temi: Satelliti, WEFAX, SSTV, Propagazione e Statistiche hanno lo stesso filo (viola in scuro, aurora in chiaro), gli stessi angoli di 10, la barra del titolo alta 25 con il gradiente, titolo a 12 normale e maniglia a puntini; SSTV ha ora la barra «Ricezione», e Registro, Ricevute e Trasmesse hanno la loro. Le pagine PSK, RTTY e CW usavano gia' i riquadri della Stazione. Il Fox resta con i suoi colori.

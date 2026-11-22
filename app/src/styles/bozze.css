@@ -1790,3 +1790,23 @@ html:root:root[data-bozza] :is(.stats-card > .panel-title:first-child, .stats-ca
 html:root:root[data-bozza]:not([data-theme='light']) :is(.stats-card > .panel-title:first-child, .stats-card > summary:first-child) {
   background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8;
 }
+
+/* menu a tendina aperti: le voci hanno sempre sfondo e testo propri (il riquadro lo disegna il browser, e con il testo chiaro del menu su uno sfondo
+   chiaro non si leggeva nulla); scuro con testo chiaro nel tema scuro, bianco con testo scuro nel tema chiaro, in ogni pagina */
+html:root:root[data-bozza] :is(select option, select optgroup) { background-color: #121b2e !important; color: #e6ecf8 !important; }
+html:root:root[data-bozza][data-theme='light'] :is(select option, select optgroup) { background-color: #ffffff !important; color: #1d2a44 !important; }
+
+/* barra del WEFAX: niente tagliato (il misuratore accanto alla frequenza e il nome della stazione si vedono per intero); se lo spazio non basta la riga va a capo */
+html:root:root[data-bozza] .wefax-page .sstv-head { flex-wrap: wrap; row-gap: 6px; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini { flex: 0 0 auto !important; overflow: visible !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini .rd-compact { flex: 0 0 auto !important; overflow: visible !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker { flex: 0 0 auto !important; width: 20rem !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn { max-width: none !important; width: 100% !important; }
+
+/* «RX» nella barra del WEFAX e dell'SSTV: verde pieno ben visibile in ricezione (lampeggia piano, senza sparire), nei due temi */
+html:root:root[data-bozza] .sstv-head .sstv-badge--receiving {
+  background: #19c463 !important; border-color: #0b8f45 !important; color: #032010 !important; font-weight: 800; letter-spacing: 0.04em; box-shadow: 0 0 8px rgba(25, 196, 99, .65);
+}
+html:root:root[data-bozza][data-theme='light'] .sstv-head .sstv-badge--receiving { background: #13a652 !important; border-color: #0b7a3c !important; color: #ffffff !important; box-shadow: 0 0 6px rgba(19, 166, 82, .5); }
+html:root:root[data-bozza] .sstv-head .sstv-badge--receiving .sstv-dot { background: currentColor !important; }
+@keyframes wefax-rx-blink { 50% { opacity: 0.6; } }
