@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.332 - 2026-11-22
+
 - WEFAX, la vista riparte da zero con una cartina nuova: appena comincia il segnale della cartina nuova (la fasatura, circa 35 secondi prima delle prime righe) la cartina di prima sparisce dalla vista; prima restava li' fino alle prime righe nuove.
 - WEFAX, guardare le cartine salvate mentre si riceve: il visore in grande non tocca la ricezione (gira nel motore); ora in alto compare un segnalino verde «Ricezione in corso» con le righe che arrivano, cosi' si vede che continua (richiesta del proprietario). Nella Guida una voce per la chiusura automatica, la vista che riparte e il visore.
 
