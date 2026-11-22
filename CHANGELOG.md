@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti, IC-820H: la trasmissione CI-V fallita si riprova dopo 15 secondi (prima 60): se SAT era spento sulla radio e lo si riaccende, la trasmissione torna senza aspettare un minuto e senza premere «Connetti» (segnalazione di Vladimir, pacchetto `3C6019AE`: la prova si e' ripetuta da sola ma lui ha riconnesso prima del minuto). Il caso si scopre alla prima lettura, senza toccare la radio.
 - SSTV: nelle miniature delle foto le ricezioni incomplete (poche righe, sincronismo scarso) stanno in fondo alla fila e sono attenuate, cosi' le foto buone restano davanti; il visore le scorre nello stesso ordine.
 - Fox: i controlli hanno la stessa forma delle altre pagine (angoli di 8, testo a 600, menu con la stessa freccia); la pagina resta «neon» per scelta.
 ## 0.11.330 - 2026-11-22

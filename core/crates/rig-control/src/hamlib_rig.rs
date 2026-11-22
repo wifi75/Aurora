@@ -277,7 +277,7 @@ const IC_820H_MODEL: u32 = 3032;
 /// IC-820H con trame CI-V dirette: fra due scambi di banda passano almeno questi secondi (ogni scambio disturba la ricezione).
 const CIV_MIN_GAP: Duration = Duration::from_secs(5);
 /// Dopo quanto una prova o una scrittura CI-V fallita si riprova da sola.
-const CIV_RETRY: Duration = Duration::from_secs(60);
+const CIV_RETRY: Duration = Duration::from_secs(15);
 
 /// Righe del registro dei passi CI-V tenute per il pacchetto di assistenza.
 const CIV_LOG_MAX: usize = 60;
@@ -3337,7 +3337,7 @@ mod tests {
         let rig = ic820h(&fake, 145_950_000, 435_000_000, crate::fake_rigctld::CivBehaviour { select_ignored: true, ..Default::default() });
         assert!(rig.set_uplink_via_civ(435_123_456).is_err());
         fake.set_civ(crate::fake_rigctld::CivBehaviour::default());
-        assert!(rig.set_uplink_via_civ(435_123_456).is_err(), "nel primo minuto non si riprova");
+        assert!(rig.set_uplink_via_civ(435_123_456).is_err(), "nei primi secondi non si riprova");
         assert_eq!(fake.civ_writes(), 0);
         if let Ok(mut civ) = rig.inner.civ.lock() {
             civ.failed_at = Some(Instant::now() - CIV_RETRY - Duration::from_secs(1));
