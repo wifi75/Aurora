@@ -33,6 +33,9 @@ import { SevenSegment, digitsWidth } from "./SevenSegment";
 export const FACE_H = 96;
 /** Misure del disegno FT-2000 compatto (2026-11-19): frequenza, stati, S-meter/potenza e VFO B senza spazi vuoti. */
 export const FT_FACE_W = 504;
+/** Spazio in piu' dello stile con potenza, ROS e ALC: tre righe di lettura tra gli indicatori del VFO A e l'S-meter. */
+export const FT_POWER_BLOCK_W = 112;
+export const FT_FACE_WP = FT_FACE_W + FT_POWER_BLOCK_W;
 export const FT_FACE_H = 66;
 /** Larghezza del disegno IC-7610 (due pannelli VFO affiancati, senza colonna di tasti). */
 export const IC_FACE_W = 684;
@@ -69,6 +72,8 @@ interface FaceProps {
   data?: FaceExtras | null;
   /** Con il clic: TUNE diventa un pulsante (in testata); senza, il disegno e' solo un'immagine (anteprime). */
   onAction?: (item: CatExtraItem) => void;
+  /** Stile con la lettura grande di ROS, ALC e potenza in trasmissione tra il VFO A e l'S-meter (richiesta di Pascal). */
+  power?: boolean;
   waiting?: CatExtraItem | null;
 }
 
@@ -184,8 +189,10 @@ export function Ft2000Display({
   data,
   onAction,
   waiting,
+  power = false,
 }: FaceProps) {
   const { extras: x } = data ?? NO_EXTRAS;
+  const faceW = power ? FT_FACE_WP : FT_FACE_W;
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
   const main = mainMeter(model);
@@ -199,13 +206,17 @@ export function Ft2000Display({
   const FREQ_X = 8;
   const FREQ_Y = 15;
   const spyX = FREQ_X + digitsWidth("000.000.00", freqStyle) + 6;
-  const R0 = spyX + 34 + 10;
+  const blockX = spyX + 34 + 8;
+  const R0 = spyX + 34 + 10 + (power ? FT_POWER_BLOCK_W : 0);
+  const readouts = meterReadouts(model.meters);
+  const readout = (key: 'PO' | 'SWR' | 'ALC') => readouts.find((r) => r.key === key)?.text ?? '--';
+  const swrText = readout('SWR') === '--' ? '--' : `1:${readout('SWR')}`;
   const bHz = x.vfo_b_hz ?? 0;
   const hits: Hit[] = [{ x: spyX - 1, y: 47, w: 36, h: 14, text: "TUNE" }];
   return (
     <div className="rd-face rd-face--ft">
       <DisplayFrame
-        width={FT_FACE_W}
+        width={faceW}
         height={FT_FACE_H}
         radius={9}
         inset={3}
@@ -228,6 +239,19 @@ export function Ft2000Display({
         <FtSpy x={spyX} y={20} text="TX" color={FT.red} on={link.tx} />
         <FtSpy x={spyX} y={34} text="BUSY" color={FT.yellow} on={link.busy} />
         <FtSpy x={spyX} y={48} text="TUNE" color={FT.cyan} on={x.tuner === true} />
+
+        {/* ROS, ALC e potenza in grande, con una riga sottile a sinistra */}
+        {power ? (
+          <g>
+            <rect x={blockX - 5} y={9} width={1} height={46} fill={FT.cyan} opacity={0.35} />
+            <Label x={blockX} y={23} text="SWR" fill={FT.ink} size={11} weight={700} />
+            <Label x={blockX + FT_POWER_BLOCK_W - 14} y={23} text={swrText} fill={swrColor} size={13} weight={700} anchor="end" />
+            <Label x={blockX} y={38} text="ALC" fill={FT.ink} size={11} weight={700} />
+            <Label x={blockX + FT_POWER_BLOCK_W - 14} y={38} text={readout('ALC').replace(' ', '')} fill={FT.cyan} size={13} weight={700} anchor="end" />
+            <Label x={blockX} y={53} text="PWR TX" fill={FT.ink} size={11} weight={700} />
+            <Label x={blockX + FT_POWER_BLOCK_W - 14} y={53} text={readout('PO').replace(' ', '')} fill={sending ? FT.amber : FT.cyan} size={13} weight={700} anchor="end" />
+          </g>
+        ) : null}
 
         {/* in ricezione l'S-meter con la scala; in trasmissione diventa il misuratore della potenza, e sotto compare la barra del ROS */}
         {sending
@@ -288,7 +312,7 @@ export function Ft2000Display({
           offOpacity={0.1}
         />
       </DisplayFrame>
-      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={FT_FACE_W} height={FT_FACE_H} />
+      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={faceW} height={FT_FACE_H} />
     </div>
   );
 }

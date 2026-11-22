@@ -61,6 +61,14 @@ export const radioDisplayStrings = {
     'LCD ámbar Kenwood',
     'LCD âmbar Kenwood',
   ],
+  'rd.style.ft2000p': [
+    'Pannello Yaesu FT-2000 con ROS, ALC e potenza',
+    'Yaesu FT-2000 panel with SWR, ALC and power',
+    'Yaesu-FT-2000-Feld mit SWR, ALC und Leistung',
+    'Panneau Yaesu FT-2000 avec ROS, ALC et puissance',
+    'Panel Yaesu FT-2000 con ROE, ALC y potencia',
+    'Painel Yaesu FT-2000 com ROE, ALC e potência',
+  ],
   'rd.style.ft2000': [
     'Pannello Yaesu FT-2000',
     'Yaesu FT-2000 panel',

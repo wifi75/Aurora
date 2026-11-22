@@ -188,14 +188,14 @@ function Zoom({ children, off = false }: { children: ReactNode; off?: boolean })
 }
 
 /** Pannello unico in testata (FT-2000, IC-7610): stessa misura dei due blocchi, con gli indicatori cliccabili come nel display esteso. */
-function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | 'ic7610' }) {
+function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | 'ft2000p' | 'ic7610' }) {
   const t = useT();
   const { rig, waiting, click } = useCatExtras();
   const tune = useTuneButton();
   // TUNE a scatto: acceso dopo il clic (e se la radio dice che l'accordatore e' inserito) finche' non lo si spegne a mano
   const data = { extras: { ...(rig?.extras ?? {}), tuner: tune.lit } };
   const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void (item === 'tune' ? tune.press() : click(item)) };
-  return <div className={`rd-header rd-face-slot rd-face-slot--${style === 'ft2000' ? 'ft' : 'ic'}`}>{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
+  return <div className={`rd-header rd-face-slot rd-face-slot--${style === 'ic7610' ? 'ic' : style === 'ft2000p' ? 'ftp' : 'ft'}`}>{style === 'ic7610' ? <Ic7610Display {...props} /> : <Ft2000Display {...props} power={style === 'ft2000p'} />}</div>;
 }
 
 /** I display moderni in testata: gli estesi nella riga dei comandi, i quasi quadrati fissi nell'angolo (le icone diventano piccole). */

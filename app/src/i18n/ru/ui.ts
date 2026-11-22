@@ -3754,6 +3754,7 @@ export const RU_UI: Record<string, string> = {
   "rd.style.color": "Icom, цветной экран",
   "rd.style.fluorescent": "Yaesu, флуоресцентный",
   "rd.style.ft2000": "Панель Yaesu FT-2000",
+  "rd.style.ft2000p": "Панель Yaesu FT-2000 с КСВ, ALC и мощностью",
   "rd.style.ic7610": "Панель Icom IC-7610",
   "rd.style.icblackq": "Icom чёрный со стрелкой (почти квадрат)",
   "rd.style.icblueq": "Icom синий (почти квадрат)",

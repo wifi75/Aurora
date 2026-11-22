@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Display della radio, nuovo stile «Pannello Yaesu FT-2000 con ROS, ALC e potenza» (richiesta di Pascal): come il pannello FT-2000 ma con tre righe grandi tra il VFO A e l'S-meter (ROS 1:x, ALC in percentuale, potenza in trasmissione in W) e solo le due frequenze VFO A e VFO B; piu' largo (792 punti). Si sceglie in Impostazioni › Radio › Stile del display; non cambia gli altri stili.
+
 - Riquadri di tutte le pagine identici a quelli della Stazione (FT8), nei due temi: Satelliti, WEFAX, SSTV, Propagazione e Statistiche hanno lo stesso filo (viola in scuro, aurora in chiaro), gli stessi angoli di 10, la barra del titolo alta 25 con il gradiente, titolo a 12 normale e maniglia a puntini; SSTV ha ora la barra «Ricezione», e Registro, Ricevute e Trasmesse hanno la loro. Le pagine PSK, RTTY e CW usavano gia' i riquadri della Stazione. Il Fox resta con i suoi colori.
 
 - Log: la pagina del log si rilegge da sola quando arriva un QSO da un altro log (Log4OM, OpsLog, HRD…) o se ne registra uno: prima il QSO era gia' nel log di Aurora (il contatore diceva «ricevuti») ma l'elenco non si aggiornava finche' non si ricaricava la pagina (segnalazione di Luc, #88). Il motore manda l'avviso `log_in` senza passare dal bus dei QSO registrati, quindi nulla viene rimandato fuori.

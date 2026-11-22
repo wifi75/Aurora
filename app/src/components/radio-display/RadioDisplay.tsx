@@ -39,6 +39,8 @@ export function RadioDisplay({ model, style, size = 'full', face = DEMO_FACE_EXT
       return <LedDisplay {...common} />;
     case 'ft2000':
       return <Ft2000Display {...common} data={face} />;
+    case 'ft2000p':
+      return <Ft2000Display {...common} data={face} power />;
     case 'ic7610':
       return <Ic7610Display {...common} data={face} />;
     case 'icblueq':

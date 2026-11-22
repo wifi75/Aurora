@@ -42,7 +42,7 @@ describe('RadioDisplay', () => {
     const { container } = render(<RadioDisplay model={model} style={style} size="full" />);
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain("S-meter stimato dall'audio S6");
     // il pannello FT-2000 non scrive la lettura numerica: davanti alla barra c'e' solo la tilde
-    expect(container.textContent).toContain(style === 'ft2000' ? '~' : '~S6');
+    expect(container.textContent).toContain(style === 'ft2000' || style === 'ft2000p' ? '~' : '~S6');
   });
 
   it('shows no estimate mark with the real meters of the radio', () => {
@@ -63,7 +63,7 @@ describe('RadioDisplay', () => {
       expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'Radio non risponde');
       // i pannelli FT-2000 e IC-7610 non scrivono piu' la frase sopra gli strumenti: a radio spenta c'e' la scritta grande al centro (CSS)
       // il disegno piccolo non ripete la frase (la scritta grande a radio spenta e' CSS, a misura del display)
-      if (style !== 'ft2000' && style !== 'ic7610' && size === 'full') expect(container.textContent).toContain('Radio non risponde');
+      if (style !== 'ft2000' && style !== 'ft2000p' && style !== 'ic7610' && size === 'full') expect(container.textContent).toContain('Radio non risponde');
       unmount();
     }
   });

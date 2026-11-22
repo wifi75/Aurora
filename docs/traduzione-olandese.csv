@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -2424,6 +2424,7 @@ rd.style.fluorescent,Yaesu fluorescent,Yaesu fluorescerend
 rd.style.analog,Analog needle,Analoge naald
 rd.style.color,Icom colour screen,Icom-kleurenscherm
 rd.style.amber,Kenwood amber LCD,Kenwood amberkleurig LCD
+rd.style.ft2000p,"Yaesu FT-2000 panel with SWR, ALC and power","Yaesu FT-2000-paneel met SWR, ALC en vermogen"
 rd.style.ft2000,Yaesu FT-2000 panel,Yaesu FT-2000-paneel
 rd.style.ic7610,Icom IC-7610 panel,Icom IC-7610-paneel
 tip.rd.faces,"The FT-2000 and IC-7610 panels take the whole top-right space on their own: large VFO A, VFO B beside it, S-meter and the radio indicators (preamp, attenuator, AGC, NB, NR, NOTCH, tuner). Click an indicator to change it on the radio, as in the extended display; values the radio does not provide stay off. With these two the layout below does not apply.","De panelen FT-2000 en IC-7610 nemen zelf de hele ruimte rechtsboven in: grote VFO A, VFO B ernaast, S-meter en de indicatoren van de radio (preamp, attenuator, AGC, NB, NR, NOTCH, tuner). Klik op een indicator om die op de radio te wijzigen, zoals bij het uitgebreide display; waarden die de radio niet levert, blijven uit. Bij deze twee geldt de indeling hieronder niet."
@@ -4849,7 +4850,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","Met deze keuzes: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,de rotor gaat {n} s eerder naar het opkomstpunt
 sat.trk.sumBeforeOff,the rotator does not move before the rise,de rotor beweegt niet voor de opkomst
-sat.trk.sumStart," (from {e}° elevation)"," (vanaf {e}° elevatie)"
+sat.trk.sumStart, (from {e}° elevation), (vanaf {e}° elevatie)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,volgt de satelliet{start} elke {i} s als hij meer dan {d}° verschuift
 sat.trk.sumStay,at the end of the pass it stays put,aan het einde van de passage blijft hij staan
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,{n} s na LOS gaat hij naar {az}°/{el}°

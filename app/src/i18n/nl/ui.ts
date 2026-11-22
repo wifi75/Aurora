@@ -3754,6 +3754,7 @@ export const NL_UI: Record<string, string> = {
   "rd.style.color": "Icom-kleurenscherm",
   "rd.style.fluorescent": "Yaesu fluorescerend",
   "rd.style.ft2000": "Yaesu FT-2000-paneel",
+  "rd.style.ft2000p": "Yaesu FT-2000-paneel met SWR, ALC en vermogen",
   "rd.style.ic7610": "Icom IC-7610-paneel",
   "rd.style.icblackq": "Icom zwart met naald (bijna vierkant)",
   "rd.style.icblueq": "Icom blauw (bijna vierkant)",

@@ -4,7 +4,7 @@ import type { RadioMeters } from '../api/schemas';
 import { browserStorage } from './theme';
 
 /** Gli stili del display della radio, nell'ordine in cui si propongono nelle Impostazioni. */
-export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610'] as const;
+export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ft2000p', 'ic7610'] as const;
 /** I tre stili quasi quadrati non si propongono piu' (uscivano dallo schermo, richiesta del proprietario): restano nel tipo solo per riconoscere una scelta salvata, che passa a uno stile lungo. */
 /** Stili tolti dalla scelta (richiesta del proprietario): chi li aveva salvati passa allo stile indicato. */
 const RETIRED_STYLES: Record<string, (typeof RADIO_DISPLAY_STYLES)[number]> = { icdual: 'ic7610', icblue: 'ic7610', ledline: 'led' };
@@ -15,8 +15,8 @@ export type RadioDisplayStyle = (typeof RADIO_DISPLAY_STYLES)[number] | (typeof 
 const SQUARE_REPLACEMENT: Record<(typeof SQUARE_STYLES)[number], (typeof RADIO_DISPLAY_STYLES)[number]> = { icblueq: 'ic7610', icblackq: 'ic7610', yaesuq: 'ft2000' };
 
 /** Stili a pannello unico (un solo schermo largo con i due VFO e gli indicatori): in testata prendono il posto dei due blocchi. */
-export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' {
-  return style === 'ft2000' || style === 'ic7610';
+export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ft2000p' | 'ic7610' {
+  return style === 'ft2000' || style === 'ft2000p' || style === 'ic7610';
 }
 
 /** Stili quasi quadrati (330 x 140): stanno nell'angolo della testata, al posto delle icone, che diventano piccole. */
@@ -26,6 +26,7 @@ export function isSquareStyle(style: RadioDisplayStyle): style is 'icblueq' | 'i
 
 /** Le misure in testata, in punti: estesi 640 x 70, quasi quadrati 330 x 140. */
 export function displaySize(style: RadioDisplayStyle): { w: number; h: number } {
+  if (style === 'ft2000p') return { w: 792, h: 90 };
   return isSquareStyle(style) ? { w: 330, h: 130 } : { w: 640, h: 90 };
 }
 

@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -2424,6 +2424,7 @@ rd.style.fluorescent,Yaesu fluorescent,"Yaesu, флуоресцентный"
 rd.style.analog,Analog needle,Стрелочный аналог
 rd.style.color,Icom colour screen,"Icom, цветной экран"
 rd.style.amber,Kenwood amber LCD,"Kenwood, янтарный ЖКД"
+rd.style.ft2000p,"Yaesu FT-2000 panel with SWR, ALC and power","Панель Yaesu FT-2000 с КСВ, ALC и мощностью"
 rd.style.ft2000,Yaesu FT-2000 panel,Панель Yaesu FT-2000
 rd.style.ic7610,Icom IC-7610 panel,Панель Icom IC-7610
 tip.rd.faces,"The FT-2000 and IC-7610 panels take the whole top-right space on their own: large VFO A, VFO B beside it, S-meter and the radio indicators (preamp, attenuator, AGC, NB, NR, NOTCH, tuner). Click an indicator to change it on the radio, as in the extended display; values the radio does not provide stay off. With these two the layout below does not apply.","Панели FT-2000 и IC-7610 занимают всё место в правом верхнем углу: крупный VFO A, рядом VFO B, S-метр и индикаторы трансивера (предусилитель, аттенюатор, AGC, NB, NR, NOTCH, тюнер). Нажмите на индикатор, чтобы изменить его на трансивере, как в расширенном дисплее; значения, которых трансивер не передаёт, остаются выключенными. Для этих двух панелей нижняя раскладка не применяется."
@@ -4849,7 +4850,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
+sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°

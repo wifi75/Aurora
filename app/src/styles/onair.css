@@ -7439,7 +7439,7 @@ html[data-theme='light'] .update-strip.update-strip--ready { color: #062a00; bac
 .rd-rigsw--led, .rd-rigsw--ledline { --rs-bg: #120404; --rs-line: #5a1414; --rs-ink: #ff4a3a; --rs-on: #ff4a3a; --rs-on-ink: #200404; }
 .rd-rigsw--analog { --rs-bg: #f1e7cf; --rs-line: #a08a5c; --rs-ink: #3a2c12; --rs-on: #3a2c12; --rs-on-ink: #f1e7cf; }
 .rd-rigsw--color { --rs-bg: #0e1630; --rs-line: #34508e; --rs-ink: #9fd0ff; --rs-on: #ffd23f; --rs-on-ink: #1a1400; }
-.rd-rigsw--ft2000, .rd-rigsw--yaesuq { --rs-bg: #0a0d10; --rs-line: #3a4048; --rs-ink: #ffa63a; --rs-on: #ffa63a; --rs-on-ink: #1c0f00; }
+.rd-rigsw--ft2000, .rd-rigsw--ft2000p, .rd-rigsw--yaesuq { --rs-bg: #0a0d10; --rs-line: #3a4048; --rs-ink: #ffa63a; --rs-on: #ffa63a; --rs-on-ink: #1c0f00; }
 .rd-rigsw--ic7610, .rd-rigsw--icdual, .rd-rigsw--icblue, .rd-rigsw--icblueq { --rs-bg: #04122e; --rs-line: #1f4a9a; --rs-ink: #8fd2ff; --rs-on: #8fd2ff; --rs-on-ink: #04122e; }
 .rd-rigsw--icblackq { --rs-bg: #050608; --rs-line: #2c3138; --rs-ink: #e8eef6; --rs-on: #e8eef6; --rs-on-ink: #050608; }
 

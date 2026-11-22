@@ -1158,3 +1158,8 @@ body.rd-radio-off .rd-header::after {
 .live-top .rd-face-slot--ft { width: 31.5rem; }
 .live-top:has(> .rd-zoom-host .rd-face-slot--ft),
 .live-top:has(> .rd-face-slot--ft) { min-height: 0; }
+
+/* Pannello FT-2000 con ROS, ALC e potenza: piu' largo di quello normale (504 + 112 su 504 di 40 rem) */
+.rd-face-slot--ftp {
+  width: 49.5rem;
+}
