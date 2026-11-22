@@ -604,7 +604,13 @@ pub struct Receiver {
     snr: f64,
     /// I blocchi decodificati: per ogni fase del blocco, `sync_integ_len` righe di `freq_offsets` blocchi.
     pipe: Vec<u64>,
+    /// Per ogni blocco del `pipe`, la sua qualita' (picco medio di Hadamard contro il rumore degli altri valori, nel blocco stesso).
+    pipe_quality: Vec<f64>,
     pipe_ptr: Vec<usize>,
+    /// Squelch di Aurora sul singolo blocco (`None` = come la libreria): un blocco con qualita' sotto la soglia non esce.
+    block_squelch: Option<f64>,
+    /// La qualita' dell'ultimo blocco arrivato all'uscita (uscito o no).
+    last_quality: f64,
     output: Vec<u8>,
     symbol: [f64; 8],
 }
@@ -655,7 +661,10 @@ impl Receiver {
             best_freq_offset: 0,
             snr: 0.0,
             pipe: vec![0; block_phases * sync_integ_len * freq_offsets],
+            pipe_quality: vec![0.0; block_phases * sync_integ_len * freq_offsets],
             pipe_ptr: vec![0; block_phases],
+            block_squelch: None,
+            last_quality: 0.0,
             output: Vec::new(),
             symbol: [0.0; 8],
         })
@@ -702,6 +711,19 @@ impl Receiver {
         self.snr
     }
 
+    /// Squelch sul singolo blocco (aggiunta di Aurora, spento di base): il sincronismo integra piu' blocchi e resta alto per qualche blocco
+    /// prima e dopo un segnale, quando i blocchi in uscita sono ancora rumore (caratteri senza senso prima e dopo il testo). Con la soglia
+    /// accesa esce solo un blocco la cui qualita' (vedi [`Receiver::last_block_quality`]) la supera.
+    pub fn set_block_squelch(&mut self, threshold: Option<f64>) {
+        self.block_squelch = threshold.filter(|t| t.is_finite());
+    }
+
+    /// La qualita' dell'ultimo blocco arrivato all'uscita: il picco medio della trasformata di Hadamard dei suoi caratteri contro la radice
+    /// dell'energia degli altri valori (nel rumore circa 2-3, un blocco ben ricevuto molto di piu').
+    pub fn last_block_quality(&self) -> f64 {
+        self.last_quality
+    }
+
     /// Lo spostamento di frequenza del segnale trovato dal sincronismo, in Hz.
     pub fn frequency_offset(&self) -> f64 {
         (self.best_freq_offset as f64 - (self.freq_offsets / 2) as f64) * (RATE_HZ / self.symbol_len as f64)
@@ -739,6 +761,8 @@ impl Receiver {
                 decoder.push(&self.symbol);
                 decoder.process();
                 self.pipe[pipe_row + offset] = decoder.packed();
+                self.pipe_quality[pipe_row + offset] =
+                    if decoder.noise_energy > 0.0 { decoder.signal / decoder.noise_energy.sqrt() } else { 0.0 };
                 self.sync_noise[row + offset].process(decoder.noise_energy, self.sync_weight);
                 let integ = &mut self.sync_signal[row + offset];
                 integ.process(decoder.signal, self.sync_weight);
@@ -767,9 +791,10 @@ impl Receiver {
                 let noise_idx = (row + fo) % self.sync_noise.len();
                 let best_noise = self.sync_noise[noise_idx].output.max(0.0).sqrt();
                 self.snr = if best_noise == 0.0 { 0.0 } else { self.best_signal / best_noise };
-                if self.snr >= self.sync_threshold {
-                    let best_row =
-                        (self.best_block_phase * self.sync_integ_len + self.pipe_ptr[self.best_block_phase]) * fo;
+                let best_row = (self.best_block_phase * self.sync_integ_len + self.pipe_ptr[self.best_block_phase]) * fo;
+                self.last_quality = self.pipe_quality[best_row + self.best_freq_offset];
+                let block_ok = self.block_squelch.is_none_or(|t| self.last_quality >= t);
+                if self.snr >= self.sync_threshold && block_ok {
                     let mut block = self.pipe[best_row + self.best_freq_offset];
                     for _ in 0..self.bits {
                         self.output.push((block & 0xFF) as u8);

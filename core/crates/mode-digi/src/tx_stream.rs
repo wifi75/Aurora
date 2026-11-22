@@ -9,6 +9,8 @@
 use std::f64::consts::PI;
 
 use crate::cw::{PROSIGNS, pattern_of, unit_seconds};
+use crate::olivia;
+use crate::resample_8k::Interpolator;
 use crate::psk::{PskMode, RATE};
 use crate::rtty::{LTRS, Reg, RttyCharset, RttyParams, push_char, push_frame};
 use crate::varicode;
@@ -21,6 +23,7 @@ pub enum TxModulator {
     Rtty(RttyTx),
     Psk(PskTx),
     Cw(CwTx),
+    Olivia(Box<OliviaTx>),
 }
 
 impl TxModulator {
@@ -36,12 +39,18 @@ impl TxModulator {
         TxModulator::Cw(CwTx::new(tone_hz, wpm))
     }
 
+    /// Olivia o Contestia; `None` se toni, banda e centro non stanno nella banda audio.
+    pub fn olivia(params: olivia::Params) -> Option<Self> {
+        OliviaTx::new(params).map(|m| TxModulator::Olivia(Box::new(m)))
+    }
+
     /// L'inizio della trasmissione.
     pub fn preamble(&mut self) -> Vec<f32> {
         match self {
             TxModulator::Rtty(m) => m.preamble(),
             TxModulator::Psk(m) => m.preamble(),
             TxModulator::Cw(m) => m.preamble(),
+            TxModulator::Olivia(m) => m.preamble(),
         }
     }
 
@@ -51,6 +60,7 @@ impl TxModulator {
             TxModulator::Rtty(m) => token.chars().flat_map(|c| m.char(c)).collect(),
             TxModulator::Psk(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Cw(m) => m.token(token),
+            TxModulator::Olivia(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
         }
     }
 
@@ -60,6 +70,7 @@ impl TxModulator {
             TxModulator::Rtty(m) => m.idle(),
             TxModulator::Psk(m) => m.idle(),
             TxModulator::Cw(m) => m.idle(),
+            TxModulator::Olivia(m) => m.idle(),
         }
     }
 
@@ -69,6 +80,7 @@ impl TxModulator {
             TxModulator::Rtty(m) => m.postamble(),
             TxModulator::Psk(m) => m.postamble(),
             TxModulator::Cw(m) => m.postamble(),
+            TxModulator::Olivia(m) => m.postamble(),
         }
     }
 
@@ -307,6 +319,66 @@ impl CwTx {
     }
 }
 
+/// Olivia e Contestia a flusso: i caratteri si raccolgono finche' non riempiono un blocco FEC (uno per bit del simbolo), poi il blocco
+/// diventa audio a 8 kHz e l'interpolatore 2:3 lo porta a 12 kHz. Finche' il blocco non e' pieno un carattere non da' audio. In attesa
+/// (nessun testo) il blocco a meta' si completa con caratteri nulli (chi riceve non li stampa) e parte, o parte un blocco tutto nullo; alla
+/// fine il blocco a meta' si completa allo stesso modo, poi escono la coda del modulatore e quella del filtro. Come la libreria, la
+/// trasmissione comincia con un carattere nullo.
+pub struct OliviaTx {
+    stream: olivia::BlockStream,
+    interp: Interpolator,
+    buf: Vec<u8>,
+}
+
+impl OliviaTx {
+    fn new(params: olivia::Params) -> Option<Self> {
+        // il ricevitore controlla che i toni stiano nella banda audio: lo stesso controllo vale per la trasmissione
+        crate::olivia_rx::Receiver::new(params, 8, 4, 3.0)?;
+        Some(Self { stream: olivia::BlockStream::new(params)?, interp: Interpolator::new(), buf: Vec::new() })
+    }
+
+    /// Un blocco (completato con zeri) in audio a 12 kHz.
+    fn emit(&mut self) -> Vec<f32> {
+        let block = self.stream.block(&self.buf);
+        self.buf.clear();
+        self.to_12k(&block)
+    }
+
+    fn to_12k(&mut self, audio: &[f32]) -> Vec<f32> {
+        let mut out = Vec::with_capacity(audio.len() * 3 / 2 + 2);
+        self.interp.process(audio, &mut out);
+        for v in &mut out {
+            *v *= AMP;
+        }
+        out
+    }
+
+    /// Un breve silenzio (il PTT si apre) e il carattere nullo d'inizio.
+    fn preamble(&mut self) -> Vec<f32> {
+        self.buf = vec![0];
+        vec![0.0; (0.05 * f64::from(RATE)) as usize]
+    }
+
+    fn char(&mut self, c: u8) -> Vec<f32> {
+        self.buf.push(c);
+        if self.buf.len() >= self.stream.chars_per_block() { self.emit() } else { Vec::new() }
+    }
+
+    fn idle(&mut self) -> Vec<f32> {
+        self.emit()
+    }
+
+    fn postamble(&mut self) -> Vec<f32> {
+        let mut out = if self.buf.is_empty() { Vec::new() } else { self.emit() };
+        let tail = self.stream.finish();
+        out.extend(self.to_12k(&tail));
+        let mut rest = Vec::new();
+        self.interp.flush(&mut rest);
+        out.extend(rest.into_iter().map(|v| v * AMP));
+        out
+    }
+}
+
 /// L'onda intera di un testo con i modulatori a flusso (per le prove e per chi non trasmette a flusso).
 pub fn whole(m: &mut TxModulator, text: &str) -> Vec<f32> {
     let chars: Vec<char> = text.chars().collect();
@@ -347,6 +419,28 @@ mod tests {
     #[test]
     fn cw_a_pezzi_e_come_l_onda_intera() {
         assert_eq!(whole(&mut TxModulator::cw(700.0, 25.0), TEXT), cw::modulate(TEXT.as_bytes(), 700.0, 25.0, AMP));
+    }
+
+    /// Olivia a pezzi: lo stesso audio del trasmettitore intero (a 8 kHz) portato a 12 kHz, dopo il silenzio d'inizio.
+    #[test]
+    fn olivia_a_pezzi_e_come_l_onda_intera() {
+        for (variant, tones, bw) in [(olivia::Variant::Olivia, 8usize, 250usize), (olivia::Variant::Olivia, 32, 1000), (olivia::Variant::Contestia, 16, 500)] {
+            let p = olivia::Params { variant, tones, bandwidth: bw, center_hz: 1500.0 };
+            let mut m = TxModulator::olivia(p).expect("parametri validi");
+            let ours = whole(&mut m, "CQ DE IU3ABC IO91WM");
+            let ref8 = olivia::Transmitter::new(p).expect("parametri validi").transmit(b"CQ DE IU3ABC IO91WM");
+            let mut it = Interpolator::new();
+            let mut want = vec![0.0f32; (0.05 * f64::from(RATE)) as usize];
+            let mut up = Vec::new();
+            it.process(&ref8, &mut up);
+            it.flush(&mut up);
+            want.extend(up.into_iter().map(|v| v * AMP));
+            assert_eq!(ours.len(), want.len(), "{variant:?} {tones}/{bw}");
+            let err = ours.iter().zip(&want).map(|(a, b)| (a - b).abs()).fold(0.0f32, f32::max);
+            assert!(err < 1e-6, "{variant:?} {tones}/{bw}: differenza {err}");
+        }
+        // toni fuori dalla banda audio: niente modulatore
+        assert!(TxModulator::olivia(olivia::Params { variant: olivia::Variant::Olivia, tones: 32, bandwidth: 2000, center_hz: 3500.0 }).is_none());
     }
 
     #[test]

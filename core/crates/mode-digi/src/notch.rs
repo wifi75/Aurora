@@ -170,6 +170,9 @@ pub fn default_passband(mode: crate::DigiMode, shift_hz: f32, rtty_baud: f32) ->
         crate::DigiMode::Rtty => shift_hz + 2.0 * rtty_baud,
         crate::DigiMode::Cw => 80.0,
         crate::DigiMode::Ssb => 2400.0,
+        // la banda vera la conosce `DigiSettings::passband`; qui quella di base piu' il margine
+        crate::DigiMode::Olivia => 300.0,
+        crate::DigiMode::Contestia => 600.0,
     }
 }
 

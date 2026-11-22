@@ -110,10 +110,14 @@ pub enum DigiMode {
     Cw,
     /// Fonia: niente decodifica e niente testo trasmesso; serve al log e ai contest (parla l'operatore al microfono).
     Ssb,
+    /// Olivia (MFSK con FEC, a blocchi): toni e banda in [`DigiSettings::olivia`].
+    Olivia,
+    /// Contestia (come Olivia con blocchi piu' corti e 64 caratteri): toni e banda in [`DigiSettings::contestia`].
+    Contestia,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 5] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb];
+    pub const ALL: [DigiMode; 7] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb, DigiMode::Olivia, DigiMode::Contestia];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -122,6 +126,8 @@ impl DigiMode {
             DigiMode::Rtty => "rtty",
             DigiMode::Cw => "cw",
             DigiMode::Ssb => "ssb",
+            DigiMode::Olivia => "olivia",
+            DigiMode::Contestia => "contestia",
         }
     }
 
@@ -132,6 +138,8 @@ impl DigiMode {
             DigiMode::Rtty => "RTTY",
             DigiMode::Cw => "CW",
             DigiMode::Ssb => "SSB",
+            DigiMode::Olivia => "Olivia",
+            DigiMode::Contestia => "Contestia",
         }
     }
 
@@ -143,13 +151,78 @@ impl DigiMode {
         match self {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
-            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb => None,
+            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia => None,
         }
     }
 
     /// Il modo ha un ricevitore e un trasmettitore di testo (in SSB parla l'operatore).
     pub fn is_text(self) -> bool {
         self != DigiMode::Ssb
+    }
+
+    /// Olivia o Contestia: quale delle due varianti.
+    pub fn olivia_variant(self) -> Option<crate::olivia::Variant> {
+        match self {
+            DigiMode::Olivia => Some(crate::olivia::Variant::Olivia),
+            DigiMode::Contestia => Some(crate::olivia::Variant::Contestia),
+            _ => None,
+        }
+    }
+}
+
+/// I toni ammessi di Olivia e Contestia.
+pub const OLIVIA_TONES: [u32; 5] = [4, 8, 16, 32, 64];
+/// Le bande ammesse di Olivia e Contestia (Hz).
+pub const OLIVIA_BANDWIDTHS: [u32; 4] = [250, 500, 1000, 2000];
+
+/// Le impostazioni di Olivia o di Contestia (una copia per modo).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct OliviaSettings {
+    /// Numero di toni: 4, 8, 16, 32 o 64.
+    pub tones: u32,
+    /// Banda in Hz: 250, 500, 1000 o 2000 (la frequenza di ricezione e di trasmissione e' il centro).
+    pub bandwidth_hz: u32,
+    /// Di quanti bin si cerca il segnale attorno alla frequenza scelta (2-32; 8 come fldigi).
+    pub sync_margin: u32,
+    /// Su quanti blocchi si integra il sincronismo (2-32; 4 come fldigi).
+    pub sync_integration: u32,
+    /// Soglia dello squelch sul rapporto segnale/rumore del sincronismo (dB, 0-40): sotto non si stampa niente. Con lo squelch spento vale
+    /// [`OliviaSettings::SQUELCH_DEFAULT_DB`].
+    pub squelch_snr_db: f32,
+}
+
+impl OliviaSettings {
+    /// La soglia di base dello squelch (dB): sopra il rapporto che il sincronismo trova nel solo rumore (fino a circa 10 dB), sotto quello
+    /// di un segnale debole (17 dB e oltre; prove `lo_squelch_di_olivia_*` in `olivia_link`).
+    pub const SQUELCH_DEFAULT_DB: f32 = 12.0;
+
+    pub fn olivia() -> OliviaSettings {
+        OliviaSettings { tones: 8, bandwidth_hz: 250, sync_margin: 8, sync_integration: 4, squelch_snr_db: OliviaSettings::SQUELCH_DEFAULT_DB }
+    }
+
+    pub fn contestia() -> OliviaSettings {
+        OliviaSettings { tones: 16, bandwidth_hz: 500, ..OliviaSettings::olivia() }
+    }
+
+    fn is_valid(&self) -> bool {
+        OLIVIA_TONES.contains(&self.tones)
+            && OLIVIA_BANDWIDTHS.contains(&self.bandwidth_hz)
+            && (2..=32).contains(&self.sync_margin)
+            && (2..=32).contains(&self.sync_integration)
+            && self.squelch_snr_db.is_finite()
+            && (0.0..=40.0).contains(&self.squelch_snr_db)
+    }
+
+    /// I parametri del modulatore e del ricevitore centrati su `centre_hz`.
+    pub fn params(&self, variant: crate::olivia::Variant, centre_hz: f32) -> crate::olivia::Params {
+        crate::olivia::Params { variant, tones: self.tones as usize, bandwidth: self.bandwidth_hz as usize, center_hz: f64::from(centre_hz) }
+    }
+}
+
+impl Default for OliviaSettings {
+    fn default() -> Self {
+        OliviaSettings::olivia()
     }
 }
 
@@ -319,6 +392,10 @@ pub struct DigiSettings {
     pub passband_on: bool,
     /// Larghezza del passabanda (Hz, 20-1000); 0 = quella di base del modo (`notch::default_passband`).
     pub passband_hz: f32,
+    /// Olivia: toni, banda, sincronismo e squelch.
+    pub olivia: OliviaSettings,
+    /// Contestia: toni, banda, sincronismo e squelch.
+    pub contestia: OliviaSettings,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -412,6 +489,8 @@ impl Default for DigiSettings {
             band_validation: "normal".into(),
             passband_on: false,
             passband_hz: 0.0,
+            olivia: OliviaSettings::olivia(),
+            contestia: OliviaSettings::contestia(),
         }
     }
 }
@@ -527,6 +606,11 @@ impl DigiSettings {
         if !passband_ok(self.passband_hz) {
             return Err(DigiError::BadValue("larghezza del passabanda fuori da 20-1000 Hz (0 = di base)".into()));
         }
+        if !self.olivia.is_valid() || !self.contestia.is_valid() {
+            return Err(DigiError::BadValue(
+                "Olivia/Contestia: toni non fra 4, 8, 16, 32 e 64, banda non fra 250, 500, 1000 e 2000 Hz, sincronismo fuori da 2-32 o squelch fuori da 0-40 dB".into(),
+            ));
+        }
         Ok(())
     }
 
@@ -572,6 +656,12 @@ impl DigiSettings {
         if !passband_ok(self.passband_hz) {
             self.passband_hz = base.passband_hz;
         }
+        if !self.olivia.is_valid() {
+            self.olivia = base.olivia;
+        }
+        if !self.contestia.is_valid() {
+            self.contestia = base.contestia;
+        }
         self.mode_macros.retain(|k, _| DigiMode::from_id(k).is_some());
         if self.validate().is_ok() { self } else { base }
     }
@@ -580,13 +670,27 @@ impl DigiSettings {
         if self.tx_follow_rx { self.rx_freq_hz } else { self.tx_freq_hz }
     }
 
+    /// Le impostazioni di Olivia o Contestia per il modo scelto (`None` negli altri modi).
+    pub fn olivia_settings(&self) -> Option<(crate::olivia::Variant, &OliviaSettings)> {
+        match self.mode {
+            DigiMode::Olivia => Some((crate::olivia::Variant::Olivia, &self.olivia)),
+            DigiMode::Contestia => Some((crate::olivia::Variant::Contestia, &self.contestia)),
+            _ => None,
+        }
+    }
+
     /// I parametri RTTY sul centro dato; `lsb`: la radio e' in LSB e mark e space si invertono (oltre a «Rev»).
     /// Il passabanda acceso (basso, alto) intorno alla frequenza di ricezione scelta.
     fn passband(&self) -> Option<(f32, f32)> {
         if !self.passband_on {
             return None;
         }
-        let w = if self.passband_hz > 0.0 { self.passband_hz } else { crate::notch::default_passband(self.mode, self.rtty_shift_hz, self.rtty_baud) };
+        let w = match (self.passband_hz > 0.0, self.olivia_settings()) {
+            (true, _) => self.passband_hz,
+            // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo
+            (false, Some((_, o))) => o.bandwidth_hz as f32 * 1.2,
+            (false, None) => crate::notch::default_passband(self.mode, self.rtty_shift_hz, self.rtty_baud),
+        };
         Some((self.rx_freq_hz - w / 2.0, self.rx_freq_hz + w / 2.0))
     }
 
@@ -598,6 +702,8 @@ impl DigiSettings {
             DigiMode::Rtty => self.rtty_shift_hz / 2.0,
             DigiMode::Cw => 50.0,
             DigiMode::Ssb => 0.0,
+            // il ricevitore cerca da solo il segnale entro il margine di sincronismo: l'AFC non lo sposta
+            DigiMode::Olivia | DigiMode::Contestia => 0.0,
         }
     }
 
@@ -1182,7 +1288,11 @@ impl DigiService {
     }
 
     /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
+    /// Olivia e Contestia con toni e banda fuori dalla banda audio danno un'onda vuota.
     pub fn wave_of(text: &str, s: &DigiSettings, lsb: bool) -> Vec<f32> {
+        if s.olivia_settings().is_some() {
+            return live::modulator(s, lsb).map(|mut m| crate::tx_stream::whole(&mut m, text)).unwrap_or_default();
+        }
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
         match (s.mode.psk(), s.mode) {
             (Some(mode), _) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
@@ -1211,6 +1321,9 @@ impl DigiService {
         let settings = self.settings();
         let lsb = self.inner.read_radio_lsb();
         let wave = Self::wave_of(text, &settings, lsb);
+        if wave.is_empty() {
+            return Err(live::modulator(&settings, lsb).err().unwrap_or(DigiError::Empty));
+        }
         let total = wave.len() as f32 / RATE;
         self.inner.tx_active.store(true, Ordering::SeqCst);
         self.inner.tx_abort.store(false, Ordering::SeqCst);
@@ -1338,6 +1451,8 @@ enum Demod {
     Cw(Box<CwDemodulator>),
     /// Il ricevitore veloce e il testo provvisorio cambiato nell'ultimo blocco, da mandare alla finestra.
     CwFast(Box<CwHybrid>, Option<String>),
+    /// Olivia e Contestia (ricevitore a 8 kHz dietro il decimatore).
+    Olivia(Box<crate::olivia_link::OliviaRx>),
     /// SSB: nessuna decodifica, solo la frequenza scelta.
     Off(f32),
 }
@@ -1346,6 +1461,17 @@ impl Demod {
     fn new(s: &DigiSettings, lsb: bool) -> Demod {
         if !s.mode.is_text() {
             return Demod::Off(s.rx_freq_hz);
+        }
+        if let Some((variant, o)) = s.olivia_settings() {
+            // squelch spento: la soglia di base, che toglie i caratteri senza senso del solo rumore (come la soglia di base del PSK)
+            let squelch = if s.squelch_on { o.squelch_snr_db } else { OliviaSettings::SQUELCH_DEFAULT_DB };
+            return match crate::olivia_link::OliviaRx::new(variant, o, s.rx_freq_hz, squelch) {
+                Some(d) => Demod::Olivia(Box::new(d)),
+                None => {
+                    tracing::warn!("{}: {} toni in {} Hz centrati a {:.0} Hz escono dalla banda audio, nessuna ricezione", s.mode.name(), o.tones, o.bandwidth_hz, s.rx_freq_hz);
+                    Demod::Off(s.rx_freq_hz)
+                }
+            };
         }
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
@@ -1393,6 +1519,7 @@ impl Demod {
             Demod::Rtty(d) => d.frequency(),
             Demod::Cw(d) => d.frequency(),
             Demod::CwFast(h, _) => h.fine().frequency(),
+            Demod::Olivia(d) => d.frequency(),
             Demod::Off(hz) => *hz,
         }
     }
@@ -1404,6 +1531,7 @@ impl Demod {
             Demod::Psk(d) => d.snr_db(),
             Demod::Cw(d) => Some(d.snr_db()),
             Demod::CwFast(h, _) => Some(h.fine().snr_db()),
+            Demod::Olivia(d) => Some(d.snr_db()),
             Demod::Off(_) => None,
         }
     }
@@ -1414,7 +1542,7 @@ impl Demod {
             Demod::Psk(d) => (d.imd_db(), Some(d.metric()), None),
             Demod::Cw(d) => (None, None, Some(d.wpm())),
             Demod::CwFast(h, _) => (None, None, Some(h.fine().wpm())),
-            Demod::Rtty(_) | Demod::Off(_) => (None, None, None),
+            Demod::Rtty(_) | Demod::Olivia(_) | Demod::Off(_) => (None, None, None),
         }
     }
 
@@ -1433,6 +1561,8 @@ impl Demod {
             Demod::Rtty(d) => d.steer(hz),
             Demod::Cw(d) => d.steer(hz),
             Demod::CwFast(h, _) => h.steer(hz),
+            // il sincronismo cerca da solo il segnale entro il suo margine
+            Demod::Olivia(_) => {}
             Demod::Off(f) => *f = hz,
         }
     }
@@ -1445,6 +1575,7 @@ impl Demod {
             Demod::Rtty(d) => (Some(d.snr_db()), (11.0, 6.0)),
             Demod::Cw(d) => (Some(d.snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
             Demod::CwFast(h, _) => (Some(h.fine().snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
+            Demod::Olivia(d) => (Some(d.snr_db()), (d.threshold_db(), d.threshold_db() - 3.0)),
             Demod::Off(_) => (None, (0.0, 0.0)),
         }
     }
@@ -1456,6 +1587,7 @@ impl Demod {
             Demod::Rtty(d) => d.signal(),
             Demod::Cw(d) => d.signal(),
             Demod::CwFast(h, _) => h.fine().signal(),
+            Demod::Olivia(d) => d.signal(),
             Demod::Off(_) => (-90.0, false),
         }
     }
@@ -1486,6 +1618,7 @@ impl Demod {
                 }
                 (out.fixed.iter().map(|s| char::from(s.ch)).collect(), Vec::new())
             }
+            Demod::Olivia(d) => (d.process(audio), Vec::new()),
             Demod::Off(_) => (String::new(), Vec::new()),
         }
     }
@@ -1731,7 +1864,9 @@ mod tests {
         assert_eq!(DigiMode::from_id("PSK31"), Some(DigiMode::Psk31));
         assert_eq!(DigiMode::from_id("rtty"), Some(DigiMode::Rtty));
         assert_eq!(DigiMode::from_id("cw"), Some(DigiMode::Cw));
-        assert_eq!(DigiMode::from_id("olivia"), None);
+        assert_eq!(DigiMode::from_id("olivia"), Some(DigiMode::Olivia));
+        assert_eq!(DigiMode::from_id("Contestia"), Some(DigiMode::Contestia));
+        assert_eq!(DigiMode::from_id("mfsk16"), None);
         assert_eq!(DigiMode::from_id("SSB"), Some(DigiMode::Ssb));
         assert!(!DigiMode::Ssb.is_text() && DigiMode::Cw.is_text());
         let s = DigiSettings { mode: DigiMode::Ssb, rx_freq_hz: 1200.0, ..DigiSettings::default() };
@@ -2060,6 +2195,79 @@ mod tests {
         }
         let _ = std::fs::remove_dir_all(&dir);
         assert!(out.contains("CQ IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    /// Olivia e Contestia: valori di base, un `digi.json` di prima senza i campi, i valori fuori dai limiti rifiutati e riparati uno per uno.
+    #[test]
+    fn le_impostazioni_di_olivia_e_contestia() {
+        let s: DigiSettings = serde_json::from_str(r#"{"mode":"olivia","rx_freq_hz":1500}"#).expect("json");
+        assert_eq!(s.mode, DigiMode::Olivia);
+        assert_eq!((s.olivia.tones, s.olivia.bandwidth_hz, s.olivia.sync_margin, s.olivia.sync_integration), (8, 250, 8, 4));
+        assert_eq!((s.contestia.tones, s.contestia.bandwidth_hz), (16, 500));
+        assert!(s.validate().is_ok());
+        let json = serde_json::to_value(&s).expect("json");
+        assert_eq!(json["olivia"]["tones"], 8);
+        assert_eq!(json["contestia"]["bandwidth_hz"], 500);
+        for bad in [
+            OliviaSettings { tones: 12, ..OliviaSettings::olivia() },
+            OliviaSettings { bandwidth_hz: 125, ..OliviaSettings::olivia() },
+            OliviaSettings { sync_margin: 1, ..OliviaSettings::olivia() },
+            OliviaSettings { sync_integration: 99, ..OliviaSettings::olivia() },
+            OliviaSettings { squelch_snr_db: f32::NAN, ..OliviaSettings::olivia() },
+        ] {
+            let s = DigiSettings { contestia: bad, cw_wpm: 25.0, ..DigiSettings::default() };
+            assert!(s.validate().is_err(), "{bad:?}");
+            let r = s.repaired();
+            assert_eq!(r.contestia, OliviaSettings::contestia());
+            assert_eq!(r.cw_wpm, 25.0, "il resto resta");
+        }
+        let c = DigiSettings { mode: DigiMode::Contestia, ..DigiSettings::default() };
+        assert_eq!(c.olivia_settings().map(|(v, o)| (v, o.tones)), Some((crate::olivia::Variant::Contestia, 16)));
+        assert!(DigiSettings::default().olivia_settings().is_none());
+        assert!(DigiService::open(&std::env::temp_dir().join("aurora-digi-olivia-modi")).snapshot().modes.iter().any(|m| m.id == "contestia" && m.name == "Contestia"));
+        let _ = std::fs::remove_dir_all(std::env::temp_dir().join("aurora-digi-olivia-modi"));
+    }
+
+    /// Nel solo rumore (ascolto acceso, Olivia scelto, squelch spento: vale la soglia di base) la finestra RX non riceve niente.
+    #[test]
+    fn olivia_nel_rumore_non_scrive_niente() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-olivia-rumore-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        let s = DigiSettings { mode: DigiMode::Olivia, rx_freq_hz: 1500.0, ..DigiSettings::default() };
+        std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
+        let svc = DigiService::open(&dir);
+        let texts = Arc::new(Mutex::new(String::new()));
+        let sink = Arc::clone(&texts);
+        svc.set_emitter(Arc::new(move |ev: DigiEvent| {
+            if ev.kind == "rx_text"
+                && let Some(t) = ev.text
+            {
+                lock(&sink).push_str(&t);
+            }
+        }));
+        svc.start_rx();
+        let mut x: u64 = 0x2545_F491_4F6C_DD1D;
+        for _ in 0..400 {
+            let chunk: Vec<f32> = (0..1200)
+                .map(|_| {
+                    x ^= x << 13;
+                    x ^= x >> 7;
+                    x ^= x << 17;
+                    ((x >> 40) as f32 / (1u64 << 24) as f32 - 0.5) * 0.6
+                })
+                .collect();
+            svc.inner.queue.send(Msg::Audio(12_000, chunk)).expect("coda");
+        }
+        // aspetta che la coda si svuoti
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while svc.inner.queue.try_send(Msg::Notches(Vec::new())).is_err() && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        std::thread::sleep(Duration::from_millis(600));
+        let snr = svc.snapshot().rx.snr_db;
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(lock(&texts).is_empty(), "nel rumore: {:?}", lock(&texts));
+        assert!(snr.is_some(), "l'S/N di Olivia arriva allo stato");
     }
 
     /// Due pagine aperte (finestra principale e finestra staccata): chiudendone una l'ascolto resta, chiudendo l'ultima si spegne; con

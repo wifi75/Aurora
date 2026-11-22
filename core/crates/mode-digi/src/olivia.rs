@@ -303,29 +303,64 @@ impl Transmitter {
     /// Tutta la trasmissione di un testo: parte con un carattere nullo (come fa la libreria), poi il testo, poi il blocco si completa con
     /// caratteri nulli e finisce. L'audio e' a 8000 Hz; ogni mezzo simbolo e' normalizzato al suo massimo, come fa la libreria.
     pub fn transmit(&self, text: &[u8]) -> Vec<f32> {
-        let bits = self.encoder.bits_per_symbol();
+        let mut stream = BlockStream::from_parts(self.params, self.encoder.clone());
         let mut chars = vec![0u8];
         chars.extend_from_slice(text);
-        let mut modulator = Modulator::new(&self.params);
         let mut audio: Vec<f32> = Vec::new();
-        let block_symbols = self.encoder.symbols_per_block();
-        for block in chars.chunks(bits) {
-            let symbols = self.encoder.encode_block(block);
-            for symbol in symbols.iter().take(block_symbols) {
-                modulator.send(*symbol);
-                let chunk = modulator.output();
-                let peak = chunk.iter().fold(0.0f64, |m, v| m.max(v.abs()));
-                let scale = if peak > 0.0 { 1.0 / peak } else { 0.0 };
-                audio.extend(chunk.iter().map(|v| (v * scale) as f32));
-            }
+        for block in chars.chunks(self.encoder.bits_per_symbol()) {
+            audio.extend(stream.block(block));
         }
-        // la coda dell'ultimo simbolo (si sovrappone a meta')
-        let chunk = modulator.output();
-        let peak = chunk.iter().fold(0.0f64, |m, v| m.max(v.abs()));
-        let scale = if peak > 0.0 { 1.0 / peak } else { 0.0 };
-        audio.extend(chunk.iter().map(|v| (v * scale) as f32));
+        audio.extend(stream.finish());
         audio
     }
+}
+
+/// Il trasmettitore a blocchi, per la trasmissione a flusso: un blocco FEC alla volta, con la fase e la coda del modulatore che continuano
+/// da un blocco all'altro. Messi in fila, i blocchi e la coda danno esattamente l'audio di [`Transmitter::transmit`].
+pub struct BlockStream {
+    encoder: Encoder,
+    modulator: Modulator,
+}
+
+impl BlockStream {
+    pub fn new(params: Params) -> Option<BlockStream> {
+        let encoder = Encoder::new(params.variant, params.bits_per_symbol())?;
+        Some(BlockStream::from_parts(params, encoder))
+    }
+
+    fn from_parts(params: Params, encoder: Encoder) -> BlockStream {
+        BlockStream { modulator: Modulator::new(&params), encoder }
+    }
+
+    /// Caratteri per blocco (uno per ogni bit del simbolo).
+    pub fn chars_per_block(&self) -> usize {
+        self.encoder.bits_per_symbol()
+    }
+
+    /// L'audio (8000 Hz) di un blocco: `chars` ha al massimo [`BlockStream::chars_per_block`] caratteri, i mancanti valgono zero.
+    pub fn block(&mut self, chars: &[u8]) -> Vec<f32> {
+        let symbols = self.encoder.encode_block(chars);
+        let mut audio = Vec::new();
+        for symbol in symbols.iter().take(self.encoder.symbols_per_block()) {
+            self.modulator.send(*symbol);
+            push_normalized(&mut audio, &self.modulator.output());
+        }
+        audio
+    }
+
+    /// La coda dell'ultimo simbolo (si sovrappone a meta'): la fine della trasmissione.
+    pub fn finish(&mut self) -> Vec<f32> {
+        let mut audio = Vec::new();
+        push_normalized(&mut audio, &self.modulator.output());
+        audio
+    }
+}
+
+/// Mezzo simbolo normalizzato al suo massimo, come fa la libreria.
+fn push_normalized(audio: &mut Vec<f32>, chunk: &[f64]) {
+    let peak = chunk.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+    let scale = if peak > 0.0 { 1.0 / peak } else { 0.0 };
+    audio.extend(chunk.iter().map(|v| (v * scale) as f32));
 }
 
 #[cfg(test)]

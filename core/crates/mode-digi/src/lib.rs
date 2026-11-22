@@ -19,6 +19,7 @@
 //! - `cw_noise`: il rumore del ricevitore CW istante per istante (bande laterali e minimo scorrevole);
 //! - `cw_agc`: l'AGC del ricevitore CW comandato dal fondo del rumore (radio che pompa, scrosci larghi);
 //! - [`olivia`], [`olivia_rx`]: Olivia e Contestia (codificatore FEC, trasmettitore e ricevitore);
+//! - [`resample_8k`]: i ricampionatori 12 <-> 8 kHz di Olivia e Contestia (FIR a fase lineare);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod band;
@@ -37,10 +38,12 @@ pub mod macro_files;
 pub mod mmtty_oracle;
 pub mod notch;
 pub mod olivia;
+pub mod olivia_link;
 pub mod olivia_rx;
 pub mod psk;
 pub mod psk_viterbi;
 pub mod recorder;
+pub mod resample_8k;
 pub mod rtty;
 pub mod rtty_chain;
 pub mod rtty_multi;
@@ -52,4 +55,4 @@ pub mod varicode;
 pub use cw::CwDemodulator;
 pub use psk::{PskDemodulator, PskMode, RATE};
 pub use rtty::{RttyChar, RttyDemodulator, RttyDiversity, RttyParams};
-pub use service::{DigiError, DigiMacro, DigiMode, DigiService, DigiSettings, DigiTxPort, ImportHow, RadioModeSource, RttyReceiver};
+pub use service::{DigiError, DigiMacro, DigiMode, DigiService, DigiSettings, DigiTxPort, ImportHow, OliviaSettings, RadioModeSource, RttyReceiver};

@@ -47,13 +47,19 @@ impl Session {
     }
 }
 
-/// Il modulatore a flusso per le impostazioni attuali; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
-fn modulator(s: &DigiSettings, lsb: bool) -> TxModulator {
-    match (s.mode.psk(), s.mode) {
+/// Il modulatore a flusso per le impostazioni attuali; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti). Olivia e Contestia con
+/// toni e banda che non stanno nella banda audio danno `BadValue`.
+pub(super) fn modulator(s: &DigiSettings, lsb: bool) -> Result<TxModulator, DigiError> {
+    if let Some((variant, o)) = s.olivia_settings() {
+        return TxModulator::olivia(o.params(variant, s.tx_freq())).ok_or_else(|| {
+            DigiError::BadValue(format!("{}: {} toni in {} Hz centrati a {:.0} Hz escono dalla banda audio", s.mode.name(), o.tones, o.bandwidth_hz, s.tx_freq()))
+        });
+    }
+    Ok(match (s.mode.psk(), s.mode) {
         (Some(mode), _) => TxModulator::psk(mode, s.tx_freq()),
         (None, DigiMode::Cw) => TxModulator::cw(s.tx_freq(), s.cw_wpm),
         (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset),
-    }
+    })
 }
 
 impl DigiService {
@@ -188,7 +194,13 @@ impl DigiService {
         }
         let settings = self.settings();
         let lsb = self.inner.read_radio_lsb();
-        let mut m = modulator(&settings, lsb);
+        let mut m = match modulator(&settings, lsb) {
+            Ok(m) => m,
+            Err(e) => {
+                *lock(&self.inner.session) = None;
+                return Err(e);
+            }
+        };
         let first = m.preamble();
         let first_len = first.len() as u64;
         self.inner.tx_active.store(true, Ordering::SeqCst);
@@ -253,6 +265,9 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
     let mut last_emit = Instant::now();
     // dove finisce l'audio di ogni pezzo di testo (campioni a 12 kHz dall'inizio)
     let mut marks: VecDeque<(u64, String)> = VecDeque::new();
+    // i pezzi di testo che non hanno dato ancora audio (Olivia raccoglie un blocco intero, un carattere che il modo non ha): partono con il
+    // prossimo audio, non prima
+    let mut held = String::new();
     let mut closing = false;
     let mut sent_chars = 0usize;
     let sent_event = |text: String, sent: usize| {
@@ -297,7 +312,10 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
                 }
                 generated += len;
                 if let Some(t) = piece {
-                    marks.push_back((generated, t));
+                    held.push_str(&t);
+                }
+                if len > 0 && !held.is_empty() {
+                    marks.push_back((generated, std::mem::take(&mut held)));
                 }
                 if closing {
                     port.close_stream();
@@ -328,7 +346,8 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
     };
     // finita bene: i caratteri ancora in coda sono partiti con l'ultimo audio
     if state == "done" {
-        let rest: String = marks.drain(..).map(|(_, t)| t).collect();
+        let mut rest: String = marks.drain(..).map(|(_, t)| t).collect();
+        rest.push_str(&held);
         if !rest.is_empty() {
             sent_chars += rest.chars().count();
             sent_event(rest, sent_chars);
@@ -365,12 +384,15 @@ mod tests {
         started: Mutex<Option<Instant>>,
         closed: AtomicBool,
         halted: AtomicBool,
+        /// Quante volte piu' veloce del tempo vero «suona» (0 = tempo vero): le prove di Olivia, lento, non aspettano minuti.
+        speed: std::sync::atomic::AtomicU32,
     }
 
     impl FakePort {
         fn played(&self) -> u64 {
             let len = lock(&self.wave).len() as u64;
-            lock(&self.started).map_or(0, |t| ((t.elapsed().as_secs_f64() * f64::from(RATE)) as u64).min(len))
+            let speed = f64::from(self.speed.load(Ordering::SeqCst).max(1));
+            lock(&self.started).map_or(0, |t| ((t.elapsed().as_secs_f64() * f64::from(RATE) * speed) as u64).min(len))
         }
     }
 
@@ -602,5 +624,124 @@ mod tests {
         assert_eq!(svc.tx_open("").unwrap_err(), DigiError::NoTextMode);
         assert_eq!(svc.transmit_restart("CQ", false).unwrap_err(), DigiError::NoTextMode);
         assert!(lock(&port.wave).is_empty(), "nessun audio verso la radio");
+    }
+
+    /// Olivia o Contestia con toni e banda dati, centrati a 1500 Hz, con la catena finta 8 volte piu' veloce del tempo vero.
+    fn olivia_service(mode: DigiMode, tones: u32, bw: u32) -> (DigiService, Arc<FakePort>, Arc<Mutex<Vec<DigiEvent>>>, tempdir::Dir) {
+        let (svc, port, events, dir) = service(mode);
+        let mut s = svc.settings();
+        let o = if mode == DigiMode::Olivia { &mut s.olivia } else { &mut s.contestia };
+        o.tones = tones;
+        o.bandwidth_hz = bw;
+        s.rx_freq_hz = 1500.0;
+        s.tx_freq_hz = 1500.0;
+        svc.apply_settings(s).expect("impostazioni");
+        port.speed.store(8, Ordering::SeqCst);
+        (svc, port, events, dir)
+    }
+
+    /// Rumore gaussiano ripetibile (xorshift e Box-Muller).
+    fn noise(seed: u64, n: usize, sigma: f32) -> Vec<f32> {
+        let mut x = seed | 1;
+        let mut uniform = move || {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            ((x >> 11) as f64 + 0.5) / (1u64 << 53) as f64
+        };
+        (0..n).map(|_| sigma * ((-2.0 * uniform().ln()).sqrt() * (2.0 * std::f64::consts::PI * uniform()).cos()) as f32).collect()
+    }
+
+    /// L'onda trasmessa con due secondi davanti, 25 dietro (il ricevitore integra piu' blocchi: gli ultimi escono dopo) e rumore moderato.
+    fn with_noise(wave: &[f32], sigma: f32) -> Vec<f32> {
+        let mut audio = vec![0.0; 24_000];
+        audio.extend_from_slice(wave);
+        audio.extend(vec![0.0; 12_000 * 25]);
+        let n = noise(11, audio.len(), sigma);
+        for (a, n) in audio.iter_mut().zip(n) {
+            *a += n;
+        }
+        audio
+    }
+
+    fn received(events: &Mutex<Vec<DigiEvent>>) -> String {
+        lock(events).iter().filter(|e| e.kind == "rx_text" && e.rx_id.is_none()).filter_map(|e| e.text.clone()).collect()
+    }
+
+    /// Anello chiuso nel servizio: il testo esce dal trasmettitore a flusso (8 kHz portati a 12 kHz), con il rumore entra nella ricezione
+    /// del servizio (12 kHz portati a 8 kHz) e arriva intero nella finestra RX, senza caratteri spuri nel rumore prima e dopo.
+    #[test]
+    fn olivia_e_contestia_in_anello_chiuso_nel_servizio() {
+        let text = "CQ CQ DE IU3ABC IU3ABC IO91WM K";
+        for (mode, tones, bw) in [(DigiMode::Olivia, 8, 250), (DigiMode::Olivia, 32, 1000), (DigiMode::Contestia, 16, 500)] {
+            let (svc, port, events, _dir) = olivia_service(mode, tones, bw);
+            svc.transmit(text).expect("partita");
+            assert!(wait_state(&svc, "done", 30), "{mode:?} {tones}/{bw}: {:?}", svc.snapshot().tx);
+            assert_eq!(sent(&events), text, "{mode:?} {tones}/{bw}");
+            let audio = with_noise(&lock(&port.wave), 0.3);
+            svc.start_rx();
+            for chunk in audio.chunks(1200) {
+                svc.inner.queue.send(Msg::Audio(12_000, chunk.to_vec())).expect("coda");
+            }
+            let deadline = Instant::now() + Duration::from_secs(60);
+            while !received(&events).contains(text) && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            // lascia arrivare anche la coda (dove potrebbero esserci caratteri spuri)
+            std::thread::sleep(Duration::from_millis(500));
+            let got = received(&events);
+            assert!(got.contains(text), "{mode:?} {tones}/{bw}: ricevuto {got:?}");
+            assert!(got.len() <= text.len() + 4, "{mode:?} {tones}/{bw}: caratteri spuri in {got:?}");
+            assert!(lock(&events).iter().any(|e| e.kind == "rx_text" && e.mode.as_deref() == Some(mode.id())));
+        }
+    }
+
+    /// Olivia trasmette a blocchi: il testo scritto mentre si trasmette (anche a meta' di un blocco, anche dopo che il blocco a meta' e' gia'
+    /// partito completato con caratteri nulli) parte tutto e nell'ordine, e si rilegge intero.
+    #[test]
+    fn olivia_il_testo_scritto_durante_la_trasmissione_non_si_perde() {
+        let (svc, port, events, _dir) = olivia_service(DigiMode::Olivia, 8, 500);
+        svc.tx_open("CQ").expect("aperta");
+        let pieces = ["CQ", " DE", " I", "U3ABC", " IU3ABC", " IO91WM", " K"];
+        for p in &pieces[1..] {
+            std::thread::sleep(Duration::from_millis(170));
+            svc.tx_type(p).expect("scritto");
+        }
+        // una pausa lunga: il blocco a meta' parte con i nulli, la trasmissione resta aperta
+        std::thread::sleep(Duration::from_millis(600));
+        svc.tx_type(" TU").expect("scritto");
+        svc.tx_close();
+        assert!(wait_state(&svc, "done", 30), "stato: {:?}", svc.snapshot().tx);
+        let want = format!("{} TU", pieces.concat());
+        assert_eq!(sent(&events), want);
+        let audio = with_noise(&lock(&port.wave), 0.2);
+        let mut d = super::super::Demod::new(&svc.settings(), false);
+        let got: String = audio.chunks(1200).map(|c| d.process(c).0).collect();
+        assert!(got.contains(&want), "ricevuto: {got:?}");
+    }
+
+    /// I caratteri di Olivia risultano partiti quando parte il loro blocco, non quando entrano nel modulatore.
+    #[test]
+    fn olivia_i_caratteri_partono_con_il_loro_blocco() {
+        let (svc, port, events, _dir) = olivia_service(DigiMode::Olivia, 8, 250);
+        port.speed.store(1, Ordering::SeqCst);
+        svc.transmit("CQ CQ CQ DE IU3ABC").expect("partita");
+        // 8/250: un blocco di 8 caratteri dura poco piu' di 2 s; dopo 1 s nessun carattere e' ancora uscito del tutto
+        std::thread::sleep(Duration::from_millis(1000));
+        assert!(sent(&events).is_empty(), "gia' partiti: {:?}", sent(&events));
+        svc.abort_tx();
+        assert!(wait_state(&svc, "aborted", 5));
+    }
+
+    #[test]
+    fn olivia_con_toni_fuori_dalla_banda_audio_non_trasmette() {
+        let (svc, port, _events, _dir) = olivia_service(DigiMode::Olivia, 64, 2000);
+        let mut s = svc.settings();
+        s.rx_freq_hz = 3400.0;
+        s.tx_freq_hz = 3400.0;
+        svc.apply_settings(s).expect("impostazioni valide anche se il modo non ci sta: si cambia un campo alla volta");
+        assert!(matches!(svc.transmit("CQ"), Err(DigiError::BadValue(_))));
+        assert!(svc.snapshot().tx.state != "sending");
+        assert!(lock(&port.wave).is_empty());
     }
 }
