@@ -5649,6 +5649,7 @@ export const NL_UI: Record<string, string> = {
   "wefax.hist.partial": "Gedeeltelijk",
   "wefax.hist.prev": "Kaarten naar links",
   "wefax.hist.title": "Ontvangen kaarten",
+  "wefax.lb.live": "Ontvangst bezig: gaat door terwijl je naar deze kaart kijkt ({rows} regels)",
   "wefax.note.lost": "Signaal verloren: beeld verworpen",
   "wefax.note.saved": "Kaart opgeslagen in de geschiedenis",
   "wefax.phase.apt": "Starttoon (APT)",

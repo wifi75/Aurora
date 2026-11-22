@@ -97,4 +97,11 @@ describe('Lightbox WEFAX', () => {
     expect(a.getAttribute('href')).toBe('/api/v1/wefax/images/a1/audio');
     expect(a.getAttribute('download')).toBe('a1.wav');
   });
+
+  it('mentre si riceve dice che la ricezione continua; senza ricezione non compare', () => {
+    const { rerender } = render(<Lightbox entry={ENTRY} onClose={() => undefined} onDelete={() => undefined} onFixed={() => undefined} live={321} />);
+    expect(screen.getByText(/321/)).toBeTruthy();
+    rerender(<Lightbox entry={ENTRY} onClose={() => undefined} onDelete={() => undefined} onFixed={() => undefined} live={null} />);
+    expect(screen.queryByText(/321/)).toBeNull();
+  });
 });

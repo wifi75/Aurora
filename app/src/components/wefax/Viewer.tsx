@@ -29,6 +29,8 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
   const box = useRef<HTMLDivElement>(null);
   // una cartina nuova arrivata prima della risposta di `rx/current`: quella risposta (vecchia) non deve coprirla
   const started = useRef(false);
+  // lo stato di ricezione di prima: la cartina si svuota quando comincia una fasatura nuova
+  const lastState = useRef('');
   const [size, setSize] = useState({ w: 1809, h: CHUNK_ROWS });
   const [rows, setRows] = useState(0);
   // la cartina parte adattata alla larghezza del riquadro (nessuna barra orizzontale) e segue il ridimensionamento; i pulsanti − e +
@@ -94,6 +96,21 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
         if (ev.kind === 'rx_lost') {
           setNote('lost');
           onChanged();
+          return;
+        }
+        if (ev.kind === 'rx_status') {
+          // un segnale nuovo (tono d'inizio, poi la fasatura): la cartina di prima sparisce subito e si riparte da zero, senza aspettare le prime righe
+          const before = lastState.current;
+          lastState.current = ev.state ?? '';
+          if (ev.state === 'phasing' && before !== 'phasing' && c) {
+            started.current = true;
+            c.width = c.width || 1809;
+            c.height = CHUNK_ROWS;
+            setSize({ w: c.width, h: CHUNK_ROWS });
+            setRows(0);
+            setNote(null);
+            setMeasuring(false);
+          }
           return;
         }
         if (!c) return;

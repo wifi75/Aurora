@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../api/client', () => ({
   getWefaxCurrentBlob: vi.fn(() => Promise.reject(new Error('none'))),
   postWefaxSlant: vi.fn(),
 }));
+import { emitWefax } from '../../lib/wefaxBus';
 import { Viewer } from './Viewer';
 
 beforeEach(() => {
@@ -39,5 +40,16 @@ describe('Viewer WEFAX', () => {
     fireEvent.click(screen.getByRole('button', { name: /fit|adatta/i }));
     expect(box.className).toContain('wefax-box--fit');
     expect(screen.getByRole('status', { hidden: true }).textContent).toBe('50 %');
+  });
+
+  it('al segnale di una cartina nuova la vista si svuota subito: sparisce la nota della cartina di prima', () => {
+    viewer();
+    act(() => emitWefax({ type: 'wefax', kind: 'rx_done', image_id: 'img-1' }));
+    expect(screen.getByText(/salvata|saved/i)).toBeTruthy();
+    // aspetta il tono d'inizio, poi comincia la fasatura della cartina nuova
+    act(() => emitWefax({ type: 'wefax', kind: 'rx_status', state: 'apt' }));
+    expect(screen.queryByText(/salvata|saved/i)).toBeTruthy();
+    act(() => emitWefax({ type: 'wefax', kind: 'rx_status', state: 'phasing' }));
+    expect(screen.queryByText(/salvata|saved/i)).toBeNull();
   });
 });

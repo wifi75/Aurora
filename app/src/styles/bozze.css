@@ -1810,3 +1810,8 @@ html:root:root[data-bozza] .sstv-head .sstv-badge--receiving {
 html:root:root[data-bozza][data-theme='light'] .sstv-head .sstv-badge--receiving { background: #13a652 !important; border-color: #0b7a3c !important; color: #ffffff !important; box-shadow: 0 0 6px rgba(19, 166, 82, .5); }
 html:root:root[data-bozza] .sstv-head .sstv-badge--receiving .sstv-dot { background: currentColor !important; }
 @keyframes wefax-rx-blink { 50% { opacity: 0.6; } }
+
+/* visore delle cartine salvate: mentre si riceve, un segnalino verde dice che la ricezione continua */
+.wefax-lightbox .wefax-lb-live { position: absolute; top: 12px; left: 12px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #19c463; color: #032010; box-shadow: 0 0 10px rgba(25, 196, 99, .6); }
+html[data-theme='light'] .wefax-lightbox .wefax-lb-live { background: #13a652; color: #ffffff; }
+.wefax-lightbox .wefax-lb-live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: wefax-rx-blink 1s steps(2, start) infinite; }

@@ -5649,6 +5649,7 @@ export const RU_UI: Record<string, string> = {
   "wefax.hist.partial": "Частично",
   "wefax.hist.prev": "Карты левее",
   "wefax.hist.title": "Принятые карты",
+  "wefax.lb.live": "Идёт приём: он продолжается, пока вы смотрите эту карту ({rows} строк)",
   "wefax.note.lost": "Сигнал потерян: изображение отброшено",
   "wefax.note.saved": "Карта сохранена в истории",
   "wefax.phase.apt": "Стартовый тон (APT)",

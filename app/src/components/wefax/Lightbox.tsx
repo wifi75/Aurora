@@ -43,7 +43,7 @@ function canFullscreen(): boolean {
  * spostamento con il mouse (trascinando) o con il dito, schermo intero, rotazione, misura dell'inclinazione, scarico di immagine e audio.
  * Tasti: + − zoom, 0 adatta, 1 pixel reali, F schermo intero, R / L ruota, Esc chiude.
  */
-export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxImageEntry; onClose: () => void; onDelete: () => void; onFixed: (e: WefaxImageEntry) => void }) {
+export function Lightbox({ entry, onClose, onDelete, onFixed, live = null }: { entry: WefaxImageEntry; onClose: () => void; onDelete: () => void; onFixed: (e: WefaxImageEntry) => void; /** Righe della cartina che sta arrivando adesso (`null`: nessuna ricezione): la ricezione non si ferma mai guardando le cartine salvate. */ live?: number | null }) {
   const t = useT();
   const root = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -273,6 +273,12 @@ export function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxIm
   return (
     <div ref={root} tabIndex={-1} className={`sstv-lightbox wefax-lightbox${fs ? ' wefax-lightbox--full' : ''}`} role="dialog" aria-modal="true" aria-label={whenUtc(entry.time_ms)} onClick={onClose}>
       <figure onClick={(e) => e.stopPropagation()}>
+        {live !== null ? (
+          <p className="wefax-lb-live" role="status">
+            <span className="wefax-lb-live-dot" aria-hidden="true" />
+            {t('wefax.lb.live', { rows: live })}
+          </p>
+        ) : null}
         <div
           ref={scroller}
           className={`wefax-lb-scroll${overflows ? ' wefax-lb-scroll--pan' : ''}${dragging ? ' wefax-lb-scroll--drag' : ''}`}

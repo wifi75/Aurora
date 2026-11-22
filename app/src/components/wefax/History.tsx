@@ -14,7 +14,7 @@ function short(ms: number): string {
 }
 
 /** La cronologia delle cartine ricevute: miniature (le piu' nuove prima), apri, scarica il PNG, cancella. */
-export function History({ images, onChanged }: { images: WefaxImageEntry[]; onChanged: () => void }) {
+export function History({ images, onChanged, live = null }: { images: WefaxImageEntry[]; onChanged: () => void; /** Righe della cartina in arrivo (`null`: non si sta ricevendo). */ live?: number | null }) {
   const t = useT();
   const [open, setOpen] = useState<WefaxImageEntry | null>(null);
   // una cartina sostituita (ruotata) ha lo stesso indirizzo: il numero fa ricaricare la miniatura
@@ -96,6 +96,7 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
       {open ? (
         <Lightbox
           entry={open}
+          live={live}
           onClose={() => setOpen(null)}
           onDelete={() => void remove(open)}
           onFixed={(e) => {

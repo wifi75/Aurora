@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- WEFAX, la vista riparte da zero con una cartina nuova: appena comincia il segnale della cartina nuova (la fasatura, circa 35 secondi prima delle prime righe) la cartina di prima sparisce dalla vista; prima restava li' fino alle prime righe nuove.
+- WEFAX, guardare le cartine salvate mentre si riceve: il visore in grande non tocca la ricezione (gira nel motore); ora in alto compare un segnalino verde «Ricezione in corso» con le righe che arrivano, cosi' si vede che continua (richiesta del proprietario). Nella Guida una voce per la chiusura automatica, la vista che riparte e il visore.
+
 - WEFAX, la cartina si chiude e si salva quando finisce davvero: il tono di fine (450 Hz) ora si riconosce anche misurando la potenza sul tono (due finestre di mezzo secondo di fila), non solo contando le transizioni, che con il filtro stretto o una sintonia leggermente fuori non superavano le soglie. Sulle registrazioni vere di DDK3 la cartina si chiudeva da sola solo a segnale finito, da 24 a 42 secondi dopo la fine vera (con 50 righe in piu' di coda e segnata come incompleta); ora si chiude al tono, completa, con le righe giuste. Nel resto dell'immagine la potenza sui 450 Hz resta sotto 0,1, sul tono e' tra 0,6 e 0,9. Prova automatica con un tono debole e mezzo minuto di portante dopo (fallisce senza la correzione).
 
 - Pagina Log: dopo aver cancellato dei QSO, o quando ne arriva uno nuovo da un altro log, le righe non restavano scelte e il testo appariva scuro e spento (le righe non scelte sono attenuate); tornando nella pagina tornava tutto bianco. Ora dopo una cancellazione i QSO rimasti tornano tutti scelti, e un QSO nuovo si sceglie da solo se prima era scelto tutto (se avevi tolto qualche riga dalla scelta, resta com'e'). Prove automatiche: falliscono senza la correzione (segnalazione di Luc, #88).

@@ -232,7 +232,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
                 />
               </Card>
               <div className="wefax-band-hist">
-                <History images={images.data ?? []} onChanged={refreshImages} />
+                <History images={images.data ?? []} onChanged={refreshImages} live={data.rx.receiving ? data.rx.rows : null} />
               </div>
             </div>
           </div>
