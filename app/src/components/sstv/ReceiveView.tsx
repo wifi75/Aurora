@@ -221,6 +221,7 @@ export function ReceiveView({
       </div>
 
       <aside className="sstv-side">
+        <div className="sstv-side-title">{t('wefax.card.rx')}</div>
         <dl className="sstv-readouts">
           <div>
             <dt>{t('sstv.rx.mode')}</dt>

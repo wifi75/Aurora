@@ -1743,3 +1743,50 @@ html:root:root[data-bozza] .digi-classica :is(.digi-rxbar-btn, .digi-tool) { bor
 /* barra in basso delle pagine testuali: i numeri (frequenza, larghezza, baud) si leggono per intero nelle caselle */
 html:root:root[data-bozza] .digi-status input:not([type='checkbox']):not([type='range']) { padding: 0 6px; min-width: 5.4rem; text-align: center; font-variant-numeric: tabular-nums; }
 html:root:root[data-bozza] .digi-status select { padding: 0 22px 0 8px; min-width: 5.4rem; }
+
+/* ---- riquadri di tutte le pagine identici a quelli della Stazione (FT8): stesso filo con i colori dell'aurora, angoli di 10, barra del titolo alta 25
+   con il gradiente, titolo a 12 senza grassetto, maniglia a puntini; vale per Satelliti, WEFAX, SSTV, Propagazione e Statistiche, nei due temi ---- */
+html:root:root[data-bozza] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side, .sstv-log, .sstv-screen, .prop-card, .stats-card) {
+  border: 1px solid rgba(142, 123, 255, .6) !important; border-radius: 10px !important; box-shadow: none !important;
+  background: #0a1220 !important;
+}
+html:root:root[data-bozza][data-theme='light'] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side, .sstv-log, .sstv-screen, .prop-card, .stats-card) {
+  background: linear-gradient(#ffffff, #ffffff) padding-box, linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box !important;
+}
+html:root:root[data-bozza] .dash-card--bare { background: #07142b !important; }
+html:root:root[data-bozza][data-theme='light'] .dash-card--bare { background: linear-gradient(#07142b, #07142b) padding-box, linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box !important; }
+/* schede della griglia (Satelliti, contest): la barra tocca i bordi e il contenuto ha il suo margine */
+html:root:root[data-bozza] .dash-card:not(.dash-card--bare) { padding: 0 !important; }
+html:root:root[data-bozza] .dash-card:not(.dash-card--bare) > .dash-bar { margin: 0 !important; box-sizing: border-box; height: 25px; min-height: 25px; padding: 1.6px 8px !important; gap: 2px 8px; border-radius: 0 !important; }
+html:root:root[data-bozza] .dash-card:not(.dash-card--bare) > .dash-body { padding: 8px 12px 10px; }
+html:root:root[data-bozza] .dash-bar .dash-title { font-size: 12px !important; font-weight: 400 !important; letter-spacing: normal !important; }
+html:root:root[data-bozza] .dash-bar .dash-grip { opacity: .8 !important; width: 8px; color: #3d4a63; }
+html:root:root[data-bozza]:not([data-theme='light']) .dash-bar .dash-grip { color: #c3cee4; }
+/* titoli dei riquadri WEFAX come la barra della Stazione */
+html:root:root[data-bozza] :is(.wefax-card .wefax-card-title, .wefax-history > .sstv-hist-head) {
+  box-sizing: border-box; display: flex; align-items: center; min-height: 25px; padding: 1.6px 8px; border-radius: 0; font-size: 12px; font-weight: 400; letter-spacing: normal;
+}
+
+/* titoli dei riquadri di SSTV e Propagazione: la stessa barra della Stazione (gradiente, 25 di altezza, 12 normale) */
+html:root:root[data-bozza] :is(.sstv-side-title, .sstv-log-title, .sstv-history--both .sstv-hist-head, .prop-card > h2) {
+  box-sizing: border-box; display: flex; align-items: center; min-height: 25px; padding: 1.6px 8px; border-radius: 0; font-size: 12px; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 1.2;
+  background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); border-bottom: 1px solid #afa9ec; color: #1d2a44;
+}
+html:root:root[data-bozza]:not([data-theme='light']) :is(.sstv-side-title, .sstv-log-title, .sstv-history--both .sstv-hist-head, .prop-card > h2) {
+  background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8;
+}
+html:root:root[data-bozza] .prop-card > h2 { margin: -16px -20px 12px; }
+html:root:root[data-bozza] .sstv-log-title { margin: -7.2px -9.6px 4px; }
+html:root:root[data-bozza] .sstv-side-title { margin: -8px -12.8px 6px; }
+html:root:root[data-bozza] .sstv-history--both .sstv-hist-head { margin: 0 -16px 4px; }
+html:root:root[data-bozza] .sstv-history--both .sstv-hist-col:first-child .sstv-hist-head { margin-top: -14.4px; }
+html:root:root[data-bozza] .sstv-side-col .sstv-history--both .sstv-hist-head { margin: 0 -12.8px 4px; }
+html:root:root[data-bozza] .sstv-side-col .sstv-history--both .sstv-hist-col:first-child .sstv-hist-head { margin-top: -8px; }
+/* Statistiche: titoli dei riquadri e delle sezioni a tendina con la stessa barra */
+html:root:root[data-bozza] :is(.stats-card > .panel-title:first-child, .stats-card > summary:first-child) {
+  box-sizing: border-box; display: flex; align-items: center; min-height: 25px; margin: -12.8px -16px 8px; padding: 1.6px 8px; border-radius: 0; font-size: 12px; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 1.2;
+  background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); border-bottom: 1px solid #afa9ec; color: #1d2a44; cursor: pointer;
+}
+html:root:root[data-bozza]:not([data-theme='light']) :is(.stats-card > .panel-title:first-child, .stats-card > summary:first-child) {
+  background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8;
+}
