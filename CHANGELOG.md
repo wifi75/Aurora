@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Barra del WEFAX: la pagina non ha piu' la larghezza massima, cosi' la barra si allunga quanto la finestra e tutto sta su una riga sola (prima AFC e SQL andavano a capo); il menu della stazione ha il carattere piu' grande (14,5) e il testo e' allineato a destra, vicino ai pulsanti ▲ ▼.
+- Display compatto della radio (schermi stretti e pagina WEFAX): oltre a S, potenza e ROS c'e' anche l'ALC (se la radio lo manda; senza, un trattino). Lo stile «Pannello FT-2000 con ROS, ALC e potenza» lo aveva gia'.
+
 ## 0.11.332 - 2026-11-22
 
 - WEFAX, la vista riparte da zero con una cartina nuova: appena comincia il segnale della cartina nuova (la fasatura, circa 35 secondi prima delle prime righe) la cartina di prima sparisce dalla vista; prima restava li' fino alle prime righe nuove.

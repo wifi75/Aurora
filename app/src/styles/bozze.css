@@ -1800,7 +1800,7 @@ html:root:root[data-bozza][data-theme='light'] :is(select option, select optgrou
 html:root:root[data-bozza] .wefax-page .sstv-head { flex-wrap: wrap; row-gap: 6px; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini { flex: 0 0 auto !important; overflow: visible !important; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-mini .rd-compact { flex: 0 0 auto !important; overflow: visible !important; }
-html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker { flex: 0 0 auto !important; width: 20rem !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker { flex: 0 0 auto !important; width: auto !important; min-width: 17rem; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn { max-width: none !important; width: 100% !important; }
 
 /* «RX» nella barra del WEFAX e dell'SSTV: verde pieno ben visibile in ricezione (lampeggia piano, senza sparire), nei due temi */
@@ -1815,3 +1815,13 @@ html:root:root[data-bozza] .sstv-head .sstv-badge--receiving .sstv-dot { backgro
 .wefax-lightbox .wefax-lb-live { position: absolute; top: 12px; left: 12px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #19c463; color: #032010; box-shadow: 0 0 10px rgba(25, 196, 99, .6); }
 html[data-theme='light'] .wefax-lightbox .wefax-lb-live { background: #13a652; color: #ffffff; }
 .wefax-lightbox .wefax-lb-live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: wefax-rx-blink 1s steps(2, start) infinite; }
+/* menu della stazione nella barra del WEFAX: il testo e la freccia allineati a destra, vicino ai pulsanti ▲ ▼ */
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn { justify-content: flex-end !important; text-align: right !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-text { text-align: right; flex: 0 1 auto; }
+
+/* barra del WEFAX su una riga sola: la pagina non ha piu' la larghezza massima, cosi' la barra si allunga quanto la finestra; il menu della stazione ha il carattere piu' grande */
+html:root:root[data-bozza] .sstv-page.wefax-page { max-width: none !important; margin-left: 0 !important; margin-right: 0 !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn { font-size: 14.5px !important; font-weight: 600; }
+html:root:root[data-bozza] .wefax-page .wefax-picker-list .wefax-picker-opt, html:root:root[data-bozza] .wefax-page .wefax-picker-list .wefax-picker-band { font-size: 14px !important; }
+html:root:root[data-bozza] .sstv-head .wefax-picker .wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn { font-size: 14.5px !important; font-weight: 600 !important; }
+html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn .wefax-picker-text { font-size: inherit !important; }

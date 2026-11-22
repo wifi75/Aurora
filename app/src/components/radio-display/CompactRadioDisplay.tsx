@@ -15,6 +15,7 @@ export function CompactRadioDisplay({ model, noTune = false }: { model: DisplayM
   const readouts = meterReadouts(model.meters);
   const power = readouts.find((r) => r.key === 'PO')?.text ?? '—';
   const swr = readouts.find((r) => r.key === 'SWR')?.text ?? '—';
+  const alc = readouts.find((r) => r.key === 'ALC')?.text ?? '—';
   // come sotto il display grande: la radio dice di avere l'accordatore, oppure non si leggono i dati in piu' e non si sa
   const hasTuner = !noTune && (rig?.extras?.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none'));
   const freq = hasFrequency(model.dialHz) ? formatRadioFrequency(model.dialHz) : '--.---.--';
@@ -32,6 +33,9 @@ export function CompactRadioDisplay({ model, noTune = false }: { model: DisplayM
       </span>
       <span className="rd-compact-read" title="SWR">
         <small>SWR</small> {swr}
+      </span>
+      <span className="rd-compact-read" title="ALC">
+        <small>ALC</small> {alc}
       </span>
       {hasTuner ? (
         <button
