@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.329 - 2026-11-22
+
 - Satelliti, IC-820H (#83): la trasmissione con trame CI-V dirette si riprova da sola un minuto dopo un fallimento (prova o scrittura), senza dover premere «Connetti» nelle impostazioni. Prima, spegnendo SAT sulla radio la prova falliva (le due bande uguali) e restava ferma fino alla riconnessione, anche dopo aver riacceso SAT (segnalazione di Vladimir con RS-44 e AO-7).
 - PTT: cambiando radio (o modello) in Impostazioni dopo l'avvio la trasmissione continua a funzionare: prima la catena costruita all'avvio rifiutava ogni trasmissione con «PTT: radio cambiata» fino al riavvio di Aurora (pacchetto di un IC-820H con modello 3034 poi 3032: 19 trasmissioni fallite in tre ore). Con il PTT spento la catena passa alla radio nuova; con il PTT acceso sulla radio vecchia la guardia resta.
 - Orologio: lo stesso errore della correzione (per esempio «serve avviare Aurora come amministratore») si scrive nel registro una volta sola invece che a ogni controllo (ogni minuto, centinaia di righe al giorno).
