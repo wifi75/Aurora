@@ -27,6 +27,8 @@ pub const TCI_RATE: u32 = 48_000;
 const STOP_FADE: Duration = Duration::from_millis(5);
 /// Con un'onda in corso e nessuna richiesta del server per tanto tempo, il collegamento TCI si considera perso.
 const STALL: Duration = Duration::from_secs(3);
+/// Dopo tanto senza che il server tiri i campioni, lo stop non aspetta la discesa.
+const STOP_STALL: Duration = Duration::from_millis(500);
 
 /// Da 48 kHz (l'onda) alla frequenza chiesta dal server, a blocchi: filtro sinc a finestra di Hann (passa-basso al 90% della meta'
 /// della frequenza piu' bassa), la stessa forma di `engine-native/src/resample.rs`. La posizione resta tra un blocco e l'altro.
@@ -159,7 +161,10 @@ impl AudioSink for TciSink {
     }
 
     fn stop(&mut self) {
-        let n = (STOP_FADE.as_secs_f64() * f64::from(TCI_RATE)).round() as usize;
+        // la discesa la fa il server tirando i campioni: se non tira piu' (nessun TCI collegato, SDR chiusa) non finirebbe mai e l'uscita
+        // resterebbe «in riproduzione» per sempre, bloccando il cambio verso la scheda scelta dopo (segnalazione #96)
+        let stalled = now_ms().saturating_sub(self.shared.last_pull_ms.load(Ordering::SeqCst)) > STOP_STALL.as_millis() as u64;
+        let n = if stalled { 0 } else { (STOP_FADE.as_secs_f64() * f64::from(TCI_RATE)).round() as usize };
         lock(&self.shared.playback).begin_stop(n);
     }
 
@@ -237,6 +242,15 @@ mod tests {
         source(&mut buf, 48_000);
         assert!(!sink.is_playing(), "5 ms di discesa e poi basta");
         assert!(buf[0] > 0.9 && buf[500] == 0.0);
+    }
+
+    #[test]
+    fn stop_without_a_server_pulling_ends_at_once() {
+        let (mut sink, _source) = TciSink::new(Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        sink.start(vec![1.0; 48_000]).expect("start");
+        sink.shared.last_pull_ms.store(now_ms() - 10_000, Ordering::SeqCst);
+        sink.stop();
+        assert!(!sink.is_playing(), "nessuno tira i campioni: la discesa non arriverebbe mai");
     }
 
     #[test]
