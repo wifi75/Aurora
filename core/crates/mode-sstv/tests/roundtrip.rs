@@ -434,6 +434,24 @@ fn a_long_dropout_keeps_the_picture_and_the_lines_in_their_place() {
     assert!(psnr(&rows_between(&img, 0.62, 1.0), &rows_between(&done.image, 0.62, 1.0)) > 20.0, "righe finali al loro posto");
 }
 
+/// Un segnale che finisce a meta' immagine: l'interruzione tollerata (30 s) non allunga l'immagine salvata con righe nere mai ricevute.
+#[test]
+fn a_signal_that_stops_halfway_is_saved_without_the_black_tail() {
+    let m1 = SstvMode::Martin1.spec();
+    let img = test_image(m1.width, m1.height);
+    let mut audio = vec![0.0f32; RATE as usize / 2];
+    let full = encode_shifted(m1.mode, &img, RATE, 0.0).expect("codifica");
+    let keep = ((mode_sstv::modes::HEADER_SECONDS + m1.image_seconds() * 0.5) * f64::from(RATE)) as usize;
+    audio.extend(&full[..keep.min(full.len())]);
+    audio.extend(vec![0.0f32; 40 * RATE as usize]);
+    add_noise(&mut audio, 0.03, 29);
+    let events = events_of(&audio, DecoderConfig::default());
+    let done = last_image(&events).expect("immagine");
+    assert!(!done.complete, "metà immagine non e' completa");
+    let h = f64::from(done.image.height) / f64::from(m1.height);
+    assert!((0.4..=0.6).contains(&h), "altezza salvata {h:.2} dell'immagine: niente righe nere in coda");
+}
+
 #[test]
 fn recognition_without_vis_estimates_the_tuning_offset() {
     let spec = SstvMode::Scottie1.spec();

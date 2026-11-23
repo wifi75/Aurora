@@ -544,7 +544,9 @@ impl Decoder {
         self.vis.reset();
         self.sync.reset();
         let groups = rx.spec.groups();
-        let done = rx.next_group.min(groups);
+        // le righe dopo l'ultima letta davvero (il tratto senza segnale che precede la chiusura) non fanno parte dell'immagine: ne' per la parte
+        // minima da salvare, ne' per l'altezza, ne' per dire che e' completa
+        let done = rx.groups.iter().rposition(Option::is_some).map_or(0, |last| last as u32 + 1).min(rx.next_group.min(groups));
         let part = done as f32 / groups as f32;
         if part < MIN_SAVE || rx.syncs.len() < 3 {
             tracing::info!("SSTV: ricezione di {} interrotta ({:.0} %)", rx.spec.name, part * 100.0);

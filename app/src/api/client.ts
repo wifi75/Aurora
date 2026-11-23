@@ -790,7 +790,7 @@ export interface CatConfig {
   /** In trasmissione legge la potenza e/o il ROS (accesi di base): spegnerne uno riduce le richieste alla radio (clic dei misuratori). */
   read_tx_power?: boolean;
   read_tx_swr?: boolean;
-  /** In trasmissione legge anche l'ALC (spento di base; serve al pannello grande di potenza, ROS e ALC). */
+  /** In trasmissione legge anche l'ALC (spento di base; il valore compare nel campo ALC del display della radio). */
   read_tx_alc?: boolean;
   /** PTT «dati» (rigctld `T 3`): la radio trasmette l'audio posteriore/USB invece del microfono (spento di base, solo Hamlib). */
   ptt_data?: boolean;

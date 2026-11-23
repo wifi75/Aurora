@@ -143,8 +143,8 @@ pub struct RigConfig {
     pub read_tx_power: bool,
     /// «In trasmissione leggi il ROS»: acceso di base. Spento, la protezione che ferma la trasmissione con ROS alto non ha il dato e non scatta.
     pub read_tx_swr: bool,
-    /// «In trasmissione leggi anche l'ALC»: spento di base (e' un misuratore in piu' che, su alcune radio, fa cambiare lo strumento al selettore). Serve al
-    /// pannello grande di potenza, ROS e ALC (solo con Hamlib).
+    /// «In trasmissione leggi anche l'ALC»: spento di base (e' un misuratore in piu' che, su alcune radio, fa cambiare lo strumento al selettore). Il valore compare nel
+    /// campo ALC del display della radio (solo con Hamlib).
     pub read_tx_alc: bool,
     /// «PTT dati (audio posteriore/USB)»: spento di base. Acceso, il PTT parte come «dati» (rigctld `T 3`, `RIG_PTT_ON_DATA`) e la radio usa l'audio
     /// del connettore dati o USB invece del microfono: come «Rear/Data» di WSJT-X, che lo fa solo per le radio che Hamlib dichiara mic/dati (TS-890S...).
