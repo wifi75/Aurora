@@ -143,6 +143,9 @@ pub struct RigConfig {
     pub read_tx_power: bool,
     /// «In trasmissione leggi il ROS»: acceso di base. Spento, la protezione che ferma la trasmissione con ROS alto non ha il dato e non scatta.
     pub read_tx_swr: bool,
+    /// «In trasmissione leggi anche l'ALC»: spento di base (e' un misuratore in piu' che, su alcune radio, fa cambiare lo strumento al selettore). Serve al
+    /// pannello grande di potenza, ROS e ALC (solo con Hamlib).
+    pub read_tx_alc: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
     /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
@@ -198,6 +201,7 @@ impl Default for RigConfig {
             restore_on_exit: true,
             read_tx_power: true,
             read_tx_swr: true,
+            read_tx_alc: false,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),

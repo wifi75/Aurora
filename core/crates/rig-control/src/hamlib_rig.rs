@@ -1135,6 +1135,9 @@ impl Inner {
             if self.config.read_tx_swr {
                 steps.extend(TX_LEVELS.iter().filter(|l| poll.memory.supported(**l)).map(|l| Step::Level(*l)));
             }
+            if self.config.read_tx_alc && poll.memory.supported(Level::Alc) {
+                steps.push(Step::Level(Level::Alc));
+            }
         } else if poll.memory.supported(Level::Strength) {
             steps.push(Step::Level(Level::Strength));
         }
@@ -2931,6 +2934,21 @@ mod tests {
             std::thread::sleep(Duration::from_millis(260));
         }
         assert_eq!(fake.count("l STRENGTH"), 1, "la richiesta non si ripete");
+    }
+
+    #[test]
+    fn with_read_tx_alc_the_alc_is_read_in_transmit_too() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER_METER_WATTS", "20.5");
+        fake.set_level("SWR", "1.5");
+        fake.set_level("ALC", "0.3");
+        let rig = tx_rig(&fake, RigConfig { read_tx_alc: true, ..RigConfig::default() });
+        let mut last = Meters::default();
+        for _ in 0..3 {
+            last = rig.meters().expect("misuratori");
+            std::thread::sleep(Duration::from_millis(210));
+        }
+        assert_eq!((last.power_w, last.swr, last.alc), (Some(20.5), Some(1.5), Some(0.3)));
     }
 
     #[test]

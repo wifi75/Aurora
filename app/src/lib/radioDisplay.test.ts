@@ -166,7 +166,7 @@ describe('saved style', () => {
 
   it('falls back on garbage or unknown styles', () => {
     expect(readRadioDisplay(store('non json'))).toEqual(DEFAULT_RADIO_DISPLAY);
-    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true, layout: 'single', bigMeters: true });
+    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true, layout: 'single', bigMeters: false });
     expect(readRadioDisplay({ getItem: () => { throw new Error('negato'); } })).toEqual(DEFAULT_RADIO_DISPLAY);
   });
 });

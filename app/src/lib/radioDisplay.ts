@@ -56,7 +56,7 @@ export interface RadioDisplayPref {
 export const RADIO_DISPLAY_LAYOUTS = ['single', 'pair'] as const;
 export type RadioDisplayLayout = (typeof RADIO_DISPLAY_LAYOUTS)[number];
 
-export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false, layout: 'single', bigMeters: true };
+export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false, layout: 'single', bigMeters: false };
 
 const KEY = 'aurora-radio-display';
 
@@ -81,7 +81,7 @@ export function readRadioDisplay(storage: ReadableStorage): RadioDisplayPref {
       style: typeof parsed.style === 'string' && parsed.style in RETIRED_STYLES ? RETIRED_STYLES[parsed.style] as RadioDisplayStyle : isRadioDisplayStyle(parsed.style) ? replaceSquare(parsed.style) : DEFAULT_RADIO_DISPLAY.style,
       hidden: parsed.hidden === true,
       layout: parsed.layout === 'pair' || parsed.layout === 'single' ? parsed.layout : DEFAULT_RADIO_DISPLAY.layout,
-      bigMeters: parsed.bigMeters !== false,
+      bigMeters: parsed.bigMeters === true,
     };
   } catch {
     return { ...DEFAULT_RADIO_DISPLAY };
