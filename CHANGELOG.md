@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.337 - 2026-11-23
 - Modi testuali (CW, PSK, RTTY, Olivia...) con l'uscita audio TCI o Cat4OM: la trasmissione falliva subito con «questa uscita audio non accoda campioni» (146 segnalazioni da 3 installazioni sulla 0.11.336). Il tratto di uscita verso il CAT non passava `append` e `consumed` all'uscita vera. Corretto leggendo il codice, senza una prova automatica (serve un servizio CAT vero per costruirlo): da provare con una SDR via TCI.
 
 - SSTV, ricezione: nuovo pulsante «Dimensione reale» accanto a «Originale / Pulita» (richiesta di Luc, #93): mostra l'immagine alla grandezza vera (320x256 e simili) come i programmi SSTV classici, invece di ingrandirla fino a riempire la finestra; la scelta si ricorda. Il visore di base resta com'era.
