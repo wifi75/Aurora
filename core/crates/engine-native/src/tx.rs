@@ -273,6 +273,24 @@ struct Recent {
     slot_start_ms: u64,
 }
 
+/// I due messaggi differiscono solo per il numero del rapporto (`K1ABC IU3ABC R-15` e `K1ABC IU3ABC R-16`): stesse parole, ultimo token un
+/// rapporto (con o senza `R`) in entrambi.
+fn only_report_differs(old: &str, new: &str) -> bool {
+    let (a, b): (Vec<&str>, Vec<&str>) = (old.split_whitespace().collect(), new.split_whitespace().collect());
+    if a.len() < 3 || a.len() != b.len() || a[..a.len() - 1] != b[..b.len() - 1] {
+        return false;
+    }
+    let report = |t: &str| -> Option<bool> {
+        let (r, rest) = t.strip_prefix('R').map_or((false, t), |x| (true, x));
+        let digits = rest.strip_prefix(['+', '-'])?;
+        (digits.len() == 2 && digits.bytes().all(|c| c.is_ascii_digit())).then_some(r)
+    };
+    match (report(a[a.len() - 1]), report(b[b.len() - 1])) {
+        (Some(x), Some(y)) => x == y && a[a.len() - 1] != b[b.len() - 1],
+        _ => false,
+    }
+}
+
 pub struct TxDriver<P: TxPort + ?Sized> {
     seq: Sequencer,
     opts: Options,
@@ -1833,6 +1851,15 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
                 let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
+                // la decodifica tardiva ha cambiato solo il numero del rapporto (R-15 -> R-16): non si interrompe il messaggio gia' in onda, che
+                // verrebbe sostituito a meta' e il corrispondente debole non lo decodificherebbe (segnalazione di EA3CUU, #92); il nuovo parte al periodo dopo
+                if already
+                    && let Some(old) = self.on_air_tx.as_ref().filter(|(_, free, _, start)| !*free && *start == slot.start_ms(self.mode)).map(|t| t.0.clone())
+                    && only_report_differs(&old, &sent)
+                {
+                    log.push(format!("rapporto cambiato dopo l'avvio: resta in onda «{old}», «{sent}» parte al periodo dopo"));
+                    return log;
+                }
                 if already {
                     // ritrasmissione: il messaggio e' cambiato dopo l'avvio
                     match self.port.replace(request.clone()) {
@@ -2357,6 +2384,17 @@ mod tests {
         controls.set_switch("wait_call", true);
         d.after_slot(SLOT_MS + 30_000, &[("IU3ABC K1ABC -07".to_string(), -8, 1200)], BASE + 44.2, 14_074_000, "20m");
         assert!(!controls.switch_on("wait_call"), "la risposta diretta disarma Wait and Call in MSK144");
+    }
+
+    #[test]
+    fn only_a_changed_report_is_detected() {
+        assert!(only_report_differs("M0OXO EA3CUU R-15", "M0OXO EA3CUU R-16"));
+        assert!(only_report_differs("M0OXO EA3CUU -15", "M0OXO EA3CUU -16"));
+        assert!(!only_report_differs("M0OXO EA3CUU R-15", "M0OXO EA3CUU -15"), "R-15 e -15 sono messaggi diversi");
+        assert!(!only_report_differs("M0OXO EA3CUU JN12", "M0OXO EA3CUU R-15"), "Tx1 -> Tx3 cambia il tipo di messaggio");
+        assert!(!only_report_differs("M0OXO EA3CUU RR73", "M0OXO EA3CUU 73"));
+        assert!(!only_report_differs("M0OXO EA3CUU R-15", "K1ABC EA3CUU R-16"), "un altro corrispondente");
+        assert!(!only_report_differs("M0OXO EA3CUU R-15", "M0OXO EA3CUU R-15"), "uguale: niente da distinguere");
     }
 
     /// WSJT-X 3.3.0-beta8: con Tune in corso Abilita Tx non si accende e Wait non reagisce; spento il Tune tutto torna come prima.
