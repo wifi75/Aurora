@@ -175,6 +175,14 @@ impl AudioSink for NetOutput {
     fn has_failed(&self) -> bool {
         self.sink.has_failed()
     }
+    // la trasmissione a flusso dei modi testuali (CW, PSK, RTTY, Olivia...) accoda i campioni con `append` e legge quanti ne sono passati con
+    // `consumed`: senza questi due l'uscita TCI/Cat4OM rispondeva «questa uscita audio non accoda campioni» e la trasmissione falliva
+    fn append(&mut self, samples: Vec<f32>) -> Result<(), tx_native::TxError> {
+        self.sink.append(samples)
+    }
+    fn consumed(&self) -> Option<u64> {
+        self.sink.consumed()
+    }
 }
 
 impl Drop for NetOutput {
