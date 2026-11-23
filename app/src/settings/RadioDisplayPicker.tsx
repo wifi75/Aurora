@@ -1,4 +1,5 @@
 import { CompactRadioDisplay } from '../components/radio-display/CompactRadioDisplay';
+import { TxMetersBig } from '../components/radio-display/TxMetersBig';
 import { RadioDisplay } from '../components/radio-display/RadioDisplay';
 import { useT, type Key } from '../i18n';
 import { DEMO_MODEL, displaySize, isFaceStyle, isSquareStyle, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useNarrowScreen, useRadioDisplay } from '../lib/radioDisplay';
@@ -45,6 +46,10 @@ export function RadioDisplayPicker() {
           </label>
         ))}
       </div>
+      <h3 className="set-sub">{t('rd.big')}</h3>
+      <Help>{t('tip.rd.big')}</Help>
+      <TxMetersBig demo={DEMO_MODEL.meters ?? undefined} />
+      <TxMetersBig demo={{ power_w: 100, swr: 2.4, alc: 0.8 }} />
       <div className="set-checks">
         <Check label={t('rd.hide')} hint={t('tip.rd.hide')} checked={pref.hidden} onChange={(hidden) => set({ hidden })} />
         <Check label={t('rd.big')} hint={t('tip.rd.big')} checked={pref.bigMeters} onChange={(bigMeters) => set({ bigMeters })} />

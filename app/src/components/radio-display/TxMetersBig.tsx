@@ -1,4 +1,5 @@
 import { useT } from '../../i18n';
+import type { RadioMeters } from '../../api/schemas';
 import { useMeterBallistics } from '../../lib/meterBallistics';
 import { displayModel, useRadioDisplay } from '../../lib/radioDisplay';
 import { useStation } from '../../state/station';
@@ -37,12 +38,13 @@ function Tile({ name, value, fraction, bad }: { name: string; value: string; fra
  * Pannello fisso con potenza in uscita, ROS e ALC in grande, per leggerli da lontano mentre si regola l'audio. Compare solo se la radio
  * da almeno uno di questi strumenti (via CAT) ed e' stato scelto nelle Impostazioni.
  */
-export function TxMetersBig() {
+export function TxMetersBig({ demo }: { /** Dati di prova per l'anteprima nelle Impostazioni: il pannello si vede anche senza radio. */ demo?: RadioMeters } = {}) {
   const t = useT();
   const on = useRadioDisplay((s) => s.pref.bigMeters);
   const status = useStation((s) => s.status);
-  const meters = useMeterBallistics(displayModel(status).meters);
-  if (!on || !meters || meters.estimated) return null;
+  const live = useMeterBallistics(displayModel(status).meters);
+  const meters = demo ?? live;
+  if ((!on && !demo) || !meters || meters.estimated) return null;
   const { power_w: po, swr, alc } = meters;
   if (po === undefined && swr === undefined && alc === undefined) return null;
   return (
