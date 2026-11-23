@@ -585,6 +585,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// fermo), spegne Abilita Tx/AutoTx, azzera la stazione DX con i messaggi di sequenza e svuota i messaggi ricordati per il doppio clic.
     /// JTDX (`band_changed`, `clearDX`, `QsoHistory::init`) azzera il DX e la memoria della sequenza e ferma solo nel «QSY cieco»; qui si ferma sempre.
     pub fn band_changed(&mut self) -> Vec<String> {
+        self.wait_call_until = None;
         self.halt_tx();
         self.seq.band_changed();
         self.recent.clear();
@@ -666,6 +667,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.sync_rx_from_user();
         // una scelta del DX fatta dall'operatore disarma Wait and Pounce (`cancelAutomaticCQSelection` di WSJT-X 3.3, «preserve manual targets»):
         // senza, il primo CQ sentito sostituiva il DX scelto a mano
+        if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. } | TxCommand::SetDx { .. } | TxCommand::Halt) {
+            // il limite di Wait and Call vale per quel tentativo: uno STOP o un altro DX scelto a mano lo azzerano (altrimenti spegneva il QSO nuovo)
+            self.wait_call_until = None;
+        }
         if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. } | TxCommand::SetDx { .. }) && self.controls.switch_on("pounce") {
             self.controls.set_switch("pounce", false);
             log.push("Wait and Pounce disarmato: DX scelto dall'operatore".to_string());
@@ -1413,6 +1418,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 log.push("Wait and Call: il DX non ha risposto, trasmissione spenta".to_string());
             }
         }
+        if !self.controls.wait_features.load(Ordering::Relaxed) && self.controls.switch_on("pounce") {
+            // spegnere Wait disarma Wait and Pounce (WSJT-X 3.3.0-beta8: «disabling Wait disarms Pounce»); riaccendendo Wait non si riarma da solo
+            self.controls.set_switch("pounce", false);
+            log.push("Wait and Pounce disarmato: Wait features spento".to_string());
+        }
         if !self.controls.wait_features.load(Ordering::Relaxed) || self.opts.hound {
             return;
         }
@@ -1427,6 +1437,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             match self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true) {
                 Ok(()) => {
                     self.wait_call_until = None;
+                    // in MSK144 una risposta diretta del DX disarma Wait and Call (WSJT-X 3.3.0-beta8): non deve scattare al CQ dopo
+                    if self.mode == Mode::Msk144 {
+                        self.controls.set_switch("wait_call", false);
+                    }
                     log.push(format!("Wait and Reply: {his} ti chiama («{text}»), si riprende il QSO"));
                 }
                 Err(e) => log.push(format!("Wait and Reply non possibile: {e:?}")),
@@ -2287,6 +2301,48 @@ mod tests {
             assert_eq!(d.seq.is_enabled(), on, "{log:?}");
             assert_eq!(log.iter().any(|l| l.contains("Wait and Reply")), on, "{log:?}");
         }
+    }
+
+    /// WSJT-X 3.3.0-beta8: uno STOP o un altro DX scelto a mano azzerano il limite di Wait and Call (altrimenti spegneva il QSO nuovo);
+    /// spegnere Wait disarma Pounce; in MSK144 una risposta diretta del DX disarma Wait and Call.
+    #[test]
+    fn wait_limits_and_arming_follow_wsjtx_3_3_beta8() {
+        // STOP e DX nuovo: il limite del vecchio tentativo non spegne il QSO successivo
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
+        d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: None, generate: true }, BASE + 1.0);
+        controls.set_switch("wait_call", true);
+        let next = SLOT_MS + 30_000;
+        d.after_slot(next, &[("W9XYZ K1ABC RR73".to_string(), -8, 900)], BASE + 44.2, 14_074_000, "20m");
+        assert!(d.seq.is_enabled());
+        d.handle(TxCommand::Halt, BASE + 50.0);
+        d.remember(9, "CQ DL1XYZ JO62", -9, 1100, next + 60_000);
+        d.handle(TxCommand::Reply { decode_id: 9 }, BASE + 104.0);
+        assert!(d.seq.is_enabled());
+        d.after_slot(next + 120_000, &[], BASE + 44.2 + 120.0, 14_074_000, "20m");
+        assert!(d.seq.is_enabled(), "il limite del tentativo vecchio non vale per il QSO nuovo");
+        // Wait spento: Pounce si disarma e non si riarma da solo
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
+        controls.set_switch("pounce", true);
+        controls.wait_features.store(false, Ordering::Relaxed);
+        d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_074_000, "20m");
+        assert!(!controls.switch_on("pounce"));
+        controls.wait_features.store(true, Ordering::Relaxed);
+        d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.2, 14_074_000, "20m");
+        assert!(!controls.switch_on("pounce"), "riaccendendo Wait non si riarma");
+        // MSK144: risposta diretta del DX, Wait and Call si disarma
+        let port = Arc::new(FakePort::default());
+        let controls = Arc::new(NativeControls::default());
+        controls.set_mode(Mode::Msk144);
+        let mut d = TxDriver::new("IU3ABC", "IO91", Arc::clone(&port), Arc::clone(&controls)).expect("pilota");
+        controls.wait_features.store(true, Ordering::Relaxed);
+        d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        d.handle(TxCommand::Enable(false), BASE + 14.1);
+        controls.set_switch("wait_call", true);
+        d.after_slot(SLOT_MS + 30_000, &[("IU3ABC K1ABC -07".to_string(), -8, 1200)], BASE + 44.2, 14_074_000, "20m");
+        assert!(!controls.switch_on("wait_call"), "la risposta diretta disarma Wait and Call in MSK144");
     }
 
     /// Hound, sequenza reale V26JJ (risposte multiple di MSHV, non Fox/Hound): il doppio clic su una riga rivolta a un altro prepara il Tx1, la Tx

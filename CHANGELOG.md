@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Wait, limiti e armamento come WSJT-X 3.3.0-beta8: uno STOP, un altro DX scelto a mano o un cambio di banda azzerano il limite di 6,2 periodi di Wait and Call (prima il limite del tentativo vecchio spegneva il QSO nuovo); spegnere Wait features disarma Wait and Pounce e riaccendendolo non si riarma da solo; in MSK144 una risposta diretta del DX disarma Wait and Call.
+
 - Wait and Reply / Wait and Call, come WSJT-X 3.3.0-beta8: un `RR73` del DX diretto a me fa riprendere il QSO (prima si scartava insieme ai 73); Wait and Call scatta con ogni CQ del DX (`CQ EU`, `CQ TEST`, non solo `CQ` e `CQ DX`), non scatta piu' su un 73/RR73 diretto a me (il QSO e' chiuso: prima si richiamava il DX) e il confronto dei nominativi ignora `/P` e i prefissi. I campi del messaggio si leggono per parole, non piu' con `contains("73 ")`.
 
 - FT8, sottrazione piu' veloce: il passa-basso della sottrazione (coseno quadro) si calcola con somme scorrevoli invece delle due FFT da 180000 punti, come ha fatto WSJT-X 3.3.0-beta8 (stessa idea, scritta da capo: il peso e' una costante piu' un coseno). Provato contro la somma diretta e contro il vecchio filtro per FFT; il filtro del Modo SWL resta per FFT. Misura in release: 1,4 ms contro 2,4 ms per passata.
