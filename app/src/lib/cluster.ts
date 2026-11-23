@@ -1,4 +1,5 @@
 import type { ClusterSpot } from '../api/client';
+import { baseCall } from './wishlist';
 
 export interface SpotFilters {
   /** Bande scelte: `now` e' la banda su cui e' il motore; vuoto = tutte. */
@@ -10,6 +11,8 @@ export interface SpotFilters {
   spotters?: string[];
   /** Solo gli spot nuovi per la lista dei desideri (paese, griglia, banda). */
   newOnly?: boolean;
+  /** Mostra anche gli spot del proprio nominativo (nascosti di base: con tanti skimmer riempiono il pannello). */
+  showOwn?: boolean;
 }
 
 /** I modi digitali: quelli che il filtro «Digi» raccoglie tutti insieme. */
@@ -20,6 +23,21 @@ export function isDigitalMode(mode: string | null | undefined): boolean {
   if (!mode) return false;
   const m = mode.toUpperCase();
   return DIGITAL_MODES.has(m) || m.startsWith('PSK');
+}
+
+/** Chi manda lo spot e' uno skimmer automatico (Reverse Beacon Network): il suo nominativo finisce con `-#`. */
+export function isSkimmer(spotter: string): boolean {
+  return /-#$/.test(spotter.trim());
+}
+
+/**
+ * Toglie gli spot del proprio nominativo: quando si trasmette, decine di skimmer (Reverse Beacon Network, nominativi con «-#») decodificano il
+ * segnale e mandano ognuno il suo spot, e il pannello si riempirebbe di righe «DX = io». `/P`, `/M` e simili contano come lo stesso nominativo.
+ */
+export function withoutOwnSpots(spots: readonly ClusterSpot[], ownCall: string | null | undefined): ClusterSpot[] {
+  const own = baseCall((ownCall ?? '').trim().toUpperCase());
+  if (own === '') return [...spots];
+  return spots.filter((s) => baseCall(s.dx_call.trim().toUpperCase()) !== own);
 }
 
 /** Gli spot che passano i filtri della vista (l'ordine non cambia). */

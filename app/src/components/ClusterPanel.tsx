@@ -16,7 +16,7 @@ import { MultiPick } from './MultiPick';
 import { SpotDialog } from './digi/SpotDialog';
 import { ClusterOptionsDialog, ClusterOptionsFields } from './digi/ClusterOptionsDialog';
 import { Icon } from './Icon';
-import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
+import { filterSpots, spotAge, toList, withoutOwnSpots, isSkimmer, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { CallsignTip, prefetchCallsigns, TextTip } from './CallsignTip';
@@ -40,13 +40,13 @@ const COL_TIP: Partial<Record<ClusterColumn, Key>> = { de: 'tip.ui.clusterBy', c
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false, showOwn: false };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown; showOwn?: unknown };
     // le versioni precedenti salvavano una sola banda e un solo modo
-    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true };
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true, showOwn: p.showOwn === true };
   } catch {
     return defaults;
   }
@@ -105,7 +105,7 @@ export interface ClusterContest {
 
 /** Quanti filtri sono accesi (la ricerca per nominativo si vede da se': non conta). */
 export function activeFilters(f: SpotFilters): number {
-  return (f.bands.length > 0 ? 1 : 0) + (f.modes.length > 0 ? 1 : 0) + ((f.spotters ?? []).length > 0 ? 1 : 0) + (f.newOnly === true ? 1 : 0);
+  return (f.bands.length > 0 ? 1 : 0) + (f.modes.length > 0 ? 1 : 0) + ((f.spotters ?? []).length > 0 ? 1 : 0) + (f.newOnly === true ? 1 : 0) + (f.showOwn === true ? 1 : 0);
 }
 
 /** I quattro filtri del cluster (banda, modo, chi manda lo spot, solo nuovi): nella barra o, nella vista contest, nel pannello dell'ingranaggio. */
@@ -137,6 +137,9 @@ function FilterPickers({ filters, change }: { filters: SpotFilters; change(next:
       />
       <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
         {t('cluster.filter.newOnly')}
+      </button>
+      <button type="button" className={`glass chip${filters.showOwn ? ' glass--on' : ''}`} aria-pressed={filters.showOwn === true} title={t('tip.cluster.showOwn')} onClick={() => change({ ...filters, showOwn: !filters.showOwn })}>
+        {t('cluster.filter.showOwn')}
       </button>
     </>
   );
@@ -269,7 +272,7 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true, showOwn: next.showOwn === true }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }
@@ -315,7 +318,7 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
 
   const linked = servers.filter((s) => s.state === 'connected').length;
   // «solo nuovi»: gli spot che la lista dei desideri considera nuovi (paese, griglia, banda...)
-  const shown = filterSpots(spots, filters, myBand, status?.own_continent).filter((s) => !filters.newOnly || wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null)
+  const shown = filterSpots(filters.showOwn === true ? spots : withoutOwnSpots(spots, callsign), filters, myBand, status?.own_continent).filter((s) => !filters.newOnly || wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null)
     // la rotella: gli spot piu' vecchi dei minuti scelti non si mostrano
     .filter((s) => !options || options.expireMin === 0 || spotAge(s) <= options.expireMin * 60);
 
@@ -456,7 +459,7 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
     switch (c) {
       case 'de':
         return (
-          <td key={c} className="data cluster-de cl-c cl-c--de" title={`${spotAge(s)} s`} onContextMenu={(e) => openCallMenu(e, s.spotter)}>
+          <td key={c} className="data cluster-de cl-c cl-c--de" title={isSkimmer(s.spotter) ? t('tip.cluster.skimmer', { age: spotAge(s) }) : `${spotAge(s)} s`} onContextMenu={(e) => openCallMenu(e, s.spotter)}>
             <CallsignTip call={s.spotter}>{s.spotter}</CallsignTip>
           </td>
         );

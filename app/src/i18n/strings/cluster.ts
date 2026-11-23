@@ -85,6 +85,23 @@ export const clusterStrings = {
   'cluster.filter.spotterMine': ['Solo il mio continente', 'Only my continent', 'Nur mein Kontinent', 'Seulement mon continent', 'Solo mi continente', 'Só o meu continente'],
   'cluster.filter.modeAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
   'cluster.filter.newOnly': ['Solo nuovi', 'New only', 'Nur neue', 'Nouveaux seulement', 'Solo nuevos', 'Só novos'],
+  'tip.cluster.skimmer': [
+    'Skimmer automatico (Reverse Beacon Network, nominativo con «-#»): un ricevitore che decodifica da solo CW, RTTY e FT8 e manda lo spot al cluster, senza che nessuno lo digiti. Spot di {age} s fa.',
+    'Automatic skimmer (Reverse Beacon Network, callsign ending in “-#”): a receiver that decodes CW, RTTY and FT8 by itself and sends the spot to the cluster, with nobody typing it. Spotted {age} s ago.',
+    'Automatischer Skimmer (Reverse Beacon Network, Rufzeichen mit „-#“): ein Empfänger, der CW, RTTY und FT8 selbst dekodiert und den Spot an den Cluster schickt, ohne dass jemand ihn tippt. Spot von vor {age} s.',
+    'Skimmer automatique (Reverse Beacon Network, indicatif se terminant par « -# ») : un récepteur qui décode seul le CW, le RTTY et le FT8 et envoie le spot au cluster, sans que personne ne le saisisse. Spot d’il y a {age} s.',
+    'Skimmer automático (Reverse Beacon Network, indicativo que termina en «-#»): un receptor que decodifica solo CW, RTTY y FT8 y envía el spot al cluster, sin que nadie lo escriba. Spot de hace {age} s.',
+    'Skimmer automático (Reverse Beacon Network, indicativo terminado em «-#»): um recetor que descodifica sozinho CW, RTTY e FT8 e envia o spot ao cluster, sem que ninguém o escreva. Spot de há {age} s.',
+  ],
+  'cluster.filter.showOwn': ['I miei spot', 'My spots', 'Meine Spots', 'Mes spots', 'Mis spots', 'Os meus spots'],
+  'tip.cluster.showOwn': [
+    'Di base gli spot del tuo nominativo sono nascosti: quando trasmetti, decine di skimmer (Reverse Beacon Network) ti decodificano e mandano ognuno il suo spot, e il pannello si riempirebbe di righe con te come DX. Accendi per vederli: sono la prova di chi ti ascolta.',
+    'By default the spots of your own callsign are hidden: when you transmit, dozens of skimmers (Reverse Beacon Network) decode you and each sends its own spot, and the panel would fill up with rows that have you as the DX. Switch on to see them: they show who is hearing you.',
+    'Standardmäßig sind die Spots deines eigenen Rufzeichens ausgeblendet: Wenn du sendest, dekodieren dich Dutzende Skimmer (Reverse Beacon Network) und jeder schickt seinen eigenen Spot, und das Feld füllte sich mit Zeilen, in denen du das DX bist. Einschalten, um sie zu sehen: Sie zeigen, wer dich hört.',
+    'Par défaut les spots de ton propre indicatif sont masqués : quand tu émets, des dizaines de skimmers (Reverse Beacon Network) te décodent et chacun envoie son spot, et le panneau se remplirait de lignes où tu es le DX. Active pour les voir : ils montrent qui t’entend.',
+    'De base los spots de tu propio indicativo están ocultos: cuando transmites, decenas de skimmers (Reverse Beacon Network) te decodifican y cada uno manda su spot, y el panel se llenaría de filas contigo como DX. Actívalo para verlos: muestran quién te escucha.',
+    'De base os spots do teu próprio indicativo estão escondidos: quando transmites, dezenas de skimmers (Reverse Beacon Network) descodificam-te e cada um envia o seu spot, e o painel encher-se-ia de linhas contigo como DX. Liga para os ver: mostram quem te ouve.',
+  ],
   'tip.cluster.spot': ['Invia uno spot al DX Cluster (DXSummit) con il DX in corso e la frequenza della radio.', 'Send a spot to the DX Cluster (DXSummit) with the current DX and the radio frequency.', 'Spot an den DX-Cluster (DXSummit) senden, mit dem aktuellen DX und der Funkgerätefrequenz.', 'Envoyer un spot au DX Cluster (DXSummit) avec le DX en cours et la fréquence de la radio.', 'Envía un spot al DX Cluster (DXSummit) con el DX en curso y la frecuencia de la radio.', 'Envia um spot ao DX Cluster (DXSummit) com o DX em curso e a frequência do rádio.'],
   'tip.cluster.newOnly': ['Mostra solo gli spot nuovi per la tua lista dei desideri (paese, griglia, banda).', 'Show only the spots that are new for your wish list (country, grid, band).', 'Nur Spots anzeigen, die für deine Wunschliste neu sind (Land, Feld, Band).', 'Afficher seulement les spots nouveaux pour ta liste de souhaits (pays, locator, bande).', 'Muestra solo los spots nuevos para tu lista de deseos (país, locator, banda).', 'Mostra só os spots novos para a tua lista de desejos (país, locator, banda).'],
   'cluster.filter.search': [

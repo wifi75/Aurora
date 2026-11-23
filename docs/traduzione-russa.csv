@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -1829,6 +1829,9 @@ cluster.filter.spotterAll,All,Все
 cluster.filter.spotterMine,Only my continent,Только мой континент
 cluster.filter.modeAll,All,Все
 cluster.filter.newOnly,New only,Только новые
+tip.cluster.skimmer,"Automatic skimmer (Reverse Beacon Network, callsign ending in “-#”): a receiver that decodes CW, RTTY and FT8 by itself and sends the spot to the cluster, with nobody typing it. Spotted {age} s ago.","Автоматический скиммер (Reverse Beacon Network, позывной оканчивается на «-#»): приёмник, который сам декодирует CW, RTTY и FT8 и отправляет спот в кластер, без ручного ввода. Спот {age} с назад."
+cluster.filter.showOwn,My spots,Мои споты
+tip.cluster.showOwn,"By default the spots of your own callsign are hidden: when you transmit, dozens of skimmers (Reverse Beacon Network) decode you and each sends its own spot, and the panel would fill up with rows that have you as the DX. Switch on to see them: they show who is hearing you.","По умолчанию споты вашего собственного позывного скрыты: когда вы передаёте, десятки скиммеров (Reverse Beacon Network) вас декодируют и каждый шлёт свой спот, и панель заполнилась бы строками, где DX — это вы. Включите, чтобы их увидеть: они показывают, кто вас слышит."
 tip.cluster.spot,Send a spot to the DX Cluster (DXSummit) with the current DX and the radio frequency.,Отправить спот в DX-кластер (DXSummit) с текущей DX-станцией и частотой радио.
 tip.cluster.newOnly,"Show only the spots that are new for your wish list (country, grid, band).","Показывать только споты, новые для вашего списка желаемого (страна, локатор, диапазон)."
 cluster.filter.search,Search callsign,Поиск позывного
@@ -4880,7 +4883,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
+sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°

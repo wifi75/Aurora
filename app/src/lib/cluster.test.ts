@@ -1,9 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import type { ClusterSpot } from '../api/client';
-import { filterSpots, spotAge, spotsOnWaterfall, toList } from './cluster';
+import { filterSpots, spotAge, spotsOnWaterfall, toList, withoutOwnSpots, isSkimmer } from './cluster';
 
 const spot = (id: number, call: string, band: string | null, mode: string | null): ClusterSpot => ({
   id, received_ms: 1_000_000, server: 'Prova', spotter: 'W3LPL', freq_khz: 14074, dx_call: call, comment: '', time_utc: '1234', grid: null, band, mode, country: null, continent: null,
+});
+
+describe('isSkimmer', () => {
+  it('recognises the Reverse Beacon Network skimmers by the -# ending', () => {
+    expect(isSkimmer('K9IMM-#')).toBe(true);
+    expect(isSkimmer('DK9IP-2-#')).toBe(true);
+    expect(isSkimmer('K1ABC')).toBe(false);
+    expect(isSkimmer('K1ABC-3')).toBe(false);
+  });
+});
+
+describe('withoutOwnSpots', () => {
+  const list = [spot(4, 'IU3ABC', '40m', 'FT8'), spot(3, 'iu3abc/p', '40m', 'FT8'), spot(2, 'K1ABC', '40m', 'FT8'), spot(1, 'HK4FZ', '15m', 'FT8')];
+
+  it('drops the spots of my own callsign, with or without a suffix and whatever the case', () => {
+    expect(withoutOwnSpots(list, 'IU3ABC').map((s) => s.id)).toEqual([2, 1]);
+    expect(withoutOwnSpots(list, ' iu3abc ').map((s) => s.id)).toEqual([2, 1]);
+  });
+
+  it('keeps everything without a callsign', () => {
+    expect(withoutOwnSpots(list, '')).toHaveLength(4);
+    expect(withoutOwnSpots(list, null)).toHaveLength(4);
+  });
 });
 
 describe('filterSpots', () => {
