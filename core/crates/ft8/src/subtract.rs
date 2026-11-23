@@ -187,7 +187,7 @@ fn lowpass_cos2(cin: &[Complex]) -> Vec<Complex> {
     let mut sa = Complex64::new(0.0, 0.0);
     let mut sb = Complex64::new(0.0, 0.0);
     let mut sc = Complex64::new(0.0, 0.0);
-    let mut add = |p: usize, sa: &mut Complex64, sb: &mut Complex64, sc: &mut Complex64, sign: f64| {
+    let add = |p: usize, sa: &mut Complex64, sb: &mut Complex64, sc: &mut Complex64, sign: f64| {
         let x = Complex64::new(f64::from(cin[p].re) * sign, f64::from(cin[p].im) * sign);
         let e = rot[p % NFILT1];
         *sa += x;

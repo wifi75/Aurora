@@ -139,21 +139,50 @@ pub fn verdict_of(body: &str) -> Option<bool> {
     }
 }
 
-/// Wait and Call: un messaggio del DX che dice che e' libero (`planWaitReplyCall` di `DecodedMessageReaction.cpp`: `CQ HIS`, `CQ DX HIS`, `HIS RR73`,
-/// `HIS RRR`, `HIS 73`).
-pub fn frees_the_dx(text: &str, his_call: &str) -> bool {
-    let text = text.replace(['<', '>'], "");
-    let padded = format!(" {text} ");
-    [format!(" CQ {his_call} "), format!(" CQ DX {his_call} "), format!(" {his_call} RR73 "), format!(" {his_call} RRR "), format!(" {his_call} 73 ")]
-        .iter()
-        .any(|p| padded.contains(p.as_str()))
+/// I campi di un messaggio che servono a Wait (come `parseDecodedMessage` di WSJT-X 3.3): destinatario, mittente, primo scambio e se e' un CQ.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct WaitFields {
+    destination: String,
+    sender: String,
+    exchange: String,
+    cq: bool,
 }
 
-/// Wait and Reply: il DX mi scrive (`MYCALL HISCALL ...`) e non e' un saluto finale (`!text.contains("73 ")` di `planWaitReplyCall`).
+fn wait_fields(text: &str) -> Option<WaitFields> {
+    let text = text.replace(['<', '>'], "").to_uppercase();
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let first = *words.first()?;
+    if first.starts_with("CQ") {
+        // «CQ HIS grid», «CQ DX HIS grid», «CQ EU HIS»: il mittente e' la prima parola con una cifra (il nominativo; i qualificatori non l'hanno)
+        let sender = words.iter().skip(1).find(|w| w.chars().any(|c| c.is_ascii_digit()))?;
+        return Some(WaitFields { destination: "CQ".into(), sender: (*sender).into(), exchange: String::new(), cq: true });
+    }
+    let sender = words.get(1)?;
+    Some(WaitFields { destination: first.into(), sender: (*sender).into(), exchange: words.get(2).map_or_else(String::new, |w| (*w).into()), cq: false })
+}
+
+/// Il nominativo senza prefisso o suffisso di portatile (`K1ABC/P`, `DL/K1ABC`): la parte piu' lunga tra le barre.
+fn base_call(call: &str) -> &str {
+    call.split('/').max_by_key(|part| part.len()).unwrap_or(call)
+}
+
+/// Lo stesso nominativo base (`sameStation` di WSJT-X: `/P`, `/QRP` e i prefissi di Paese non contano).
+fn same_station(a: &str, b: &str) -> bool {
+    !a.is_empty() && !b.is_empty() && base_call(&a.to_uppercase()) == base_call(&b.to_uppercase())
+}
+
+/// Wait and Call: un messaggio del DX che dice che e' libero (`planWaitReplyCall` di `DecodedMessageReaction.cpp`, WSJT-X 3.3.0-beta8): viene dal DX,
+/// non e' diretto a me, ed e' un CQ di qualunque forma (`CQ HIS`, `CQ DX HIS`, `CQ EU HIS`...) o un `RR73`, `RRR`, `73`. Il nominativo conta senza `/P` e simili.
+pub fn frees_the_dx(text: &str, my_call: &str, his_call: &str) -> bool {
+    let Some(f) = wait_fields(text) else { return false };
+    same_station(&f.sender, his_call) && (f.cq || !same_station(&f.destination, my_call)) && (f.cq || matches!(f.exchange.as_str(), "RR73" | "RRR" | "73"))
+}
+
+/// Wait and Reply: il DX mi scrive (`MYCALL HISCALL ...`) e non e' un saluto finale: `73` no, ma `RR73` si' (WSJT-X 3.3.0-beta8; prima, con il confronto
+/// `contains("73 ")`, anche `RR73` e un rapporto che finiva in 73 venivano scartati).
 pub fn dx_calls_me(text: &str, my_call: &str, his_call: &str) -> bool {
-    let text = text.replace(['<', '>'], "");
-    let padded = format!(" {text} ");
-    padded.contains(&format!(" {my_call} {his_call} ")) && !format!("{text} ").contains("73 ")
+    let Some(f) = wait_fields(text) else { return false };
+    !f.cq && same_station(&f.sender, his_call) && same_station(&f.destination, my_call) && f.exchange != "73"
 }
 
 /// Criterio di Wait and Pounce («CQ:» di WSJT-X, `AutoRespondPolicy.hpp`): a quale CQ rispondere da soli.
@@ -457,17 +486,26 @@ mod tests {
 
     #[test]
     fn wait_triggers_match_the_wsjtx_plan() {
-        assert!(frees_the_dx("CQ K1ABC FN42", "K1ABC"));
-        assert!(frees_the_dx("CQ DX K1ABC FN42", "K1ABC"));
-        assert!(frees_the_dx("W9XYZ K1ABC RR73", "K1ABC"));
-        assert!(frees_the_dx("W9XYZ <K1ABC> 73", "K1ABC"));
-        assert!(!frees_the_dx("W9XYZ K1ABC -07", "K1ABC"));
-        assert!(!frees_the_dx("K1ABC W9XYZ RR73", "K1ABC"));
-        assert!(dx_calls_me("IU3ABC K1ABC -07", "IU3ABC", "K1ABC"));
-        assert!(!dx_calls_me("IU3ABC K1ABC RR73", "IU3ABC", "K1ABC"), "RR73 contiene «73 »: WSJT-X non riprende");
-        assert!(dx_calls_me("IU3ABC K1ABC R-05", "IU3ABC", "K1ABC"));
-        assert!(!dx_calls_me("IU3ABC K1ABC 73", "IU3ABC", "K1ABC"));
-        assert!(!dx_calls_me("W9XYZ K1ABC -07", "IU3ABC", "K1ABC"));
+        let me = "IU3ABC";
+        assert!(frees_the_dx("CQ K1ABC FN42", me, "K1ABC"));
+        assert!(frees_the_dx("CQ DX K1ABC FN42", me, "K1ABC"));
+        assert!(frees_the_dx("CQ EU K1ABC JN45", me, "K1ABC"), "ogni forma di CQ libera il DX");
+        assert!(frees_the_dx("CQ TEST K1ABC FN42", me, "K1ABC"));
+        assert!(frees_the_dx("W9XYZ K1ABC RR73", me, "K1ABC"));
+        assert!(frees_the_dx("W9XYZ <K1ABC> 73", me, "K1ABC"));
+        assert!(frees_the_dx("W9XYZ K1ABC/P RRR", me, "K1ABC"), "il /P non conta");
+        assert!(!frees_the_dx("W9XYZ K1ABC -07", me, "K1ABC"));
+        assert!(!frees_the_dx("K1ABC W9XYZ RR73", me, "K1ABC"));
+        assert!(!frees_the_dx("IU3ABC K1ABC 73", me, "K1ABC"), "un 73 diretto a me chiude il QSO: non si richiama");
+        assert!(!frees_the_dx("IU3ABC K1ABC RR73", me, "K1ABC"));
+        assert!(dx_calls_me("IU3ABC K1ABC -07", me, "K1ABC"));
+        assert!(dx_calls_me("IU3ABC K1ABC RR73", me, "K1ABC"), "RR73 non e' un 73: WSJT-X 3.3.0-beta8 riprende");
+        assert!(dx_calls_me("IU3ABC K1ABC/P -07", me, "K1ABC"));
+        assert!(dx_calls_me("IU3ABC K1ABC R-05", me, "K1ABC"));
+        assert!(dx_calls_me("IU3ABC K1ABC FN73", me, "K1ABC"), "una griglia che finisce in 73 non e' un saluto");
+        assert!(!dx_calls_me("IU3ABC K1ABC 73", me, "K1ABC"));
+        assert!(!dx_calls_me("W9XYZ K1ABC -07", me, "K1ABC"));
+        assert!(!dx_calls_me("CQ K1ABC FN42", me, "K1ABC"));
     }
 
     #[test]

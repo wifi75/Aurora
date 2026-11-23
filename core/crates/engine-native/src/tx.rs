@@ -1436,7 +1436,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if !self.controls.switch_on("wait_call") || !self.opts.auto_seq {
             return;
         }
-        let Some((text, snr, freq)) = decoded.iter().find(|(t, _, _)| crate::features::frees_the_dx(t, &his)).cloned() else { return };
+        let Some((text, snr, freq)) = decoded.iter().find(|(t, _, _)| crate::features::frees_the_dx(t, &my, &his)).cloned() else { return };
         // il pulsante si disarma (`SetNoWaitAndCall`): un nuovo Wait and Call va armato a mano
         self.controls.set_switch("wait_call", false);
         let result = if text.starts_with("CQ ") {
