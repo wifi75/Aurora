@@ -59,10 +59,20 @@ describe('ExportPage', () => {
     expect(screen.queryByRole('button', { name: 'Salva ADIF…' })).not.toBeInTheDocument();
   });
 
-  it('starts with everything selected and saves all of it with the Windows window', async () => {
+  it('starts with nothing selected, so deleting by mistake is not possible', async () => {
+    vi.mocked(getLogQsos).mockResolvedValue(LOG);
+    show();
+    expect(await screen.findByText('0 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Elimina selezionati/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Salva ADIF…' })).toBeDisabled();
+  });
+
+  it('saves all of the log with the Windows window after choosing everything', async () => {
     vi.mocked(getLogQsos).mockResolvedValue(LOG);
     vi.mocked(saveLogAdif).mockResolvedValue({ ok: true, cancelled: false, path: 'C:\\log\\aurora.adi', count: 3 });
     show();
+    await screen.findByText('K1ABC');
+    await userEvent.click(screen.getByRole('button', { name: 'Seleziona tutti' }));
     expect(await screen.findByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Salva ADIF…' }));
     expect(vi.mocked(saveLogAdif)).toHaveBeenCalledWith({ all: true }, 'adif');
@@ -74,7 +84,6 @@ describe('ExportPage', () => {
     vi.mocked(saveLogAdif).mockResolvedValue({ ok: true, cancelled: true });
     show();
     await screen.findByText('K1ABC');
-    await userEvent.click(screen.getByRole('button', { name: 'Nessuno' }));
     expect(screen.getByRole('button', { name: 'Salva ADIF…' })).toBeDisabled();
     await userEvent.click(screen.getByLabelText('Seleziona il QSO con DL2XYZ'));
     await userEvent.click(screen.getByText('JA1AAA'));
@@ -101,7 +110,7 @@ describe('ExportPage', () => {
     await screen.findByText('K1ABC');
     await userEvent.click(screen.getByLabelText('Seleziona il QSO con K1ABC'));
     const link = screen.getByRole('link', { name: 'Scarica ADIF' });
-    expect(link.getAttribute('href')).toBe('/api/v1/log/export.adi?ids=1-2');
+    expect(link.getAttribute('href')).toBe('/api/v1/log/export.adi?ids=3');
     expect(link.getAttribute('download')).toMatch(/^aurora_log_\d{8}\.adi$/);
   });
 
@@ -114,8 +123,8 @@ describe('ExportPage', () => {
     expect(within(first).getByLabelText('Nominativo')).toHaveValue('DL2XYZ');
     await userEvent.click(within(first).getByRole('button', { name: 'Annulla' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    // il doppio clic non cambia la selezione (due clic: tolta e rimessa)
-    expect(screen.getByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
+    // il doppio clic non cambia la selezione (due clic: messa e tolta)
+    expect(screen.getByText('0 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Modifica il QSO con K1ABC' }));
     const dialog = screen.getByRole('dialog');
@@ -128,7 +137,7 @@ describe('ExportPage', () => {
     expect(await screen.findByText('K1ABD')).toBeInTheDocument();
     expect(screen.queryByText('K1ABC')).not.toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
+    expect(screen.getByText('0 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
   });
 
   it('deletes a QSO from the window after the confirmation and forgets it in the selection', async () => {
@@ -140,7 +149,7 @@ describe('ExportPage', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Elimina' }));
     await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(vi.mocked(deleteLogQso)).toHaveBeenCalledWith(3));
-    expect(await screen.findByText('2 selezionati su 2 mostrati (2 nel log)')).toBeInTheDocument();
+    expect(await screen.findByText('0 selezionati su 2 mostrati (2 nel log)')).toBeInTheDocument();
     expect(screen.queryByText('K1ABC')).not.toBeInTheDocument();
   });
 });
@@ -155,6 +164,7 @@ describe('ExportPage, QSO che arrivano e QSO cancellati', () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByText('K1ABC')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Seleziona tutti' }));
     vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 4, qsos: [q(4, 'IU3ABC', '2026-11-22'), ...LOG.qsos] });
     await client.invalidateQueries({ queryKey: ['log-qsos'] });
     const row = (await screen.findByText('IU3ABC')).closest('tr');
@@ -171,6 +181,7 @@ describe('ExportPage, QSO che arrivano e QSO cancellati', () => {
       </QueryClientProvider>,
     );
     const first = (await screen.findByText('K1ABC')).closest('tr') as HTMLElement;
+    await userEvent.click(screen.getByRole('button', { name: 'Seleziona tutti' }));
     await userEvent.click(first);
     expect(first).not.toHaveClass('export-row--on');
     vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 4, qsos: [q(4, 'IU3ABC', '2026-11-22'), ...LOG.qsos] });
@@ -182,7 +193,7 @@ describe('ExportPage, QSO che arrivano e QSO cancellati', () => {
 });
 
 describe('ExportPage, dopo una cancellazione', () => {
-  it('the QSOs left in the log are all selected again, not dimmed', async () => {
+  it('after a deletion nothing is selected, not even the QSOs left', async () => {
     vi.mocked(getLogQsos).mockResolvedValue(LOG);
     vi.mocked(deleteLogQsos).mockResolvedValue({ deleted: 2 });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -192,6 +203,7 @@ describe('ExportPage, dopo una cancellazione', () => {
       </QueryClientProvider>,
     );
     await screen.findByText('K1ABC');
+    await userEvent.click(screen.getByRole('button', { name: 'Seleziona tutti' }));
     // si tolgono dalla scelta K1ABC: restano scelti due, che si cancellano
     await userEvent.click((screen.getByText('K1ABC').closest('tr')) as HTMLElement);
     vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 1, qsos: LOG.qsos.slice(0, 1) });
@@ -199,6 +211,6 @@ describe('ExportPage, dopo una cancellazione', () => {
     await userEvent.click(await screen.findByRole('button', { name: /^OK$/ }));
     await waitFor(() => expect(deleteLogQsos).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText('DL2XYZ')).not.toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText('K1ABC').closest('tr')).toHaveClass('export-row--on'));
+    await waitFor(() => expect(screen.getByText('K1ABC').closest('tr')).not.toHaveClass('export-row--on'));
   });
 });

@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Pagina del log: all'apertura non e' selezionato nessun QSO (e nemmeno dopo una cancellazione), cosi' non si puo' cancellare tutto per sbaglio; per esportare l'intero log si usa «Seleziona tutti». Richiesta di ON7KEC (#88).
+
 ## 0.11.334 - 2026-11-22
 
 - Olivia e Contestia hanno le frequenze nel selettore delle bande: dal piano IARU Regione 1 (PDF dell'ARI del 2020), che non ha frequenze di chiamata per loro, una frequenza per banda dentro i tratti dei digimodi a banda stretta (500 Hz al massimo), cosi' il segnale con 500 Hz di banda resta nel tratto. Entrando nel modo da un'altra pagina la radio va sulla loro banda (prima restava dov'era). Con la banda di 1000 Hz il segnale esce da quei tratti. Provato con una prova automatica sui limiti dei tratti.
