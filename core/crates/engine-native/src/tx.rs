@@ -820,6 +820,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     log.extend(self.start_now(now_s));
                 }
             }
+            // con Tune acceso Abilita Tx non si accende (manuale o automatico): prima si spegne il Tune
+            TxCommand::Enable(true) if self.controls.is_tuning() => {
+                log.push("Tune in corso: Abilita Tx non si accende finche' il Tune non si spegne".to_string());
+            }
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
                 // l'operatore accende Abilita Tx con il messaggio 6 (CQ) scelto: il CQ lo ha chiesto lui, anche con AutoTX spento
@@ -1426,6 +1430,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if !self.controls.wait_features.load(Ordering::Relaxed) || self.opts.hound {
             return;
         }
+        // con Tune in corso Wait non accetta messaggi (WSJT-X 3.3.0-beta8: «tuning does not accept Wait messages»)
+        if self.controls.is_tuning() {
+            return;
+        }
         if self.wait_and_pounce(slot, decoded, now_s, log) {
             return;
         }
@@ -1754,6 +1762,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mut log = Vec::new();
         // WSPR e FST4W: il radiofaro parte solo a inizio periodo (`begin_slot`)
         if is_beacon(self.mode) {
+            return log;
+        }
+        // con Tune in corso non parte nessuna trasmissione (WSJT-X 3.3.0-beta8: «reject starts while Tune shutdown is pending»); prima `end_tune`
+        // rimetteva il livello normale con la portante ancora accesa e la trasmissione non partiva
+        if self.controls.is_tuning() {
+            log.push("Tune in corso: la trasmissione parte dopo che si spegne".to_string());
             return log;
         }
         let already = self.last_planned == Some(slot);
@@ -2343,6 +2357,29 @@ mod tests {
         controls.set_switch("wait_call", true);
         d.after_slot(SLOT_MS + 30_000, &[("IU3ABC K1ABC -07".to_string(), -8, 1200)], BASE + 44.2, 14_074_000, "20m");
         assert!(!controls.switch_on("wait_call"), "la risposta diretta disarma Wait and Call in MSK144");
+    }
+
+    /// WSJT-X 3.3.0-beta8: con Tune in corso Abilita Tx non si accende e Wait non reagisce; spento il Tune tutto torna come prima.
+    #[test]
+    fn nothing_starts_while_tune_is_on() {
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
+        d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        d.handle(TxCommand::Enable(false), BASE + 14.1);
+        d.handle(TxCommand::Tune(true), BASE + 20.0);
+        assert!(controls.is_tuning());
+        // Abilita Tx non si accende
+        let log = d.handle(TxCommand::Enable(true), BASE + 21.0);
+        assert!(!d.seq.is_enabled(), "{log:?}");
+        // Wait and Reply non riprende il QSO mentre la portante e' accesa
+        let (_, log) = d.after_slot(SLOT_MS + 30_000, &[("IU3ABC K1ABC -07".to_string(), -8, 1200)], BASE + 44.2, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
+        // spento il Tune, Abilita Tx si accende
+        d.handle(TxCommand::Tune(false), BASE + 50.0);
+        assert!(!controls.is_tuning());
+        d.handle(TxCommand::Enable(true), BASE + 51.0);
+        assert!(d.seq.is_enabled());
     }
 
     /// Hound, sequenza reale V26JJ (risposte multiple di MSHV, non Fox/Hound): il doppio clic su una riga rivolta a un altro prepara il Tx1, la Tx

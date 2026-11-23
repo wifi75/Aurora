@@ -780,6 +780,11 @@ impl NativeControls {
         self.notify_attenuation(tenths);
     }
 
+    /// Il Tune e' in corso (la portante e' accesa): niente avvii di trasmissione finche' non si spegne.
+    pub fn is_tuning(&self) -> bool {
+        self.tuning.load(Ordering::Relaxed)
+    }
+
     /// Il Tune parte: con il livello separato acceso si mette quello ricordato per la banda (la prima volta resta quello in uso e lo si ricorda).
     pub fn begin_tune(&self) {
         if self.tuning.swap(true, Ordering::Relaxed) || !self.tune_memory.load(Ordering::Relaxed) {
