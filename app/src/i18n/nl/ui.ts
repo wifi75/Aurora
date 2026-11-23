@@ -3787,6 +3787,7 @@ export const NL_UI: Record<string, string> = {
   "rep.ask": "Vraag me het rapport te sturen na een crash",
   "rep.auto": "Foutrapporten automatisch sturen (anoniem)",
   "rep.autoHint": "Bij elke ernstige fout wordt een kort rapport gestuurd: versie, systeem, antivirus, engine, radiomodel, PTT, CAT, geluidskaart, gebied en opgeschoond bericht. Dezelfde fout hoogstens één keer per uur, hoogstens {max} per dag.",
+  "rep.beat": "De minimale hartslag kan niet worden uitgezet: ook zonder statistieken gaat er, zolang Aurora open is, ongeveer elke 40 minuten een anoniem signaal uit met alleen de willekeurige installatiecode, de Aurora-versie en het gebruiksniveau. Geen roepletters, geen computergegevens. Het dient om de levende installaties te tellen.",
   "rep.close": "Sluiten",
   "rep.countries": "{n} landen",
   "rep.crashSend": "Rapport sturen",

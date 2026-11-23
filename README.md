@@ -168,7 +168,7 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 
 - Committers and reviewers: [Tiziano Cassone (wifi75)](https://github.com/wifi75)
 - Approvers: [Tiziano Cassone (wifi75)](https://github.com/wifi75)
-- Privacy policy: [docs/privacy.md](docs/privacy.md) (in Italian). Aurora sends anonymous error reports and an activity signal (about every 40 minutes while Aurora is open, with a use level) to its own service on Cloudflare; both can be turned off in Settings › Access and support. Nothing else is sent unless the user enables a service (log upload, cluster, spots).
+- Privacy policy: [docs/privacy.md](docs/privacy.md) (in Italian). Aurora sends anonymous error reports and an activity signal (about every 40 minutes while Aurora is open, with a use level) to its own service on Cloudflare; the error reports and the full statistics can be turned off in Settings › Access and support, while a minimal anonymous heartbeat (random installation code, version and use level, no callsign) is always sent to count the live installations. Nothing else is sent unless the user enables a service (log upload, cluster, spots).
 
 ## License
 

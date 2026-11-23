@@ -332,12 +332,10 @@ pub fn nota_uso(livello: u8) {
     USO.fetch_max(livello.min(2), Ordering::Relaxed);
 }
 
-/// Il corpo del battito, o `None` se l'utente ha spento il conteggio: codice casuale, versione e livello d'uso (0-2). Mai nominativi.
-pub fn corpo_battito(acceso: bool, installazione: &str, uso: u8) -> Option<String> {
-    if !acceso {
-        return None;
-    }
-    Some(json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "uso": uso.min(2) }).to_string())
+/// Il corpo del battito: codice casuale, versione e livello d'uso (0-2). Mai nominativi. Il battito parte sempre, anche con le statistiche
+/// spente (e' dichiarato nell'impostazione, nella Guida e nell'informativa): serve a contare le installazioni vive.
+pub fn corpo_battito(installazione: &str, uso: u8) -> String {
+    json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "uso": uso.min(2) }).to_string()
 }
 
 /// E' ora del battito: al primo giro dopo l'avvio (nessun invio prima) o quando e' passato l'intervallo.
@@ -733,21 +731,21 @@ impl Rapporti {
         }
     }
 
-    /// «Sono aperta»: ogni circa 40 minuti mentre il programma e' aperto, se acceso. Best effort: un errore non ferma nulla e, se l'invio
+    /// «Sono aperta»: ogni circa 40 minuti mentre il programma e' aperto, sempre (anche con le statistiche spente). Best effort: un errore non ferma nulla e, se l'invio
     /// fallisce, si riprova fra pochi minuti senza perdere il livello d'uso.
     fn segnala_battito(&self, ultimo: &mut Option<Instant>) {
         if !battito_dovuto(ultimo.map(|t| t.elapsed()), OGNI_BATTITO) {
             return;
         }
-        let (acceso, id) = match self.stato.lock() {
-            Ok(s) => (s.impostazioni.count_active, s.id.clone()),
+        let id = match self.stato.lock() {
+            Ok(s) => s.id.clone(),
             Err(_) => return,
         };
-        if !acceso || !configurato() {
+        if !configurato() {
             return;
         }
         let uso = USO.swap(0, Ordering::Relaxed);
-        let Some(corpo) = corpo_battito(acceso, &id, uso) else { return };
+        let corpo = corpo_battito(&id, uso);
         let inviato = agente(TIMEOUT)
             .post(&format!("{INDIRIZZO}/v1/battito"))
             .header("X-Aurora-Key", CHIAVE_INGRESSO)
@@ -1676,17 +1674,16 @@ mod tests {
     }
 
     #[test]
-    fn il_battito_e_anonimo_nei_limiti_e_spento_non_parte() {
+    fn il_battito_e_anonimo_nei_limiti_e_parte_sempre() {
         let id = "00000000-0000-4000-8000-000000000000";
-        let corpo = super::corpo_battito(true, id, 1).unwrap_or_default();
+        let corpo = super::corpo_battito(id, 1);
         let v: serde_json::Value = serde_json::from_str(&corpo).unwrap_or_default();
         assert_eq!(v["installazione"], id);
         assert_eq!(v["uso"], 1);
         assert!(v["versione"].as_str().is_some_and(|s| !s.is_empty()));
         assert_eq!(v.as_object().map(|o| o.len()), Some(3), "{v}");
-        let alto: serde_json::Value = serde_json::from_str(&super::corpo_battito(true, id, 9).unwrap_or_default()).unwrap_or_default();
+        let alto: serde_json::Value = serde_json::from_str(&super::corpo_battito(id, 9)).unwrap_or_default();
         assert_eq!(alto["uso"], 2);
-        assert_eq!(super::corpo_battito(false, id, 2), None);
     }
 
     #[test]

@@ -132,8 +132,8 @@ Aurora manda in rete» dell'installatore. Un'installazione annullata prima di co
 
 Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Dalla
 versione 0.11.323 lo ripete **circa ogni 40 minuti mentre Aurora è aperta** (un «battito»), con in più un livello d'uso. Serve
-solo a sapere quante persone usano Aurora, con quale versione e quante la usano davvero ogni giorno. È **acceso di fabbrica** e si spegne in Impostazioni → Assistenza
-→ «Invia statistiche».
+solo a sapere quante persone usano Aurora, con quale versione e quante la usano davvero ogni giorno. Le statistiche complete sono **accese di fabbrica** e si spengono in Impostazioni → Assistenza
+→ «Invia statistiche». **Il battito minimo no: parte sempre, anche con le statistiche spente.** Contiene solo l'identificativo casuale dell'installazione, la versione di Aurora e il livello d'uso (0-2): niente nominativo, niente codice ricavato dal nominativo, niente dati del computer. Serve solo a contare quante installazioni sono vive; la nazione la ricava Cloudflare dalla connessione e l'indirizzo IP non si registra.
 
 **Cosa contiene**: l'identificativo casuale dell'installazione (lo stesso dei rapporti, rigenerabile), la versione di Aurora e
 quella di Windows, il giorno, dalla 0.11.214, se hai impostato il nominativo, un **codice ricavato dal nominativo** e, dalla

@@ -69,6 +69,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.1201ueihhc3": "De andere modi dan FT8 en VHF (PSK, RTTY, CW, SSTV, satellieten) hebben hun eigen pagina en hun eigen balk: de pagina’s [[nav.fox]], [[nav.contest]] en [[nav.stats]] zijn er niet.",
   "t.120m8bxhfou": "Een telefoon of tablet koppelen",
   "t.120y1x40a25": "notitieveld",
+  "t.122rab7a7gb": "[[rep.title]] · minimale hartslag: kan niet worden uitgezet. Ook met [[rep.active]] uitgevinkt gaat er, zolang Aurora open is, ongeveer elke 40 minuten een anoniem signaal uit met alleen de willekeurige installatiecode, de Aurora-versie en het gebruiksniveau (stil, ontvangt, zendt). Het bevat niet de roepletters, niet de daarvan afgeleide code en niet de computergegevens. Het dient om de levende installaties te tellen. Het detail staat in de privacyverklaring (docs/privacy.md).",
   "t.122wsdtnhzh": "[[sw.digi.perMode]] · RTTY, “[[digi.rtty.reverse]]” (standaard uit) en “[[digi.rtty.uos]]” (standaard aan): Rev wisselt mark en space om, voor een station dat andersom zendt; met de radio op LSB draait Aurora ze al zelf om. UOS gaat na een spatie terug naar letters, zodat een gemiste letterverschuiving de tekst niet in cijfers verandert: laat het aan.",
   "t.123kpcb1nt7": "Delete of Backspace: verwijdert de gekozen laag (niet terwijl je in een vak typt).",
   "t.124dev7bxmf": "[[nav.log]]",
