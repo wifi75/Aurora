@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.340 - 2026-11-24
 - Cursore «Lvl TX»: non appare piu' il simbolo di divieto trascinandolo (il browser iniziava un trascinamento nativo dell'elemento: ora selezione e trascinamento sono disattivati sul cursore) e dopo il rilascio una lettura vecchia del motore non lo riporta piu' indietro per 2,5 secondi (la scrittura e la lettura periodica ogni 2 s si incrociavano e il cursore sembrava poco reattivo).
 ## 0.11.339 - 2026-11-23
 - «Rimanda i QSO persi», recupero dal database di Log4OM: quando il log si riapre (la porta passa da chiusa ad aperta, o Aurora parte con il log gia' aperto) Aurora confronta i QSO degli ultimi sette giorni con il database di Log4OM, se e' noto, e manda da sola quelli che mancano, senza doppioni; si fa una volta sola per apertura e non dopo un rinvio della coda. Cosi' si recuperano anche i QSO persi prima, per esempio perche' un altro programma teneva occupata la porta del log a log chiuso (caso di Log4OM sulla 2237 con un connettore che ascoltava la stessa porta): Aurora vedeva la porta aperta e mandava i QSO senza trattenerli. Prove `the_reconcile_*` e `udp_records_since_gives_each_qso_with_its_key`. Il test `a_broken_target_is_counted_and_does_not_stop_the_others` ora usa un percorso valido su ogni sistema (su Windows scriveva davvero in `C:\non\esiste\...`).

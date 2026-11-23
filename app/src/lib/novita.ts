@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.340',
+    released: '2026-11-24T00:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Cursore «Lvl TX» più pronto',
+      '“Lvl TX” slider more responsive',
+      'Regler „Lvl TX“ reagiert prompter',
+      'Curseur « Lvl TX » plus réactif',
+      'Control «Lvl TX» más ágil',
+      'Cursor «Lvl TX» mais rápido',
+    ],
+    text: [
+      'Il cursore del livello audio di trasmissione «Lvl TX» non fa più comparire il simbolo di divieto quando lo si trascina (il browser iniziava un trascinamento nativo dell’elemento) e dopo il rilascio non torna indietro per un attimo: una lettura vecchia del motore non lo sposta più per due secondi e mezzo, così risponde subito al tocco.',
+      'The “Lvl TX” transmit audio level slider no longer shows the prohibition sign when you drag it (the browser was starting a native drag of the element), and after you release it it no longer jumps back for a moment: an old reading from the engine no longer moves it for two and a half seconds, so it responds to your touch at once.',
+      'Der Regler für den Sendepegel „Lvl TX“ zeigt beim Ziehen nicht mehr das Verbotsschild (der Browser begann ein natives Ziehen des Elements) und springt nach dem Loslassen nicht mehr kurz zurück: Ein alter Messwert des Motors verschiebt ihn zweieinhalb Sekunden lang nicht mehr, sodass er sofort auf die Berührung reagiert.',
+      'Le curseur du niveau audio d’émission « Lvl TX » ne fait plus apparaître le symbole d’interdiction quand on le fait glisser (le navigateur lançait un glisser-déposer natif de l’élément) et, après le relâchement, il ne revient plus en arrière un instant : une ancienne lecture du moteur ne le déplace plus pendant deux secondes et demie, il répond donc tout de suite au toucher.',
+      'El control del nivel de audio de transmisión «Lvl TX» ya no muestra el símbolo de prohibido al arrastrarlo (el navegador iniciaba un arrastre nativo del elemento) y, tras soltarlo, ya no retrocede por un instante: una lectura antigua del motor ya no lo mueve durante dos segundos y medio, así que responde al instante al tacto.',
+      'O cursor do nível de áudio de transmissão «Lvl TX» já não mostra o símbolo de proibido ao ser arrastado (o navegador iniciava um arrastamento nativo do elemento) e, depois de o largar, já não volta atrás por um instante: uma leitura antiga do motor já não o move durante dois segundos e meio, por isso responde logo ao toque.',
+    ],
+  },
+  {
     version: '0.11.339',
     released: '2026-11-23T22:03:25Z',
     kind: 'new',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'IC-820H : l’émission CI-V des satellites se réessaie d’elle-même après une minute, sans reconnecter (#83). En changeant de radio dans les Paramètres, le PTT ne reste plus bloqué sur « radio changée » jusqu’au redémarrage. L’avertissement de l’horloge ne se répète plus chaque minute. Le contrôle des mises à jour utilise un repli si l’API de GitHub renvoie une erreur, si bien que l’avis de la nouvelle version apparaît quand même.',
       'IC-820H: la transmisión CI-V de los satélites se reintenta sola tras un minuto, sin reconectar (#83). Al cambiar de radio en Ajustes el PTT ya no se queda bloqueado en «radio cambiada» hasta reiniciar. El aviso del reloj ya no se repite cada minuto. La comprobación de actualizaciones usa una alternativa si la API de GitHub da error, así el aviso de la nueva versión aparece igualmente.',
       'IC-820H: a transmissão CI-V dos satélites repete-se sozinha após um minuto, sem voltar a ligar (#83). Ao mudar de rádio nas Definições o PTT já não fica bloqueado em «rádio alterado» até reiniciar. O aviso do relógio já não se repete a cada minuto. A verificação de atualizações usa uma alternativa se a API do GitHub der erro, e o aviso da nova versão aparece na mesma.',
-    ],
-  },
-  {
-    version: '0.11.328',
-    released: '2026-11-21T20:06:23Z',
-    kind: 'fixed',
-    title: [
-      'Satelliti, IC-820H: risposte della radio e trasmissione corrette',
-      'Satellites, IC-820H: radio replies and transmit frequency fixed',
-      'Satelliten, IC-820H: Antworten des Funkgeräts und Sendefrequenz korrigiert',
-      'Satellites, IC-820H : réponses de la radio et fréquence d’émission corrigées',
-      'Satélites, IC-820H: respuestas de la radio y frecuencia de transmisión corregidas',
-      'Satélites, IC-820H: respostas do rádio e frequência de transmissão corrigidas',
-    ],
-    text: [
-      'Con i comandi CI-V diretti Aurora ora legge davvero le risposte della radio (prima la prova di sicurezza andava in timeout) e il pacchetto di assistenza registra i byte scambiati. Corretto anche il caso in cui la frequenza di trasmissione poteva finire sulla banda di ricezione quando le due bande si leggono nella stessa banda: ora non si scrive mai sopra la ricezione. Da provare con la radio vera (opzione sperimentale, spenta di base).',
-      'With direct CI-V commands Aurora now really reads the radio’s replies (before, the safety test timed out) and the support package records the bytes exchanged. Also fixed the case where the transmit frequency could end up on the receive band when both bands are read as the same band: Aurora now never writes over the receive frequency. To be tried with a real radio (experimental option, off by default).',
-      'Mit den direkten CI-V-Befehlen liest Aurora jetzt wirklich die Antworten des Funkgeräts (zuvor lief der Sicherheitstest in ein Timeout) und das Support-Paket protokolliert die ausgetauschten Bytes. Korrigiert wurde auch der Fall, dass die Sendefrequenz auf dem Empfangsband landen konnte, wenn beide Bänder als dasselbe Band gelesen werden: Aurora schreibt jetzt nie mehr über die Empfangsfrequenz. Mit einem echten Funkgerät auszuprobieren (experimentelle Option, standardmäßig aus).',
-      'Avec les commandes CI-V directes, Aurora lit désormais vraiment les réponses de la radio (avant, le test de sécurité expirait) et le paquet d’assistance enregistre les octets échangés. Corrigé aussi le cas où la fréquence d’émission pouvait se retrouver sur la bande de réception quand les deux bandes sont lues comme la même bande : Aurora n’écrit plus jamais par-dessus la réception. À essayer avec une vraie radio (option expérimentale, désactivée par défaut).',
-      'Con los comandos CI-V directos, Aurora ahora lee de verdad las respuestas de la radio (antes la prueba de seguridad agotaba el tiempo) y el paquete de asistencia registra los bytes intercambiados. Corregido también el caso en que la frecuencia de transmisión podía acabar en la banda de recepción cuando las dos bandas se leen como la misma banda: ahora nunca se escribe sobre la recepción. Para probar con la radio real (opción experimental, desactivada de base).',
-      'Com os comandos CI-V diretos, a Aurora agora lê mesmo as respostas do rádio (antes o teste de segurança expirava) e o pacote de assistência regista os bytes trocados. Corrigido também o caso em que a frequência de transmissão podia ir parar à banda de receção quando as duas bandas são lidas como a mesma banda: agora nunca se escreve por cima da receção. A experimentar com o rádio real (opção experimental, desligada por defeito).',
     ],
   },
 ];
