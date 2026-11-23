@@ -146,6 +146,9 @@ pub struct RigConfig {
     /// «In trasmissione leggi anche l'ALC»: spento di base (e' un misuratore in piu' che, su alcune radio, fa cambiare lo strumento al selettore). Serve al
     /// pannello grande di potenza, ROS e ALC (solo con Hamlib).
     pub read_tx_alc: bool,
+    /// «PTT dati (audio posteriore/USB)»: spento di base. Acceso, il PTT parte come «dati» (rigctld `T 3`, `RIG_PTT_ON_DATA`) e la radio usa l'audio
+    /// del connettore dati o USB invece del microfono: come «Rear/Data» di WSJT-X, che lo fa solo per le radio che Hamlib dichiara mic/dati (TS-890S...).
+    pub ptt_data: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
     /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
@@ -202,6 +205,7 @@ impl Default for RigConfig {
             read_tx_power: true,
             read_tx_swr: true,
             read_tx_alc: false,
+            ptt_data: false,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),

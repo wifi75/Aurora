@@ -1361,7 +1361,7 @@ impl HamlibRig {
             if inner.config.split == SplitMode::Emulate {
                 self.emulate_begin(&link);
             }
-            link.client().set_ptt(true).map_err(|e| RigError(friendly_error(&e.0)))?;
+            link.client().set_ptt_source(true, inner.config.ptt_data).map_err(|e| RigError(friendly_error(&e.0)))?;
         } else {
             // un solo tentativo: la scala dei tentativi e' di chi spegne (`tx_native::ptt_release`), che non deve moltiplicarla
             inner.ptt_off(&link, 1).map_err(|e| RigError(format!("PTT non spento: {}", friendly_error(&e.0))))?;
@@ -2934,6 +2934,30 @@ mod tests {
             std::thread::sleep(Duration::from_millis(260));
         }
         assert_eq!(fake.count("l STRENGTH"), 1, "la richiesta non si ripete");
+    }
+
+    #[test]
+    fn with_ptt_data_the_ptt_is_asked_as_data() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start_with(&fake, RigConfig { ptt_data: true, ..RigConfig::default() }, Timing { startup_block: Duration::from_millis(10), ..tracking() });
+        std::thread::sleep(Duration::from_millis(100));
+        fake.clear_commands();
+        rig.set_ptt(true).expect("PTT");
+        assert!(fake.commands().iter().any(|c| c == "T 3"), "PTT dati: {:?}", fake.commands());
+        assert!(!fake.commands().iter().any(|c| c == "T 1"), "{:?}", fake.commands());
+        rig.set_ptt(false).expect("PTT spento");
+        assert_eq!(fake.commands().iter().rev().find(|c| c.starts_with('T')).map(String::as_str), Some("T 0"), "lo spegnimento resta T 0");
+    }
+
+    #[test]
+    fn by_default_the_ptt_is_the_plain_one() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start_with(&fake, RigConfig::default(), Timing { startup_block: Duration::from_millis(10), ..tracking() });
+        std::thread::sleep(Duration::from_millis(100));
+        fake.clear_commands();
+        rig.set_ptt(true).expect("PTT");
+        assert!(fake.commands().iter().any(|c| c == "T 1"), "{:?}", fake.commands());
+        rig.set_ptt(false).expect("PTT spento");
     }
 
     #[test]

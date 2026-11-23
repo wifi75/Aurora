@@ -808,6 +808,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           <Check label={t('cat.txPower')} hint={t('tip.cat.txPower')} checked={config.read_tx_power !== false} onChange={(v) => { set({ read_tx_power: v }); saveNow.mutate({ read_tx_power: v }); }} />
           <Check label={t('cat.txSwr')} hint={t('tip.cat.txSwr')} checked={config.read_tx_swr !== false} onChange={(v) => { set({ read_tx_swr: v }); saveNow.mutate({ read_tx_swr: v }); }} />
           <Check label={t('cat.txAlc')} hint={t('tip.cat.txAlc')} checked={config.read_tx_alc === true} onChange={(v) => { set({ read_tx_alc: v }); saveNow.mutate({ read_tx_alc: v }); }} />
+          {hamlib ? <Check label={t('cat.pttData')} hint={t('tip.cat.pttData')} checked={config.ptt_data === true} onChange={(v) => { set({ ptt_data: v }); saveNow.mutate({ ptt_data: v }); }} /> : null}
           {/* «Accendi» e «Spegni» di JTDX: con Hamlib, con TCI (`start;`/`stop;`) e con FT-991(A) Link (`PS1;`/`PS0;`); con OmniRig JTDX le spegne */}
           {hamlib || config.backend === 'tci' || config.backend === 'ft991link' ? (
             <>

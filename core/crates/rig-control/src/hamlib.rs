@@ -462,7 +462,17 @@ impl RigctldClient {
     }
 
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {
-        self.ask(&format!("T {}", u8::from(on)), 0).map(|_| ())
+        self.set_ptt_source(on, false)
+    }
+
+    /// PTT acceso o spento; con `data` acceso il PTT e' «dati» (`T 3`, `RIG_PTT_ON_DATA`): la radio trasmette l'audio del connettore dati o USB.
+    pub fn set_ptt_source(&self, on: bool, data: bool) -> Result<(), RigError> {
+        let value = match (on, data) {
+            (false, _) => 0,
+            (true, false) => 1,
+            (true, true) => 3,
+        };
+        self.ask(&format!("T {value}"), 0).map(|_| ())
     }
 
     /// Un livello di Hamlib (`l STRENGTH`, `l SWR`...) come numero.

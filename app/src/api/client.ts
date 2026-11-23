@@ -792,6 +792,8 @@ export interface CatConfig {
   read_tx_swr?: boolean;
   /** In trasmissione legge anche l'ALC (spento di base; serve al pannello grande di potenza, ROS e ALC). */
   read_tx_alc?: boolean;
+  /** PTT «dati» (rigctld `T 3`): la radio trasmette l'audio posteriore/USB invece del microfono (spento di base, solo Hamlib). */
+  ptt_data?: boolean;
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;
