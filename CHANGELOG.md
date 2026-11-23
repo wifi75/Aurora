@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.336 - 2026-11-23
 - FT8, ritrasmissione: quando la decodifica tardiva cambia solo il numero del rapporto (R-15 diventa R-16) il messaggio gia' in onda non si interrompe piu' per sostituirlo a meta' (un corrispondente debole non lo decodificava: segnalazione di EA3CUU, #92); il nuovo parte al periodo dopo. Il cambio di tipo di messaggio (Tx1 che diventa Tx3) resta come prima.
 
 - Tune, come WSJT-X 3.3.0-beta8: con la portante di Tune accesa Abilita Tx non si accende e nessuna trasmissione parte (prima il livello di uscita tornava normale con la portante ancora accesa e la trasmissione non partiva); Wait and Reply/Call/Pounce non reagiscono finche' il Tune non si spegne.
