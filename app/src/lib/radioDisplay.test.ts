@@ -159,14 +159,14 @@ describe('saved style', () => {
 
   it('round-trips the choice under the aurora-radio-display key', () => {
     const saved: Record<string, string> = {};
-    saveRadioDisplay({ setItem: (k, v) => void (saved[k] = v) }, { style: 'amber', hidden: true, layout: 'single', bigMeters: true });
+    saveRadioDisplay({ setItem: (k, v) => void (saved[k] = v) }, { style: 'amber', hidden: true, layout: 'single' });
     expect(Object.keys(saved)).toEqual(['aurora-radio-display']);
-    expect(readRadioDisplay(store(saved['aurora-radio-display'] ?? null))).toEqual({ style: 'amber', hidden: true, layout: 'single', bigMeters: true });
+    expect(readRadioDisplay(store(saved['aurora-radio-display'] ?? null))).toEqual({ style: 'amber', hidden: true, layout: 'single' });
   });
 
   it('falls back on garbage or unknown styles', () => {
     expect(readRadioDisplay(store('non json'))).toEqual(DEFAULT_RADIO_DISPLAY);
-    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true, layout: 'single', bigMeters: false });
+    expect(readRadioDisplay(store('{"style":"nixie","hidden":true}'))).toEqual({ style: 'fluorescent', hidden: true, layout: 'single' });
     expect(readRadioDisplay({ getItem: () => { throw new Error('negato'); } })).toEqual(DEFAULT_RADIO_DISPLAY);
   });
 });

@@ -1163,13 +1163,3 @@ body.rd-radio-off .rd-header::after {
 .rd-face-slot--ftp {
   width: 49.5rem;
 }
-
-.tx-big { display: flex; gap: 6px; width: fit-content; max-width: 100%; margin: 4px 8px 4px auto; padding: 4px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); }
-.tx-big-tile { width: 92px; min-width: 0; padding: 0 6px; border-left: 1px solid var(--border); }
-.tx-big-tile:first-child { border-left: 0; }
-.tx-big-tile small { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.75; }
-.tx-big-tile b { display: block; font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tx-big-bar { display: block; height: 4px; margin-top: 2px; border-radius: 2px; background: color-mix(in srgb, var(--text) 18%, transparent); overflow: hidden; }
-.tx-big-bar i { display: block; height: 100%; background: var(--ok); transition: width 0.15s linear; }
-.tx-big-tile--bad b { color: var(--danger); }
-.tx-big-tile--bad .tx-big-bar i { background: var(--danger); }

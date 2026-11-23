@@ -30,7 +30,6 @@ import { MskExtras } from '../components/MskExtras';
 import { WsprExtras, isBeaconMode } from '../components/WsprExtras';
 import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
-import { TxMetersBig } from '../components/radio-display/TxMetersBig';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
 import { askCallUnseen } from '../components/CallUnseenDialog';
@@ -664,7 +663,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         </div>
         <RadioDisplayHeader />
       </div>
-      {phone ? null : <TxMetersBig />}
       <DiagnosisBar />
       {phone ? null : <NewDxAlert onReply={(id) => void onReply(id)} />}
       {phone ? (
