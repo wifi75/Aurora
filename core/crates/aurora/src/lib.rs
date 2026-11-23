@@ -902,7 +902,8 @@ fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
         match std::fs::read(path) {
             Ok(bytes) => {
                 text.push_str(&String::from_utf8_lossy(&bytes));
-                text.push('\n');
+                // un file che finisce senza <EOR> non deve fondersi con il primo record del file dopo: <EOH> azzera il record in corso
+                text.push_str("\n<EOH>\n");
             }
             // il file di Aurora non c'e' finche' non si registra il primo QSO: non e' un problema
             Err(e) if e.kind() == std::io::ErrorKind::NotFound && path.file_name().is_some_and(|n| n == OWN_LOG_FILE) => {}
