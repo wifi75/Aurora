@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.335 - 2026-11-23
 - ALC in trasmissione con Hamlib (richiesta di Pascal F4LHL): nuova casella «In trasmissione leggi anche l'ALC» in Impostazioni › Radio (spenta di base, solo Hamlib, `read_tx_alc`). Prima Aurora non chiedeva mai l'ALC alla radio e il campo ALC del display restava «—»; con la casella accesa il display lo mostra in trasmissione, accanto a potenza e ROS. Provato con una radio finta (rigctld simulato), non con una vera; manca la voce nella Guida.
 
 - Pagina del log: all'apertura non e' selezionato nessun QSO (e nemmeno dopo una cancellazione), cosi' non si puo' cancellare tutto per sbaglio; per esportare l'intero log si usa «Seleziona tutti». Richiesta di ON7KEC (#88).
