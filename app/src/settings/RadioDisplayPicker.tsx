@@ -47,6 +47,7 @@ export function RadioDisplayPicker() {
       </div>
       <div className="set-checks">
         <Check label={t('rd.hide')} hint={t('tip.rd.hide')} checked={pref.hidden} onChange={(hidden) => set({ hidden })} />
+        <Check label={t('rd.big')} hint={t('tip.rd.big')} checked={pref.bigMeters} onChange={(bigMeters) => set({ bigMeters })} />
       </div>
     </>
   );

@@ -49,12 +49,14 @@ export interface RadioDisplayPref {
   hidden: boolean;
   /** Disposizione in testata: due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (come il display di una FT-2000). */
   layout: RadioDisplayLayout;
+  /** Pannello fisso con potenza, ROS e ALC in grande (solo se la radio li da). */
+  bigMeters: boolean;
 }
 
 export const RADIO_DISPLAY_LAYOUTS = ['single', 'pair'] as const;
 export type RadioDisplayLayout = (typeof RADIO_DISPLAY_LAYOUTS)[number];
 
-export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false, layout: 'single' };
+export const DEFAULT_RADIO_DISPLAY: RadioDisplayPref = { style: 'fluorescent', hidden: false, layout: 'single', bigMeters: true };
 
 const KEY = 'aurora-radio-display';
 
@@ -79,6 +81,7 @@ export function readRadioDisplay(storage: ReadableStorage): RadioDisplayPref {
       style: typeof parsed.style === 'string' && parsed.style in RETIRED_STYLES ? RETIRED_STYLES[parsed.style] as RadioDisplayStyle : isRadioDisplayStyle(parsed.style) ? replaceSquare(parsed.style) : DEFAULT_RADIO_DISPLAY.style,
       hidden: parsed.hidden === true,
       layout: parsed.layout === 'pair' || parsed.layout === 'single' ? parsed.layout : DEFAULT_RADIO_DISPLAY.layout,
+      bigMeters: parsed.bigMeters !== false,
     };
   } catch {
     return { ...DEFAULT_RADIO_DISPLAY };

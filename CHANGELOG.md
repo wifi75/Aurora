@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Pannello fisso con potenza in uscita, ROS e ALC in cifre grandi sotto la testata (richiesta di Pascal F4LHL): compare solo se la radio da questi strumenti via CAT, barre che diventano rosse sopra ROS 2,0 e ALC 60 %; casella «Potenza, ROS e ALC in grande» in Impostazioni › Display (accesa di base, non sul telefono). Da guardare a schermo con una radio vera; manca la voce nella Guida.
+
 - Pagina del log: all'apertura non e' selezionato nessun QSO (e nemmeno dopo una cancellazione), cosi' non si puo' cancellare tutto per sbaglio; per esportare l'intero log si usa «Seleziona tutti». Richiesta di ON7KEC (#88).
 
 ## 0.11.334 - 2026-11-22
