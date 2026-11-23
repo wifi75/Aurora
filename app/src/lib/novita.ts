@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.337',
-    released: '2026-11-23T20:00:00Z',
+    released: '2026-11-23T17:40:53Z',
     kind: 'new',
     title: [
       'Colori della cascata nei modi testuali',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.337',
-    released: '2026-11-23T20:00:00Z',
+    released: '2026-11-23T17:40:53Z',
     kind: 'new',
     title: [
       'SSTV: visore a dimensione reale',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.337',
-    released: '2026-11-23T20:00:00Z',
+    released: '2026-11-23T17:40:53Z',
     kind: 'fixed',
     title: [
       'Modi testuali con l’audio TCI o Cat4OM',
