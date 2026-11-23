@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.338 - 2026-11-23
 - Hamlib, PTT «dati» (pd0jor, Kenwood TS-890S, #96): nuova casella «PTT «dati»: trasmetti con l'audio posteriore/USB della radio» in Impostazioni › Radio (spenta di base, solo Hamlib, `ptt_data`). Acceso, il PTT parte con `T 3` (`RIG_PTT_ON_DATA`) invece di `T 1`, come fa WSJT-X con «Rear/Data». Verificato nella libreria Hamlib 4.7.2 inclusa (Ghidra): il TS-890S e' di tipo PTT mic/dati, `T 1` manda `TX;` (microfono) e `T 3` manda `TX1;` (dati). Prova con rigctld simulato; con la radio vera la prova e' di pd0jor. Guida e traduzioni nelle otto lingue.
 - Uscita audio TCI o Cat4OM senza nessuno che tira i campioni (nessun TCI collegato, SDR chiusa): lo stop non aspetta piu' la discesa, che non sarebbe mai arrivata, e l'uscita non resta «in riproduzione» per sempre. Prima, con l'uscita TCI rimasta scelta e un CAT diverso (Hamlib), ogni trasmissione falliva con «riproduzione oltre la durata prevista (14.9 s invece di 12.6 s, 48000 Hz)» e la scheda audio scelta dopo (anche quella della radio) non prendeva mai il posto: niente audio in uscita (pd0jor, TS-890S, #96, pacchetto 07916C85). Prova `stop_without_a_server_pulling_ends_at_once`.
 - SSTV, ricezione a «Dimensione reale»: l'immagine sta al centro della colonna del visore invece che nell'angolo a sinistra (richiesta di Luc, #93).
