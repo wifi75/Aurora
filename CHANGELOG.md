@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- SSTV, ricezione: con un'interruzione del segnale piu' lunga di 6 secondi (evanescenza, disturbo) l'immagine si chiudeva e al ritorno del segnale ne ripartiva una nuova dall'alto del visore (segnalazione di ON7KEC, #93). Ora un'interruzione fino a 30 secondi non chiude l'immagine: le righe di quel tratto restano nere e quelle dopo vanno al loro posto, come in MMSSTV; verso la fine dell'immagine (dal 90 %) bastano ancora 6 secondi per chiuderla e salvarla. Provato con una prova automatica (14 secondi di silenzio in un Martin 1: prima due immagini, ora una sola).
+
 ## 0.11.337 - 2026-11-23
 - Modi testuali (CW, PSK, RTTY, Olivia...) con l'uscita audio TCI o Cat4OM: la trasmissione falliva subito con «questa uscita audio non accoda campioni» (146 segnalazioni da 3 installazioni sulla 0.11.336). Il tratto di uscita verso il CAT non passava `append` e `consumed` all'uscita vera. Corretto leggendo il codice, senza una prova automatica (serve un servizio CAT vero per costruirlo): da provare con una SDR via TCI.
 

@@ -402,6 +402,38 @@ fn a_new_transmission_after_an_interrupted_image_starts_from_its_vis() {
     assert!(done.complete && psnr(&img2, &done.image) > 20.0);
 }
 
+/// Le righe da `from` a `to` (frazioni dell'altezza) di un'immagine.
+fn rows_between(img: &RgbImage, from: f64, to: f64) -> RgbImage {
+    let (a, b) = ((f64::from(img.height) * from) as u32, (f64::from(img.height) * to) as u32);
+    let w = img.width as usize * 3;
+    RgbImage { width: img.width, height: b - a, data: img.data[a as usize * w..b as usize * w].to_vec() }
+}
+
+/// ON7KEC (#93): con un'interruzione piu' lunga di 6 secondi (evanescenza) l'immagine ripartiva dall'alto del visore. Ora l'immagine resta una
+/// sola: le righe dell'interruzione sono nere e quelle dopo sono al loro posto, come in MMSSTV.
+#[test]
+fn a_long_dropout_keeps_the_picture_and_the_lines_in_their_place() {
+    let m1 = SstvMode::Martin1.spec();
+    let img = test_image(m1.width, m1.height);
+    let mut audio = vec![0.0f32; RATE as usize / 2];
+    audio.extend(encode_shifted(m1.mode, &img, RATE, 0.0).expect("codifica"));
+    audio.extend(vec![0.0f32; RATE as usize]);
+    // 14 secondi di silenzio da 1/3 dell'immagine
+    let start = ((mode_sstv::modes::HEADER_SECONDS + m1.image_seconds() / 3.0) * f64::from(RATE)) as usize + RATE as usize / 2;
+    let gap = 14 * RATE as usize;
+    for s in &mut audio[start..start + gap] {
+        *s = 0.0;
+    }
+    add_noise(&mut audio, 0.03, 23);
+    let events = events_of(&audio, DecoderConfig::default());
+    assert_eq!(starts_of(&events), [SstvMode::Martin1], "una sola immagine: {:?}", starts_of(&events));
+    let done = last_image(&events).expect("immagine");
+    assert_eq!(done.mode, SstvMode::Martin1);
+    // le righe prima dell'interruzione e quelle dopo sono al loro posto
+    assert!(psnr(&rows_between(&img, 0.0, 0.28), &rows_between(&done.image, 0.0, 0.28)) > 20.0, "righe iniziali");
+    assert!(psnr(&rows_between(&img, 0.62, 1.0), &rows_between(&done.image, 0.62, 1.0)) > 20.0, "righe finali al loro posto");
+}
+
 #[test]
 fn recognition_without_vis_estimates_the_tuning_offset() {
     let spec = SstvMode::Scottie1.spec();

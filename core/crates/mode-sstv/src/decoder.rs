@@ -102,10 +102,13 @@ struct Rx {
     phase_known: bool,
 }
 
-/// Quanti gruppi di fila senza sincronismo chiudono la ricezione.
-const MAX_MISSED: u32 = 20;
-/// ...o quanti secondi di fila senza sincronismo (nei modi lenti 20 righe sono quasi 20 secondi: il segnale e' finito da un pezzo).
-const MAX_MISSED_S: f64 = 6.0;
+/// Quanti secondi di fila senza sincronismo chiudono la ricezione. Un'interruzione piu' breve (evanescenza, disturbo, un VFO girato) non chiude
+/// l'immagine: le righe di quel tratto restano nere e quelle dopo vanno al loro posto, come in MMSSTV (prima bastavano 6 secondi e al ritorno
+/// del segnale l'immagine ripartiva dall'alto del visore, segnalazione di ON7KEC, #93).
+const MAX_LOST_S: f64 = 30.0;
+/// ...ma negli ultimi tratti dell'immagine (dal 90 %) bastano 6 secondi: il segnale e' quasi certamente finito (la trasmissione e' stata presa a
+/// meta' o si e' fermata prima della fine) e l'immagine si chiude e si salva subito, come prima.
+const MAX_LOST_END_S: f64 = 6.0;
 /// Parte minima dell'immagine per salvarla quando la ricezione si interrompe.
 const MIN_SAVE: f32 = 0.3;
 /// Un VIS nuovo chiude l'immagine in corso solo se questa e' senza sincronismo da tanto: una trasmissione nuova ha comunque davanti
@@ -506,6 +509,15 @@ impl Decoder {
                 break;
             }
             measure_sync(rx, g);
+            // senza sincronismo da qualche riga non c'e' segnale da leggere: la riga resta nera (non si disegna il rumore) ma la posizione
+            // avanza con l'orologio, cosi' al ritorno del segnale le righe vanno dove devono
+            if rx.missed >= 4 {
+                rx.next_group += 1;
+                if rx.lost_for(rx.max_lost_s()) {
+                    break;
+                }
+                continue;
+            }
             if let Some(o) = rx.offsets.get_mut(g as usize) {
                 *o = Some(rx.offset);
             }
@@ -515,14 +527,11 @@ impl Decoder {
             first_row = Some(first_row.map_or(r0, |f: u32| f.min(r0)));
             last_row = last_row.max(r0 + n);
             rx.next_group += 1;
-            if rx.missed >= MAX_MISSED || rx.lost_for(MAX_MISSED_S) {
-                break;
-            }
         }
         if let Some(first) = first_row {
             events.push(DecoderEvent::Rows { first, count: last_row - first });
         }
-        let lost = rx.missed >= MAX_MISSED || rx.lost_for(MAX_MISSED_S);
+        let lost = rx.lost_for(rx.max_lost_s());
         if (rx.next_group >= groups || lost)
             && let Some(ev) = self.finish(true) {
                 events.push(ev);
@@ -542,9 +551,12 @@ impl Decoder {
             return Some(DecoderEvent::Lost);
         }
         // ridisegno con la retta definitiva dei sincronismi
+        // solo le righe lette davvero: quelle senza segnale (interruzioni) restano nere
         for g in 0..done {
-            let vals = decode_group(&rx, g, self.tune_hz);
-            rx.groups[g as usize] = Some(vals);
+            if rx.groups[g as usize].is_some() {
+                let vals = decode_group(&rx, g, self.tune_hz);
+                rx.groups[g as usize] = Some(vals);
+            }
         }
         for g in 0..done {
             compose(&mut rx, g);
@@ -564,6 +576,11 @@ impl Decoder {
 }
 
 impl Rx {
+    /// Dopo quanti secondi senza sincronismo si chiude la ricezione: tanti a meta' immagine (un'interruzione), pochi verso la fine.
+    fn max_lost_s(&self) -> f64 {
+        if self.next_group * 10 >= self.spec.groups() * 9 { MAX_LOST_END_S } else { MAX_LOST_S }
+    }
+
     /// L'immagine e' senza sincronismo da almeno `seconds` secondi.
     fn lost_for(&self, seconds: f64) -> bool {
         self.missed >= 4 && f64::from(self.missed) * self.spec.group_seconds() >= seconds
