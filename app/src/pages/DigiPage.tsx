@@ -78,6 +78,7 @@ import { clearSize, readSize, writeSize } from '../lib/modeSizes';
 /** Altezza minima del pannello BIGScan (px) con la maniglia del bordo inferiore. */
 const RADAR_H_MIN = 160;
 import { toast, toastAction } from '../lib/toast';
+import { useAudioInputMenu } from '../components/digi/useAudioInputMenu';
 import { useStation, useStatusPick } from '../state/station';
 import '../styles/digi.css';
 import '../styles/digi-dark.css';
@@ -1740,6 +1741,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     };
   };
   const slots = Array.from({ length: 20 }, (_, i) => i + 1);
+  const audioInputMenu = useAudioInputMenu();
   const menus: MenuDef[] = [
     {
       label: t('digi.menu.file'),
@@ -1907,6 +1909,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         'sep',
         { label: t('digi.mi.modeSettings'), onSelect: () => openSettingsWindow('digi') },
         { label: t('digi.mi.personal'), onSelect: () => openSettingsWindow('personal') },
+        'sep',
+        audioInputMenu,
       ],
     },
     {

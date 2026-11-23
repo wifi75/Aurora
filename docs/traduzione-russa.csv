@@ -5011,6 +5011,9 @@ digi.mi.waterfall,Waterfall,Водопад
 digi.mi.statusBar,Status bar,Строка состояния
 digi.mi.macrosMode,Macros for this mode…,Макросы для этого режима…
 digi.mi.macrosDefault,Default macros (F1…),Стандартные макросы (F1…)
+digi.mi.audioInput,Audio input,Аудиовход
+digi.mi.audioInputDone,Audio input: {name},Аудиовход: {name}
+digi.mi.audioInputFailed,Audio input not changed,Аудиовход не изменён
 digi.mi.personal,Personal data…,Личные данные…
 digi.mi.guide,Guide to this page,Справка по этой странице
 digi.st.txrx,Click: switch between receive and transmit (also the Pause key),Щелчок: переключение приём/передача (также клавиша Pause)

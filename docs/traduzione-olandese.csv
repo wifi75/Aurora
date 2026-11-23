@@ -5011,6 +5011,9 @@ digi.mi.waterfall,Waterfall,Waterval
 digi.mi.statusBar,Status bar,Statusbalk
 digi.mi.macrosMode,Macros for this mode…,Macro’s voor deze modus…
 digi.mi.macrosDefault,Default macros (F1…),Standaardmacro’s (F1…)
+digi.mi.audioInput,Audio input,Audio-ingang
+digi.mi.audioInputDone,Audio input: {name},Audio-ingang: {name}
+digi.mi.audioInputFailed,Audio input not changed,Audio-ingang niet gewijzigd
 digi.mi.personal,Personal data…,Persoonlijke gegevens…
 digi.mi.guide,Guide to this page,Gids bij deze pagina
 digi.st.txrx,Click: switch between receive and transmit (also the Pause key),Klik: wisselen tussen ontvangen en zenden (ook de toets Pause)

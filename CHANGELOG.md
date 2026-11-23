@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Modi testuali (CW, PSK, RTTY, Olivia, SSTV...): nuovo sottomenu «Ingresso audio» nel menu Configura, con il predefinito del sistema e le schede rilevate (la scelta in uso e' spuntata), per passare in fretta da un ingresso all'altro (per esempio dall'audio della radio a una linea virtuale con un ricevitore SDR) senza aprire le Impostazioni (richiesta di Luc, #95). Cambia lo stesso valore di Impostazioni › Audio. Sei lingue piu' olandese e russo; prova automatica sul riconoscimento della voce spuntata.
 - SSTV, ricezione: con un'interruzione del segnale piu' lunga di 6 secondi (evanescenza, disturbo) l'immagine si chiudeva e al ritorno del segnale ne ripartiva una nuova dall'alto del visore (segnalazione di ON7KEC, #93). Ora un'interruzione fino a 30 secondi non chiude l'immagine: le righe di quel tratto restano nere e quelle dopo vanno al loro posto, come in MMSSTV; verso la fine dell'immagine (dal 90 %) bastano ancora 6 secondi per chiuderla e salvarla. Provato con una prova automatica (14 secondi di silenzio in un Martin 1: prima due immagini, ora una sola).
 
 ## 0.11.337 - 2026-11-23
