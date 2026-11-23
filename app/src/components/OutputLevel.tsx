@@ -13,6 +13,9 @@ interface Props {
   horizontal?: boolean;
 }
 
+/** Dopo il rilascio, per quanto una lettura del motore non sposta il cursore (la richiesta di scrittura e la lettura periodica si possono incrociare). */
+const SETTLE_MS = 2500;
+
 /** Il cursore «Lvl TX» (prima «Pwr») del motore: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
 export function OutputLevel({ horizontal = false }: Props) {
   const t = useT();
@@ -20,19 +23,23 @@ export function OutputLevel({ horizontal = false }: Props) {
   const level = useQuery({ queryKey: ['output-level'], queryFn: getOutputLevel, retry: false, refetchInterval: (q) => (q.state.status === 'error' ? 3000 : 2000) });
   const [pct, setPct] = useState<number | null>(null);
   const dragging = useRef(false);
+  // quando si e' rilasciato il cursore l'ultima volta: per un attimo una risposta vecchia del motore non deve riportarlo indietro
+  const settled = useRef(0);
   const [note, setNote] = useState('');
 
   // il valore del motore vince quando non si sta trascinando: se cambia da solo (cambio banda con la memoria per banda) il cursore lo segue
   useEffect(() => {
-    if (level.data && !dragging.current) setPct(levelPercent(level.data.attenuation_db));
+    if (level.data && !dragging.current && Date.now() - settled.current > SETTLE_MS) setPct(levelPercent(level.data.attenuation_db));
   }, [level.data]);
 
   if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>{t('out.short')} –</p>;
   if (pct === null) return null;
 
   const commit = async (value: number) => {
+    settled.current = Date.now();
     try {
       await putOutputLevel(attenuationFromPercent(value));
+      settled.current = Date.now();
       await client.invalidateQueries({ queryKey: ['output-level'] });
       setNote(t('out.saved'));
     } catch (error) {

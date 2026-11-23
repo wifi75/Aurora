@@ -58,8 +58,11 @@ export function VerticalSlider({ value, label, disabled = false, horizontal = fa
       aria-valuemax={100}
       aria-valuenow={value}
       aria-disabled={disabled}
+      // niente selezione ne' trascinamento nativo: ne nasceva il cursore di divieto (un testo o un elemento «trascinato» fuori da un bersaglio valido)
+      onDragStart={(e) => e.preventDefault()}
       onPointerDown={(e) => {
         if (disabled) return;
+        e.preventDefault();
         dragging.current = true;
         e.currentTarget.setPointerCapture?.(e.pointerId);
         move(fromPointer(e));

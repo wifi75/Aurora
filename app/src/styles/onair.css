@@ -603,6 +603,9 @@
   border-radius: 999px;
   cursor: pointer;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .vslider::before {
