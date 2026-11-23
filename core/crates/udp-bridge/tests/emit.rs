@@ -151,6 +151,9 @@ fn the_new_incoming_commands_are_read() {
         Some(Request::HighlightCallsign { call: "K1ABC".into(), background: None, foreground: None, last_only: false })
     );
     assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "K1ABC", Some(12))).expect("ann").request, Some(Request::AnnotationInfo { call: "K1ABC".into(), order: Some(12) }));
+    // togliere un nominativo: valore dato `0xffffffff`; `CLEARALL!` e' il nominativo speciale che svuota la tabella
+    assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "K1ABC", None)).expect("ann").request, Some(Request::AnnotationInfo { call: "K1ABC".into(), order: None }));
+    assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "CLEARALL!", Some(0))).expect("ann").request, Some(Request::AnnotationInfo { call: "CLEARALL!".into(), order: Some(0) }));
     assert_eq!(decode_request(&encode_annotation_info("JTDX", 3, "K1ABC", None)).expect("ann").request, Some(Request::AnnotationInfo { call: "K1ABC".into(), order: None }));
     assert_eq!(decode_request(&encode_switch_configuration("JTDX", 3, "Gara")).expect("sw").request, Some(Request::SwitchConfiguration { name: "Gara".into() }));
     let unchanged = decode_request(&encode_configure("JTDX", 3, &ConfigureFields::default())).expect("cfg").request;

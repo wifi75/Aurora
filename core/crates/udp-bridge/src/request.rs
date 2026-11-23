@@ -112,6 +112,10 @@ pub fn decode_request(datagram: &[u8]) -> Result<Addressed, Error> {
             let call = r.utf8()?.unwrap_or_default();
             let provided = r.bool()?;
             let order = r.u32()?;
+            // senza valore dato il messaggio non fa niente (WSJT-X 3.3), salvo `CLEARALL!` che svuota la tabella; con `0xffffffff` toglie il nominativo
+            if !provided && !call.trim().eq_ignore_ascii_case("CLEARALL!") {
+                return Ok(Addressed { schema, id, request: None });
+            }
             Request::AnnotationInfo { call, order: (provided && order != u32::MAX).then_some(order) }
         }
         _ => return Ok(Addressed { schema, id, request: None }),

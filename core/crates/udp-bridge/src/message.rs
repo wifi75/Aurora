@@ -393,7 +393,8 @@ pub fn encode_highlight_callsign(id: &str, schema: u32, call: &str, background: 
 pub fn encode_annotation_info(id: &str, schema: u32, call: &str, order: Option<u32>) -> Vec<u8> {
     let mut w = command_header(ANNOTATION_INFO, schema, id);
     w.utf8(Some(call));
-    w.bool(order.is_some());
+    // «toglilo» e' il valore dato `0xffffffff` (con «non dato» WSJT-X non fa niente)
+    w.bool(true);
     w.u32(order.unwrap_or(u32::MAX));
     w.into_bytes()
 }

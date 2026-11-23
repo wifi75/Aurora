@@ -239,6 +239,11 @@ impl Fox {
         if call.is_empty() {
             return;
         }
+        // il nominativo speciale `CLEARALL!` cancella tutti i valori (WSJT-X 3.3.0-beta8)
+        if call == "CLEARALL!" {
+            self.annotations.clear();
+            return;
+        }
         match order {
             Some(v) => {
                 // la tabella non cresce senza limiti: un programma esterno puo' annotare migliaia di nominativi
@@ -562,6 +567,11 @@ mod tests {
         assert_eq!(f.queue.front().map(|q| q.call.as_str()), Some("W9XYZ"));
         f.annotate("W9XYZ", None);
         assert_eq!(f.annotation("W9XYZ"), 0);
+        // `CLEARALL!` svuota la tabella (WSJT-X 3.3.0-beta8)
+        f.annotate("w9xyz", Some(7));
+        f.annotate("K1ABC", Some(3));
+        f.annotate("CLEARALL!", Some(0));
+        assert_eq!((f.annotation("W9XYZ"), f.annotation("K1ABC"), f.annotation("CLEARALL!")), (0, 0, 0));
     }
 
     #[test]
