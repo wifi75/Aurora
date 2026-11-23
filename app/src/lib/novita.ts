@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.339',
-    released: '2026-11-23T22:30:00Z',
+    released: '2026-11-23T22:03:25Z',
     kind: 'new',
     title: [
       'Spot del tuo nominativo nascosti nel DX Cluster',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.339',
-    released: '2026-11-23T22:30:00Z',
+    released: '2026-11-23T22:03:25Z',
     kind: 'fixed',
     title: [
       'Log4OM: recupero dei QSO persi',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.339',
-    released: '2026-11-23T22:30:00Z',
+    released: '2026-11-23T22:03:25Z',
     kind: 'fixed',
     title: [
       'Primo avvio dopo l’aggiornamento',
