@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.335',
-    released: '2026-11-23T10:00:00Z',
+    released: '2026-11-23T09:05:43Z',
     kind: 'new',
     title: [
       'ALC in trasmissione, facoltativo',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.335',
-    released: '2026-11-23T10:00:00Z',
+    released: '2026-11-23T09:05:43Z',
     kind: 'changed',
     title: [
       'Log: all’apertura nessun QSO selezionato',
