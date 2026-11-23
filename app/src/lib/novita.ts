@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.338',
-    released: '2026-11-23T21:30:00Z',
+    released: '2026-11-23T21:09:58Z',
     kind: 'new',
     title: [
       'Ingresso audio nel menu Configura',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.338',
-    released: '2026-11-23T21:30:00Z',
+    released: '2026-11-23T21:09:58Z',
     kind: 'new',
     title: [
       'PTT «dati» per le radio con Hamlib',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.338',
-    released: '2026-11-23T21:30:00Z',
+    released: '2026-11-23T21:09:58Z',
     kind: 'fixed',
     title: [
       'SSTV: interruzioni del segnale e visore centrato',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.338',
-    released: '2026-11-23T21:30:00Z',
+    released: '2026-11-23T21:09:58Z',
     kind: 'fixed',
     title: [
       'Uscita audio TCI/Cat4OM senza server',
