@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.336',
-    released: '2026-11-23T14:00:00Z',
+    released: '2026-11-23T11:27:28Z',
     kind: 'fixed',
     title: [
       'Wait and Reply e Wait and Call più precisi',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.336',
-    released: '2026-11-23T14:00:00Z',
+    released: '2026-11-23T11:27:28Z',
     kind: 'changed',
     title: [
       'FT8 più veloce e ritrasmissione meno fragile',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.336',
-    released: '2026-11-23T14:00:00Z',
+    released: '2026-11-23T11:27:28Z',
     kind: 'fixed',
     title: [
       'Log ADIF: un campo rovinato non fa perdere il resto',
