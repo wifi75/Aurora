@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- FT8, sottrazione piu' veloce: il passa-basso della sottrazione (coseno quadro) si calcola con somme scorrevoli invece delle due FFT da 180000 punti, come ha fatto WSJT-X 3.3.0-beta8 (stessa idea, scritta da capo: il peso e' una costante piu' un coseno). Provato contro la somma diretta e contro il vecchio filtro per FFT; il filtro del Modo SWL resta per FFT. Misura in release: 1,4 ms contro 2,4 ms per passata.
+
 ## 0.11.335 - 2026-11-23
 - ALC in trasmissione con Hamlib (richiesta di Pascal F4LHL): nuova casella «In trasmissione leggi anche l'ALC» in Impostazioni › Radio (spenta di base, solo Hamlib, `read_tx_alc`). Prima Aurora non chiedeva mai l'ALC alla radio e il campo ALC del display restava «—»; con la casella accesa il display lo mostra in trasmissione, accanto a potenza e ROS. Provato con una radio finta (rigctld simulato), non con una vera; manca la voce nella Guida.
 

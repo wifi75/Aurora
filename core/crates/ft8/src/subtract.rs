@@ -3,7 +3,8 @@
 //!
 //! Il segnale ricevuto e' `dd(t) = a(t) cos(2 pi f0 t + theta(t))`, il riferimento e' `cref(t) = exp(j (2 pi f0 t + phi(t)))` con la
 //! fase della modulazione GFSK del messaggio decodificato. L'ampiezza complessa e' `cfilt(t) = LPF[dd(t) conj(cref(t))]`: un filtro
-//! passa-basso a coseno quadro di 4001 punti (lunghezza `NFILT1 = 4000`, 0,33 s), applicato per FFT sull'intero periodo, con la
+//! passa-basso a coseno quadro di 4001 punti (lunghezza `NFILT1 = 4000`, 0,33 s), applicato con somme scorrevoli (dalla 0.11.335; prima per FFT
+//! sull'intero periodo), con la
 //! correzione dei bordi (`endcorr`). Si toglie `2 Re{cref cfilt}`. Siccome `cfilt` varia nel tempo, la sottrazione segue
 //! evanescenza e piccole derive di fase e di ampiezza, cosa che una sola ampiezza per messaggio non fa.
 //!
@@ -155,6 +156,68 @@ pub fn refine_dt(cd: &[Complex], reference: &Reference, i0: i64) -> f32 {
     (NOFF as f64 * dx * 0.005) as f32
 }
 
+/// Tabella `exp(j 2 pi k / NFILT1)` e somma dei pesi del filtro normale (coseno quadro).
+fn cos2_tables() -> &'static (Vec<rustfft::num_complex::Complex64>, f64) {
+    static TABLES: OnceLock<(Vec<rustfft::num_complex::Complex64>, f64)> = OnceLock::new();
+    TABLES.get_or_init(|| {
+        let rot = (0..NFILT1)
+            .map(|k| {
+                let a = 2.0 * PI * k as f64 / NFILT1 as f64;
+                rustfft::num_complex::Complex64::new(a.cos(), a.sin())
+            })
+            .collect();
+        let half = (NFILT1 / 2) as i64;
+        let sumw = (-half..=half).map(|j| (PI * j as f64 / NFILT1 as f64).cos().powi(2)).sum();
+        (rot, sumw)
+    })
+}
+
+/// Il passa-basso normale della sottrazione senza FFT: `out[m] = somma(j = -h..h) window(j)/sumw * cin[m + 1 + j]`, con `cin` zero fuori
+/// da `0..n` (la stessa cosa che fanno le due FFT lunghe, ma costa poche operazioni per campione). Il peso `cos^2(pi j / N)` e'
+/// `(1 + cos(2 pi j / N)) / 2`, cioe' una costante piu' un coseno: la somma si ottiene da tre somme scorrevoli di `cin`, `cin * conj(e)` e
+/// `cin * e` con `e = exp(j 2 pi p / N)`, che a ogni campione perdono il primo della finestra e prendono il successivo. Somme in doppia
+/// precisione, cosi' togliere e aggiungere 150 mila campioni non lascia deriva. Come in WSJT-X 3.3.0-beta8 (che ha tolto le FFT con la
+/// stessa idea): il risultato non e' identico bit a bit a quello per FFT, differisce solo negli arrotondamenti.
+fn lowpass_cos2(cin: &[Complex]) -> Vec<Complex> {
+    use rustfft::num_complex::Complex64;
+    let n = cin.len();
+    let (rot, sumw) = cos2_tables();
+    let half = NFILT1 / 2;
+    let mut out = vec![ZERO; n];
+    let mut sa = Complex64::new(0.0, 0.0);
+    let mut sb = Complex64::new(0.0, 0.0);
+    let mut sc = Complex64::new(0.0, 0.0);
+    let mut add = |p: usize, sa: &mut Complex64, sb: &mut Complex64, sc: &mut Complex64, sign: f64| {
+        let x = Complex64::new(f64::from(cin[p].re) * sign, f64::from(cin[p].im) * sign);
+        let e = rot[p % NFILT1];
+        *sa += x;
+        *sb += x * e.conj();
+        *sc += x * e;
+    };
+    // finestra del primo campione: p da 0 a 1 + half (centro su m + 1 = 1)
+    for p in 0..n.min(half + 2) {
+        add(p, &mut sa, &mut sb, &mut sc, 1.0);
+    }
+    for m in 0..n {
+        let e = rot[(m + 1) % NFILT1];
+        let u = (e.conj() * sc + e * sb) * 0.25;
+        let v = (sa * 0.5 + u) / *sumw;
+        out[m] = Complex::new(v.re as f32, v.im as f32);
+        // finestra del campione dopo: perde p = m + 1 - half, prende p = m + 2 + half
+        if m + 1 >= half {
+            let old = m + 1 - half;
+            if old < n {
+                add(old, &mut sa, &mut sb, &mut sc, -1.0);
+            }
+        }
+        let new = m + 2 + half;
+        if new < n {
+            add(new, &mut sa, &mut sb, &mut sc, 1.0);
+        }
+    }
+    out
+}
+
 /// Toglie dall'audio (12 kHz, nella scala a 16 bit di `decode`) il segnale di toni `reference` a `f0_hz`, che comincia a `dt_s`
 /// secondi dall'inizio del periodo (ritardo assoluto, cioe' con lo 0,5 s incluso).
 pub fn subtract(audio: &mut [f32], reference: &Reference, f0_hz: f32, dt_s: f64) {
@@ -172,18 +235,26 @@ pub fn subtract_with(audio: &mut [f32], reference: &Reference, f0_hz: f32, dt_s:
     let start = (dt_s * SAMPLE_RATE as f64 + 1.0) as i64 - 1;
     let limit = audio.len().min(NFFT) as i64;
 
-    let mut cfilt = vec![ZERO; NFFT];
-    for (i, (c, r)) in cfilt.iter_mut().zip(cref.iter()).enumerate().take(NFRAME) {
+    let mut camp = vec![ZERO; if swl { NFFT } else { NFRAME }];
+    for (i, (c, r)) in camp.iter_mut().zip(cref.iter()).enumerate().take(NFRAME) {
         let id = start + i as i64;
         if id >= 0 && id < limit {
             *c = r.conj() * audio[id as usize];
         }
     }
-    filt.forward.process(&mut cfilt);
-    for (c, w) in cfilt.iter_mut().zip(filt.cw.iter()) {
-        *c *= *w;
-    }
-    filt.inverse.process(&mut cfilt);
+    let mut cfilt = if swl {
+        // il filtro a coseno del Modo SWL resta per FFT
+        let mut v = camp;
+        filt.forward.process(&mut v);
+        for (c, w) in v.iter_mut().zip(filt.cw.iter()) {
+            *c *= *w;
+        }
+        filt.inverse.process(&mut v);
+        v
+    } else {
+        // il filtro normale (coseno quadro) si calcola con somme scorrevoli, senza le due FFT da 180000 punti
+        lowpass_cos2(&camp)
+    };
     // correzione dei bordi: i primi e gli ultimi NFILT1/2 + 1 campioni dell'onda
     for (k, &corr) in filt.endcorr.iter().enumerate() {
         cfilt[k] *= corr;
@@ -252,6 +323,71 @@ mod tests {
             audio[start + i] += (gain * f64::from(w)) as f32;
         }
         audio
+    }
+
+    /// Il filtro per somme scorrevoli coincide con la somma diretta in doppia precisione e con quello per FFT.
+    #[test]
+    fn il_passa_basso_a_somme_scorrevoli_coincide_con_la_somma_diretta_e_con_la_fft() {
+        // dati fissi pseudo casuali (nessun generatore esterno)
+        let mut seed = 12345u64;
+        let mut next = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            ((seed >> 33) as f64 / (1u64 << 31) as f64 - 0.5) as f32
+        };
+        let n = 9000usize;
+        let cin: Vec<Complex> = (0..n).map(|_| Complex::new(next(), next())).collect();
+        let fast = lowpass_cos2(&cin);
+        let half = (NFILT1 / 2) as i64;
+        let window = |j: i64| (PI * j as f64 / NFILT1 as f64).cos().powi(2);
+        let sumw: f64 = (-half..=half).map(window).sum();
+        for m in [0usize, 1, 5, 1999, 2000, 2001, 4500, 6998, 6999, 7000, 8998, 8999] {
+            let (mut re, mut im) = (0.0f64, 0.0f64);
+            for j in -half..=half {
+                let p = m as i64 + 1 + j;
+                if p >= 0 && (p as usize) < n {
+                    re += window(j) / sumw * f64::from(cin[p as usize].re);
+                    im += window(j) / sumw * f64::from(cin[p as usize].im);
+                }
+            }
+            assert!((f64::from(fast[m].re) - re).abs() < 1e-5 && (f64::from(fast[m].im) - im).abs() < 1e-5, "campione {m}: {:?} contro ({re}, {im})", fast[m]);
+        }
+        // contro il vecchio filtro per FFT (lontano dall'ultimo bordo, dove la FFT circolare riavvolge)
+        let filt = filter(false);
+        let mut v = vec![ZERO; NFFT];
+        v[..n].copy_from_slice(&cin);
+        filt.forward.process(&mut v);
+        for (c, w) in v.iter_mut().zip(filt.cw.iter()) {
+            *c *= *w;
+        }
+        filt.inverse.process(&mut v);
+        for m in (0..n - 10).step_by(37) {
+            assert!((v[m].re - fast[m].re).abs() < 2e-4 && (v[m].im - fast[m].im).abs() < 2e-4, "campione {m}: FFT {:?}, somme {:?}", v[m], fast[m]);
+        }
+    }
+
+    /// Misura (non gira da sola: `cargo test -p ft8 --release -- --ignored misura_velocita --nocapture`): somme scorrevoli contro FFT.
+    #[test]
+    #[ignore]
+    fn misura_velocita_del_passa_basso() {
+        let cin: Vec<Complex> = (0..NFRAME).map(|i| Complex::new((i % 97) as f32 - 48.0, (i % 89) as f32 - 44.0)).collect();
+        let filt = filter(false);
+        let t0 = std::time::Instant::now();
+        for _ in 0..5 {
+            let mut v = vec![ZERO; NFFT];
+            v[..NFRAME].copy_from_slice(&cin);
+            filt.forward.process(&mut v);
+            for (c, w) in v.iter_mut().zip(filt.cw.iter()) {
+                *c *= *w;
+            }
+            filt.inverse.process(&mut v);
+            std::hint::black_box(&v);
+        }
+        let fft = t0.elapsed() / 5;
+        let t1 = std::time::Instant::now();
+        for _ in 0..5 {
+            std::hint::black_box(lowpass_cos2(&cin));
+        }
+        println!("passa-basso: FFT {fft:?}, somme scorrevoli {:?}", t1.elapsed() / 5);
     }
 
     #[test]
