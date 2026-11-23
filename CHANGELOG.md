@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- FT8, ritrasmissione: quando la decodifica tardiva cambia solo il numero del rapporto (R-15 diventa R-16) il messaggio gia' in onda non si interrompe piu' per sostituirlo a meta' (un corrispondente debole non lo decodificava: segnalazione di EA3CUU, #92); il nuovo parte al periodo dopo. Il cambio di tipo di messaggio (Tx1 che diventa Tx3) resta come prima.
+
 - Tune, come WSJT-X 3.3.0-beta8: con la portante di Tune accesa Abilita Tx non si accende e nessuna trasmissione parte (prima il livello di uscita tornava normale con la portante ancora accesa e la trasmissione non partiva); Wait and Reply/Call/Pounce non reagiscono finche' il Tune non si spegne.
 
 - Battito minimo sempre acceso: l'anonimo «sono aperta» (codice casuale dell'installazione, versione e livello d'uso, senza nominativo ne' dati del computer) parte ogni circa 40 minuti anche con «Invia statistiche» spento, per contare le installazioni vive; e' dichiarato sotto la casella, nella Guida, nel README e in `docs/privacy.md`. Le statistiche complete (conteggio giornaliero con tipo di computer) restano facoltative.
