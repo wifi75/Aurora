@@ -69,7 +69,9 @@ try {
 } finally { Pop-Location }
 
 Write-Host '3/3 File della release...'
-$bundle = "$root\desktop\src-tauri\target\release\bundle\nsis"
+# con CARGO_TARGET_DIR (per esempio su D:, quando le cartelle target del progetto sono di sola lettura) l'installatore sta li'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { "$root\desktop\src-tauri\target" }
+$bundle = "$targetDir\release\bundle\nsis"
 $setup = Get-ChildItem $bundle -Filter "*_${vCore}_*-setup.exe" | Select-Object -First 1
 if (-not $setup) { throw "Installatore della versione $vCore non trovato in $bundle" }
 $sig = "$($setup.FullName).sig"
