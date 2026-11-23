@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Aggiornamento di Aurora: dopo aver chiuso l'Aurora rimasto acceso il nuovo programma non aspetta piu' 0,8 secondi fissi ma che la porta 8787 sia libera (fino a 6 secondi). Prima, se il vecchio processo ci metteva di piu' a sparire, il primo avvio dopo l'aggiornamento falliva con «la porta 8787 e' gia' usata da aurora-desktop» e il secondo riusciva (pacchetto di crash 7F5DF751, 0.11.338, FTDX-10). Prove `it_waits_until_the_port_is_free_and_not_longer` e `it_gives_up_after_the_attempts`.
 - DX Cluster (pannello): gli spot del proprio nominativo sono nascosti di base (quando si trasmette, decine di skimmer della Reverse Beacon Network, con nominativo che finisce in `-#`, decodificano il segnale e il pannello si riempiva di righe con se' stessi come DX); il nuovo pulsante «I miei spot» nei filtri li mostra. Passando il mouse sul nominativo di uno skimmer compare la spiegazione (che e' un ricevitore automatico). Provate `withoutOwnSpots` e `isSkimmer`.
 ## 0.11.338 - 2026-11-23
 - Hamlib, PTT «dati» (pd0jor, Kenwood TS-890S, #96): nuova casella «PTT «dati»: trasmetti con l'audio posteriore/USB della radio» in Impostazioni › Radio (spenta di base, solo Hamlib, `ptt_data`). Acceso, il PTT parte con `T 3` (`RIG_PTT_ON_DATA`) invece di `T 1`, come fa WSJT-X con «Rear/Data». Verificato nella libreria Hamlib 4.7.2 inclusa (Ghidra): il TS-890S e' di tipo PTT mic/dati, `T 1` manda `TX;` (microfono) e `T 3` manda `TX1;` (dati). Prova con rigctld simulato; con la radio vera la prova e' di pd0jor. Guida e traduzioni nelle otto lingue.

@@ -88,7 +88,24 @@ pub fn evict(port: u16) {
     if !leftovers.is_empty() {
         tracing::warn!("sulla porta {port} un Aurora rimasto acceso (processi {leftovers:?}) teneva ancora connessioni aperte: lo chiudo");
         leftovers.into_iter().for_each(kill);
-        std::thread::sleep(Duration::from_millis(800));
+        wait_until_free(|| listeners(port).is_empty());
+    }
+}
+
+/// Aspetta che il sistema liberi la porta dopo aver chiuso un Aurora: finche' il vecchio processo la tiene, il nuovo avvio fallisce con
+/// «la porta e' gia' usata» (pacchetto del 2026-11-23 sulla 0.11.338: dopo l'aggiornamento il primo avvio falliva e il secondo riusciva). Al massimo
+/// sei secondi, poi si prosegue lo stesso; un minimo di mezzo secondo lascia chiudere i socket.
+fn wait_until_free(is_free: impl Fn() -> bool) {
+    wait_until_free_with(is_free, 30, Duration::from_millis(200), Duration::from_millis(500));
+}
+
+fn wait_until_free_with(is_free: impl Fn() -> bool, attempts: u32, step: Duration, minimum: Duration) {
+    std::thread::sleep(minimum);
+    for _ in 0..attempts {
+        if is_free() {
+            return;
+        }
+        std::thread::sleep(step);
     }
 }
 
@@ -107,7 +124,26 @@ fn evict_answering(port: u16) {
             return;
         }
         pids.into_iter().for_each(kill);
-        std::thread::sleep(Duration::from_millis(800));
+        wait_until_free(|| listeners(port).is_empty());
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    #[test]
+    fn it_waits_until_the_port_is_free_and_not_longer() {
+        let calls = AtomicU32::new(0);
+        wait_until_free_with(|| calls.fetch_add(1, Ordering::SeqCst) >= 3, 30, Duration::from_millis(5), Duration::from_millis(1));
+        assert_eq!(calls.load(Ordering::SeqCst), 4, "si ferma al primo controllo con la porta libera");
+    }
+
+    #[test]
+    fn it_gives_up_after_the_attempts() {
+        let calls = AtomicU32::new(0);
+        wait_until_free_with(|| { calls.fetch_add(1, Ordering::SeqCst); false }, 5, Duration::from_millis(2), Duration::from_millis(1));
+        assert_eq!(calls.load(Ordering::SeqCst), 5, "con la porta sempre occupata si prosegue lo stesso");
+    }
+}
