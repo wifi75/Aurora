@@ -54,6 +54,23 @@ export function ReceiveView({
   const [source, setSource] = useState<string | null>(snap.rx.source ?? null);
   // pulizia dal rumore dell'immagine in arrivo o appena ricevuta: l'originale (e quella salvata) non cambia
   const [clean, setClean] = useState(false);
+  // «Dimensione reale»: il visore alla grandezza vera dell'immagine (320x256 e simili), come nei programmi SSTV classici; si ricorda
+  const [native, setNative] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem('aurora-sstv-native') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleNative = () =>
+    setNative((on) => {
+      try {
+        window.localStorage.setItem('aurora-sstv-native', on ? '0' : '1');
+      } catch {
+        // senza archivio la scelta non si ricorda, ma il visore cambia lo stesso
+      }
+      return !on;
+    });
   const [order, setOrder] = useState(3);
   const [level, setLevel] = useState(0.4);
   const [applied, setApplied] = useState({ order: 3, level: 0.4 });
@@ -166,7 +183,7 @@ export function ReceiveView({
   return (
     <section className={log ? 'sstv-rx sstv-rx--log' : 'sstv-rx'}>
       <div className="sstv-stage">
-        <div className="sstv-screen" style={{ aspectRatio: `${size.w} / ${size.h}` }}>
+        <div className={native ? 'sstv-screen sstv-screen--native' : 'sstv-screen'} style={native ? { width: size.w, height: size.h, aspectRatio: `${size.w} / ${size.h}` } : { aspectRatio: `${size.w} / ${size.h}` }}>
           <canvas ref={canvas} width={size.w} height={size.h} className={smooth ? 'sstv-canvas' : 'sstv-canvas sstv-canvas--crisp'} aria-label={t('sstv.view.rx')} />
           {clean && hasImage ? (
             <img
@@ -195,6 +212,9 @@ export function ReceiveView({
               {t('sstv.clean.cleaned')}
             </button>
           </span>
+          <button type="button" className={native ? 'sstv-native on' : 'sstv-native'} aria-pressed={native} onClick={toggleNative} title={t('sstv.view.nativeTip')}>
+            {t('sstv.view.native')}
+          </button>
           {clean ? (
             <>
               <label className="sstv-slider">

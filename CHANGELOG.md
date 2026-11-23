@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- SSTV, ricezione: nuovo pulsante «Dimensione reale» accanto a «Originale / Pulita» (richiesta di Luc, #93): mostra l'immagine alla grandezza vera (320x256 e simili) come i programmi SSTV classici, invece di ingrandirla fino a riempire la finestra; la scelta si ricorda. Il visore di base resta com'era.
+
 - Cascata dei modi testuali (CW, PSK, RTTY), richiesta di fetuso (#94): in Impostazioni › Aspetto e avvisi › Cascata un nuovo gruppo «Cascata dei modi testuali» permette di scegliere la palette (la «Classica» di sempre o una di quelle di JTDX), il guadagno e lo zero, per far risaltare il segnale ricevuto; valgono solo per quella cascata e non toccano quella dell'FT8. Di fabbrica resta com'era. Spiegato nella Guida, in sei lingue piu' olandese e russo.
 
 ## 0.11.336 - 2026-11-23

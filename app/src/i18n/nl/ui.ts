@@ -4590,6 +4590,8 @@ export const NL_UI: Record<string, string> = {
   "sstv.tx.stopTip": "Stopt de uitzending meteen (toets Esc)",
   "sstv.tx.to": "Roepnaam van de ander",
   "sstv.undo": "Ongedaan maken",
+  "sstv.view.native": "Ware grootte",
+  "sstv.view.nativeTip": "Toont het ontvangen beeld op zijn werkelijke grootte (bijvoorbeeld 320×256 punten), zoals de klassieke SSTV-programma’s, in plaats van het te vergroten tot het hele venster gevuld is. De ruis ziet men zoals die is.",
   "sstv.view.rx": "Ontvangen",
   "sstv.view.tx": "Samenstellen en versturen",
   "st.band": "Band",
