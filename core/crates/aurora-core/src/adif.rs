@@ -33,37 +33,86 @@ pub struct AdifQso {
     pub my_grid: String,
 }
 
+/// Un byte dopo un valore e' un confine ragionevole se e' la fine del testo, uno spazio o l'inizio del campo seguente.
+fn is_boundary(bytes: &[u8], at: usize) -> bool {
+    bytes.get(at).is_none_or(|b| *b == b'<' || b.is_ascii_whitespace())
+}
+
 /// Record ADIF completi (terminati da `<EOR>`), con i nomi dei campi in maiuscolo. Quello che segue l'ultimo `<EOR>` si ignora.
+///
+/// Un campo rovinato non fa perdere il resto del file (come il lettore del log di WSJT-X 3.3.0-beta8): una lunghezza oltre la fine del testo, o
+/// che ingoierebbe un `<EOR>`, o che finisce a meta' di una parola, rende solo quel campo inutilizzabile e la lettura riprende dopo il suo
+/// descrittore; una lunghezza contata in caratteri (log con accenti) si riconosce; un descrittore non chiuso (`<BAND:3<MODE:3>`) o un `<` spurio
+/// perdono solo il loro campo. Un secondo `CALL` nello stesso record (manca un `<EOR>`) congela il resto del record, cosi' i campi di due contatti
+/// non si mescolano; di un campo ripetuto vale il primo.
 pub fn parse_records(text: &str) -> Vec<HashMap<String, String>> {
     let bytes = text.as_bytes();
     let mut records = Vec::new();
     let mut current: HashMap<String, String> = HashMap::new();
+    let mut frozen = false;
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] != b'<' {
             i += 1;
             continue;
         }
-        let Some(end) = bytes[i..].iter().position(|b| *b == b'>').map(|p| i + p) else {
+        // il descrittore finisce al primo `>`; se prima si incontra un altro `<` non e' chiuso: si salta fino a quello
+        let Some(stop) = bytes[i + 1..].iter().position(|b| *b == b'>' || *b == b'<').map(|p| i + 1 + p) else {
             break;
         };
-        let tag = String::from_utf8_lossy(&bytes[i + 1..end]).to_uppercase();
-        i = end + 1;
-        match tag.as_str() {
-            "EOH" => current.clear(),
-            "EOR" => records.push(std::mem::take(&mut current)),
+        if bytes[stop] == b'<' {
+            i = stop;
+            continue;
+        }
+        let tag = String::from_utf8_lossy(&bytes[i + 1..stop]).to_uppercase();
+        let after = stop + 1;
+        match tag.trim() {
+            "EOH" => {
+                current.clear();
+                frozen = false;
+                i = after;
+            }
+            "EOR" => {
+                records.push(std::mem::take(&mut current));
+                frozen = false;
+                i = after;
+            }
             _ => {
+                i = after;
                 let mut parts = tag.split(':');
                 let name = parts.next().unwrap_or_default().trim().to_string();
+                // un nome che non e' un campo (testo libero tra parentesi angolari) non conta
+                if !name.chars().next().is_some_and(|c| c.is_ascii_alphabetic()) || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+                    continue;
+                }
                 let Some(len) = parts.next().and_then(|l| l.trim().parse::<usize>().ok()) else {
                     continue;
                 };
-                // una lunghezza enorme (datagramma rovinato) non deve traboccare
-                let Some(value) = i.checked_add(len).and_then(|stop| bytes.get(i..stop)) else {
-                    break;
+                // lunghezza in byte; se non finisce su un confine si prova a contarla in caratteri (log con accenti)
+                let by_bytes = i.checked_add(len).filter(|stop| *stop <= bytes.len() && text.is_char_boundary(*stop) && is_boundary(bytes, *stop));
+                let by_chars = || {
+                    let mut it = text[i..].char_indices().map(|(k, _)| k).chain(std::iter::once(text.len() - i));
+                    it.nth(len).map(|k| i + k).filter(|stop| is_boundary(bytes, *stop))
                 };
-                current.insert(name, String::from_utf8_lossy(value).trim().to_string());
-                i += len;
+                let Some(value_end) = by_bytes.or_else(by_chars) else {
+                    // campo danneggiato: si riprende subito dopo il descrittore, senza perdere il resto
+                    continue;
+                };
+                // un valore che contiene la fine del record ha una lunghezza sbagliata: il campo non vale e `<EOR>` resta da leggere
+                let value = &bytes[i..value_end];
+                let upper = String::from_utf8_lossy(value).to_uppercase();
+                if upper.contains("<EOR>") || upper.contains("<EOH>") {
+                    continue;
+                }
+                i = value_end;
+                if frozen {
+                    continue;
+                }
+                if name == "CALL" && current.contains_key("CALL") {
+                    frozen = true;
+                    continue;
+                }
+                current.entry(name).or_insert_with(|| String::from_utf8_lossy(value).trim().to_string());
             }
         }
     }
@@ -270,5 +319,35 @@ mod tests {
         assert_eq!(q.len(), 2);
         assert_eq!(q[0].mode, "CONTESTIA");
         assert_eq!(q[1].mode, "OLIVIA");
+    }
+    /// Campi rovinati: si perde solo il campo (o il record) rovinato, non il resto del file (come il lettore del log di WSJT-X 3.3.0-beta8).
+    #[test]
+    fn a_damaged_field_does_not_lose_the_rest_of_the_log() {
+        let calls = |text: &str| -> Vec<(String, String)> { parse_qsos(text).into_iter().map(|q| (q.call, q.band)).collect() };
+        let ok = |c: &str, b: &str| (c.to_string(), b.to_string());
+        // lunghezza oltre la fine del testo: il record seguente si legge lo stesso
+        assert_eq!(calls("<CALL:6>IU3ABC<BAND:3>20m<COMMENT:9999>x<EOR>\n<CALL:6>IU3ABC<BAND:3>40m<EOR>"), vec![ok("IU3ABC", "20m"), ok("IU3ABC", "40m")]);
+        // lunghezza troppo grande ma dentro il file: non ingoia la fine del record
+        assert_eq!(calls("<CALL:6>IU3ABC<BAND:3>20m<COMMENT:30>ciao<EOR>\n<CALL:6>IU3ABD<BAND:3>40m<EOR>"), vec![ok("IU3ABC", "20m"), ok("IU3ABD", "40m")]);
+        // lunghezza troppo corta su CALL: niente nominativo tagliato
+        assert!(calls("<CALL:5>IU3ABC<BAND:3>20m<EOR>").is_empty());
+        // <EOR> mancante: il secondo nominativo non si mescola con i campi del primo
+        let q = parse_qsos("<CALL:6>IU3ABC<BAND:3>20m<GRIDSQUARE:6>IO91wm<CALL:6>IU3ABD<BAND:3>40m<EOR>");
+        assert_eq!(q.len(), 1);
+        assert_eq!((q[0].call.as_str(), q[0].band.as_str(), q[0].grid.as_str()), ("IU3ABC", "20m", "IO91wm"));
+        // testo libero con `<` tra i campi
+        assert_eq!(calls("x < y <CALL:6>IU3ABC<BAND:3>20m<EOR>"), vec![ok("IU3ABC", "20m")]);
+        // descrittore non chiuso: si perde solo il campo, non il resto del record
+        let r = parse_records("<CALL:6>IU3ABC<BAND:3<MODE:3>FT8<EOR>");
+        assert_eq!((r[0]["CALL"].as_str(), r[0]["MODE"].as_str(), r[0].contains_key("BAND")), ("IU3ABC", "FT8", false));
+        // campo ripetuto: vale il primo
+        assert_eq!(calls("<CALL:6>IU3ABC<BAND:3>20m<BAND:3>40m<EOR>"), vec![ok("IU3ABC", "20m")]);
+        // lunghezza in caratteri (accenti) e byte non UTF-8: si legge lo stesso
+        let r = parse_records("<CALL:6>IU3ABC<NAME:4>caf\u{e8}<GRIDSQUARE:6>IO91wm<EOR>");
+        assert_eq!((r[0]["NAME"].as_str(), r[0]["GRIDSQUARE"].as_str()), ("caf\u{e8}", "IO91wm"));
+        let r = parse_records(&String::from_utf8_lossy(b"<CALL:6>IU3ABC<NAME:4>caf\xE8<GRIDSQUARE:6>IO91wm<EOR>"));
+        assert_eq!(r[0]["GRIDSQUARE"], "IO91wm");
+        // la coda senza <EOR> resta ignorata
+        assert_eq!(calls("<CALL:6>IU3ABC<BAND:3>20m<EOR><CALL:6>IU3ABD<BAND:3>40m"), vec![ok("IU3ABC", "20m")]);
     }
 }

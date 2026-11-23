@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Lettura dei file ADIF resistente ai campi rovinati (come il log di WSJT-X 3.3.0-beta8): una lunghezza oltre la fine del file, che ingoia un `<EOR>` o che taglia una parola rende inutilizzabile solo quel campo, non il resto del log (prima una lunghezza oltre la fine fermava tutta la lettura, e una troppo corta dava un nominativo tagliato); un descrittore non chiuso o un `<` spurio perdono solo il proprio campo; un secondo `CALL` nello stesso record non mescola i campi di due contatti; di un campo ripetuto vale il primo; le lunghezze contate in caratteri (accenti) si leggono; la coda di un file senza `<EOR>` non si fonde piu' col file dopo.
+
 - JT65, decodificatore Reed-Solomon: le cancellazioni non valide (piu' di 51, o una posizione fuori dalla parola di 63 simboli) si rifiutano senza toccare i dati, come WSJT-X 3.3.0-beta8; prima una posizione fuori campo andava in underflow (panico in debug, risultato casuale in release). I chiamanti interni passano sempre indici validi: e' una protezione.
 
 - Wait, limiti e armamento come WSJT-X 3.3.0-beta8: uno STOP, un altro DX scelto a mano o un cambio di banda azzerano il limite di 6,2 periodi di Wait and Call (prima il limite del tentativo vecchio spegneva il QSO nuovo); spegnere Wait features disarma Wait and Pounce e riaccendendolo non si riarma da solo; in MSK144 una risposta diretta del DX disarma Wait and Call.
