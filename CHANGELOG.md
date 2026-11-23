@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- JT65, decodificatore Reed-Solomon: le cancellazioni non valide (piu' di 51, o una posizione fuori dalla parola di 63 simboli) si rifiutano senza toccare i dati, come WSJT-X 3.3.0-beta8; prima una posizione fuori campo andava in underflow (panico in debug, risultato casuale in release). I chiamanti interni passano sempre indici validi: e' una protezione.
+
 - Wait, limiti e armamento come WSJT-X 3.3.0-beta8: uno STOP, un altro DX scelto a mano o un cambio di banda azzerano il limite di 6,2 periodi di Wait and Call (prima il limite del tentativo vecchio spegneva il QSO nuovo); spegnere Wait features disarma Wait and Pounce e riaccendendolo non si riarma da solo; in MSK144 una risposta diretta del DX disarma Wait and Call.
 
 - Wait and Reply / Wait and Call, come WSJT-X 3.3.0-beta8: un `RR73` del DX diretto a me fa riprendere il QSO (prima si scartava insieme ai 73); Wait and Call scatta con ogni CQ del DX (`CQ EU`, `CQ TEST`, non solo `CQ` e `CQ DX`), non scatta piu' su un 73/RR73 diretto a me (il QSO e' chiuso: prima si richiamava il DX) e il confronto dei nominativi ignora `/P` e i prefissi. I campi del messaggio si leggono per parole, non piu' con `contains("73 ")`.

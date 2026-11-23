@@ -111,6 +111,11 @@ impl Codec {
     /// `None` se non si riesce.
     fn decode_in_place(&self, data: &mut [u8; NN], eras_pos: &[usize]) -> Option<usize> {
         let no_eras = eras_pos.len();
+        // cancellazioni non valide (troppe o fuori dalla parola): si rifiuta senza toccare i dati, come WSJT-X 3.3.0-beta8 (`decode_rs.c`);
+        // senza, `NN - 1 - posizione` va in underflow e `lambda` esce dai limiti
+        if no_eras > NROOTS || eras_pos.iter().any(|&p| p >= NN) {
+            return None;
+        }
         let mut s = [0usize; NROOTS];
         let mut syn = [data[0]; NROOTS];
         for &d in &data[1..NN] {
@@ -313,6 +318,28 @@ mod tests {
         let (decoded, nerr) = rs.decode(&bad, &[]).expect("25 errori si correggono");
         assert_eq!(decoded, dgen);
         assert_eq!(nerr, 25);
+    }
+
+    #[test]
+    fn invalid_erasures_are_refused_without_touching_the_data() {
+        let rs = Codec::new();
+        let dgen = [61, 36, 45, 30, 3, 55, 3, 2, 14, 5, 33, 40];
+        let sent = rs.encode(&dgen);
+        // l'ultima posizione valida (62) si accetta e il simbolo cancellato si recupera
+        let mut bad = sent;
+        bad[Codec::karn_position(62)] ^= 9;
+        let (decoded, _) = rs.decode(&bad, &[62usize.min(NN - 1)]).expect("posizione 62 valida");
+        assert_eq!(decoded, dgen);
+        // fuori dalla parola: rifiutata, e i dati restano com'erano
+        let mut karn = [7u8; NN];
+        let before = karn;
+        assert!(rs.decode_karn(&mut karn, &[NN]).is_none());
+        assert!(rs.decode_karn(&mut karn, &[usize::MAX]).is_none());
+        assert_eq!(karn, before);
+        // piu' cancellazioni dei simboli di controllo (51): rifiutate senza panico
+        let many: Vec<usize> = (0..NROOTS + 1).collect();
+        assert!(rs.decode_karn(&mut karn, &many).is_none());
+        assert_eq!(karn, before);
     }
 
     #[test]
