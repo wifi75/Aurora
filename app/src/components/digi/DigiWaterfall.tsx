@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '../../i18n';
 import { registerSpectrum } from '../../lib/spectrumFeed';
+import { digiWfTable, useDigiWf } from '../../lib/digiWfPrefs';
 import type { SpectrumRow } from '../../lib/digiSpectrum';
 import type { DigiNotch } from '../../api/client';
 import { addNotch } from '../../lib/digiNotches';
@@ -56,16 +57,6 @@ interface Props {
   hideScale?: boolean;
 }
 
-/** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
-function paletteColor(v: number): [number, number, number] {
-  const x = v / 255;
-  if (x < 0.25) return [0, 0, Math.round(60 + x * 4 * 150)];
-  if (x < 0.5) return [0, Math.round((x - 0.25) * 4 * 255), 210];
-  if (x < 0.75) return [Math.round((x - 0.5) * 4 * 255), 255, Math.round(210 * (1 - (x - 0.5) * 4))];
-  return [255, Math.round(255 * (1 - (x - 0.75) * 4)), 0];
-}
-
-const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
@@ -73,6 +64,11 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
+  // i colori scelti in Impostazioni › Cascata («Classica», guadagno 0 e zero 0 sono quelli di sempre); la tabella si rifa solo se cambiano
+  const wfPrefs = useDigiWf((s) => s.prefs);
+  const table = useMemo(() => digiWfTable(wfPrefs), [wfPrefs]);
+  const tableRef = useRef(table);
+  tableRef.current = table;
   const scale = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(800);
   // spostamento fluido: mentre si trascina i marcatori seguono il mouse subito (senza aspettare il motore); il valore vero torna dopo
@@ -164,7 +160,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
         for (let x = 0; x < c.width; x++) {
           const hz = a + (x / c.width) * (b - a);
           const v = bins[Math.min(bins.length - 1, Math.max(0, Math.floor((hz - fMinHz) / hzPerBin)))] ?? 0;
-          const [r, g, bl] = PALETTE[v] ?? [0, 0, 0];
+          const [r, g, bl] = tableRef.current[v] ?? [0, 0, 0];
           const o = x * 4;
           img.data[o] = r;
           img.data[o + 1] = g;

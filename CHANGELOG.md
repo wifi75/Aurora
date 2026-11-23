@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Cascata dei modi testuali (CW, PSK, RTTY), richiesta di fetuso (#94): in Impostazioni › Aspetto e avvisi › Cascata un nuovo gruppo «Cascata dei modi testuali» permette di scegliere la palette (la «Classica» di sempre o una di quelle di JTDX), il guadagno e lo zero, per far risaltare il segnale ricevuto; valgono solo per quella cascata e non toccano quella dell'FT8. Di fabbrica resta com'era. Spiegato nella Guida, in sei lingue piu' olandese e russo.
+
 ## 0.11.336 - 2026-11-23
 - FT8, ritrasmissione: quando la decodifica tardiva cambia solo il numero del rapporto (R-15 diventa R-16) il messaggio gia' in onda non si interrompe piu' per sostituirlo a meta' (un corrispondente debole non lo decodificava: segnalazione di EA3CUU, #92); il nuovo parte al periodo dopo. Il cambio di tipo di messaggio (Tx1 che diventa Tx3) resta come prima.
 

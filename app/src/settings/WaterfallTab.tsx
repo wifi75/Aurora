@@ -1,5 +1,6 @@
 import { useT } from '../i18n';
 import { JTDX_PALETTE_NAMES } from '../render/wfPalettes';
+import { DIGI_CLASSIC, DIGI_WF_LIMITS, DEFAULT_DIGI_WF, useDigiWf } from '../lib/digiWfPrefs';
 import { USER_PALETTE, WF_LIMITS, activeStyle, clampWf, paletteColors, useWfPrefs, type PaletteColor, type WfPrefs } from '../lib/wfPrefs';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Notes, Page } from './layout';
@@ -27,6 +28,8 @@ export function WaterfallTab() {
   const t = useT();
   const prefs = useWfPrefs((s) => s.prefs);
   const set = useWfPrefs.getState().set;
+  const digi = useDigiWf((s) => s.prefs);
+  const setDigi = useDigiWf.getState().set;
 
   const number = (key: NumberKey, label: string, hint: string) => (
     <Field label={label} hint={hint}>
@@ -89,6 +92,33 @@ export function WaterfallTab() {
           {number('zero', t('wfs.zero'), t('tip.wfs.zero'))}
           <Check label={t('wfs.scale')} hint={t('tip.wfs.scale')} checked={prefs.scale} onChange={(v) => set({ scale: v })} />
           <Check label={t('wfs.flatten')} hint={t('tip.wfs.flatten')} checked={prefs.flatten} onChange={(v) => set({ flatten: v })} />
+        </Cells>
+      </Group>
+
+      <Group title={t('wfs.digi.title')} span={2}>
+        <Help>{t('wfs.digi.intro')}</Help>
+        <Cells min={15}>
+          <Field label={t('wfs.palette')} hint={t('tip.wfs.palette')}>
+            <select value={digi.palette} onChange={(e) => setDigi({ palette: e.target.value })}>
+              <option value={DIGI_CLASSIC}>{t('wfs.digi.classic')}</option>
+              {JTDX_PALETTE_NAMES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('wfs.gain')} hint={t('tip.wfs.gain')}>
+            <input type="number" className="set-number" min={DIGI_WF_LIMITS.gain[0]} max={DIGI_WF_LIMITS.gain[1]} value={digi.gain} onChange={(e) => e.target.value !== '' && setDigi({ gain: Number(e.target.value) })} />
+          </Field>
+          <Field label={t('wfs.zero')} hint={t('tip.wfs.zero')}>
+            <input type="number" className="set-number" min={DIGI_WF_LIMITS.zero[0]} max={DIGI_WF_LIMITS.zero[1]} value={digi.zero} onChange={(e) => e.target.value !== '' && setDigi({ zero: Number(e.target.value) })} />
+          </Field>
+          <Cell>
+            <button type="button" className="glass chip" onClick={() => setDigi({ ...DEFAULT_DIGI_WF })}>
+              {t('wfs.digi.reset')}
+            </button>
+          </Cell>
         </Cells>
       </Group>
 
