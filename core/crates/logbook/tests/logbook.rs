@@ -421,3 +421,16 @@ fn a_received_update_fills_only_the_missing_fields() {
     assert_eq!((e.name.as_str(), e.grid.as_str(), e.rst_sent.as_str()), ("Joe", "FN42", "-08"), "il rapporto c'era e resta");
     assert_eq!(lb.count().unwrap(), 1);
 }
+
+#[test]
+fn udp_records_since_gives_each_qso_with_its_key() {
+    let lb = Logbook::open_in_memory().unwrap();
+    lb.add(&timed("IU3ABC", "FT8", 1_792_000_000_000)).unwrap();
+    lb.add(&timed("K1ABC", "FT4", 1_792_100_000_000)).unwrap();
+    let all = lb.udp_records_since(&station(), "20000101").unwrap();
+    assert_eq!(all.len(), 2);
+    assert_eq!((all[0].0.as_str(), all[0].1.as_str(), all[0].2.as_str(), all[0].3), ("IU3ABC", "20m", "FT8", 1_792_000_000));
+    assert!(all[0].4.to_lowercase().contains("<call:6>iu3abc"), "il record ADIF porta il nominativo: {}", all[0].4);
+    let later = lb.udp_records_since(&station(), "29991231").unwrap();
+    assert!(later.is_empty(), "nessun QSO dopo quel giorno");
+}

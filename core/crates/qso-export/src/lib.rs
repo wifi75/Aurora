@@ -43,6 +43,9 @@ pub struct ExportStats {
 /// Dato un elenco di (nominativo, banda, modo, istante in secondi Unix), dice per ciascuno se il log di destinazione ha gia' il QSO.
 pub type AlreadyThere = Arc<dyn Fn(&[(String, String, String, u64)]) -> Vec<bool> + Send + Sync>;
 
+/// I QSO degli ultimi giorni che Aurora ha e il log di destinazione no: (nominativo, banda, modo, istante in secondi Unix, record ADIF da mandare).
+pub type CatchUp = Arc<dyn Fn() -> Vec<(String, String, String, u64, String)> + Send + Sync>;
+
 #[derive(Clone)]
 pub struct Exporter {
     stats: Arc<Mutex<ExportStats>>,
@@ -92,7 +95,7 @@ impl Exporter {
         now: Arc<dyn Fn() -> u64 + Send + Sync>,
         eqsl: Arc<AtomicBool>,
     ) -> Exporter {
-        Exporter::spawn_with_resend(bus, book, targets, station, now, eqsl, Arc::new(RwLock::new(Vec::new())), None, None)
+        Exporter::spawn_with_resend(bus, book, targets, station, now, eqsl, Arc::new(RwLock::new(Vec::new())), None, None, None)
     }
 
     /// Come `spawn_shared_eqsl`, con «Rimanda i QSO persi» (vedi [`waiting`]): per gli indirizzi di `resend` (ADIF su UDP e XML N1MM) un
@@ -108,6 +111,7 @@ impl Exporter {
         resend: Arc<RwLock<Vec<SocketAddr>>>,
         queue_file: Option<PathBuf>,
         already_there: Option<AlreadyThere>,
+        catch_up: Option<CatchUp>,
     ) -> Exporter {
         let stats = Arc::new(Mutex::new(ExportStats::default()));
         let shared = Arc::clone(&stats);
@@ -116,6 +120,7 @@ impl Exporter {
             let socket = UdpSocket::bind("0.0.0.0:0").await.ok();
             let mut guard = DupeGuard::default();
             let mut queue = waiting::Queue::load(queue_file);
+            let mut reconcile = waiting::Reconcile::default();
             let mut lag = aurora_core::lag::LagWatch::critical("log e invio dei QSO (qso-export)");
             let mut tick = tokio::time::interval(std::time::Duration::from_secs(5));
             tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -136,6 +141,8 @@ impl Exporter {
                                 _ => Vec::new(),
                             };
                             for (i, w) in due.into_iter().enumerate() {
+                                // la coda ha appena rimandato a questo log: il confronto di questa volta non serve (niente doppioni)
+                                reconcile.mark_done(w.to);
                                 if present.get(i).copied().unwrap_or(false) {
                                     tracing::info!("QSO con {} non rimandato a {}: il log ce l'ha gia'", w.call, w.to);
                                     continue;
@@ -147,6 +154,30 @@ impl Exporter {
                                 }
                                 record_result(&shared, &target, result);
                                 tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                            }
+                        }
+                        // log appena riaperto: i QSO che gli mancano (persi quando era chiuso) si cercano una volta sola e si mandano
+                        if let Some(catch_up) = &catch_up {
+                            let wanted = resend.read().map(|r| r.clone()).unwrap_or_default();
+                            let udp: Vec<SocketAddr> = targets.read().map(|t| t.iter().filter_map(|x| if let Target::UdpAdif(to) = x { Some(*to) } else { None }).filter(|to| wanted.contains(to)).collect()).unwrap_or_default();
+                            for to in udp {
+                                if !reconcile.step(to, waiting::listening(to), queue.has_for(to)) {
+                                    continue;
+                                }
+                                let find = Arc::clone(catch_up);
+                                let missing = tokio::task::spawn_blocking(move || find()).await.unwrap_or_default();
+                                if !missing.is_empty() {
+                                    tracing::info!("{} QSO di Aurora mancano al log su {to}: si mandano", missing.len());
+                                }
+                                for (call, _band, _mode, _when, record) in missing {
+                                    let target = Target::UdpAdif(to);
+                                    let result = send(&target, socket.as_ref(), &record).await;
+                                    if result.is_ok() {
+                                        tracing::info!("QSO con {call} mandato a {to} (al log mancava)");
+                                    }
+                                    record_result(&shared, &target, result);
+                                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                                }
                             }
                         }
                         continue;

@@ -2559,6 +2559,20 @@ pub async fn run(
                 .collect()
         })
     };
+    // «Rimanda i QSO persi», seconda parte: quando il log si riapre si cercano anche i QSO degli ultimi sette giorni che Aurora ha e il database di
+    // Log4OM no (fatti con il log chiuso e andati persi: porta occupata da un altro programma, versioni senza la coda) e si mandano
+    let catch_up: qso_export::CatchUp = {
+        let (book, path, station_of) = (Arc::clone(&logbook), Arc::clone(&log4om_choice.current), Arc::clone(&log_station));
+        Arc::new(move || {
+            let Some(db) = path.read().ok().and_then(|p| p.clone()) else { return Vec::new() };
+            let Ok(existing) = logbook::log4om::read_all(&db) else { return Vec::new() };
+            let from = logbook::adif::utc_date(unix_secs().saturating_sub(7 * 86_400));
+            let Ok(mine) = book.udp_records_since(&station_of(), &from) else { return Vec::new() };
+            mine.into_iter()
+                .filter(|(call, band, mode, when, _)| *when > 0 && !logbook::log4om::contains(&existing, &logbook::log4om::QsoKey { call: call.clone(), band: band.clone(), mode: mode.clone(), when: *when }))
+                .collect()
+        })
+    };
     let _exporter = Exporter::spawn_with_resend(
         &bus,
         Arc::clone(&logbook),
@@ -2569,6 +2583,7 @@ pub async fn run(
         Arc::clone(&resend),
         Some(config.data_dir.join(qso_export::waiting::FILE_NAME)),
         Some(already_there),
+        Some(catch_up),
     );
     if let Some(store) = &engine_settings {
         let (store, shared, base, resend) = (Arc::clone(store), Arc::clone(&shared_targets), targets.clone(), Arc::clone(&resend));

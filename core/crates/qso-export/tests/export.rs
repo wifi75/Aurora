@@ -99,14 +99,26 @@ async fn a_broken_target_is_counted_and_does_not_stop_the_others() {
     let bus = Bus::new(64);
     let book = Arc::new(Logbook::open_in_memory().unwrap());
     let sink = UdpSocket::bind("127.0.0.1:0").await.unwrap();
-    let bad = Target::File("/non/esiste/cartella/log.adi".into());
+    // una cartella dentro un FILE non si puo' creare su nessun sistema (un percorso come /non/esiste/... su Windows si crea davvero)
+    let blocker = std::env::temp_dir().join(format!("aurora-export-test-{}", std::process::id()));
+    std::fs::write(&blocker, "x").unwrap();
+    let bad = Target::File(blocker.join("cartella").join("log.adi"));
     let exporter = Exporter::spawn(&bus, book, vec![bad, Target::UdpAdif(sink.local_addr().unwrap())], station(), Arc::new(|| 1_000_000));
     bus.events().send(Event::QsoLogged(qso("AT1AA"))).unwrap();
     let mut buf = vec![0u8; 2048];
     timeout(Duration::from_secs(1), sink.recv_from(&mut buf)).await.unwrap().unwrap();
+    // il conteggio si aggiorna dopo l'invio: si aspetta (il datagramma puo' arrivare prima che l'esportatore abbia contato)
+    for _ in 0..50 {
+        let s = exporter.stats();
+        if s.sent + s.failed >= 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
     let stats = exporter.stats();
     assert_eq!((stats.sent, stats.failed), (1, 1));
     assert!(stats.last_error.is_some());
+    let _ = std::fs::remove_file(&blocker);
 }
 
 #[tokio::test]

@@ -635,6 +635,44 @@ impl Logbook {
         Ok((out, count))
     }
 
+    /// I QSO dal giorno `from` (`AAAAMMGG`) come record ADIF per l'invio UDP (lo stesso di un QSO appena fatto), ognuno con la sua chiave
+    /// (nominativo, banda, modo, istante in secondi Unix) per confrontarlo con il log di un altro programma.
+    pub fn udp_records_since(&self, station: &adif::Station, from: &str) -> Result<Vec<(String, String, String, u64, String)>, LogError> {
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(
+            "SELECT call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, date, time_on, date_off, time_off FROM qso
+             WHERE date >= ?1 ORDER BY date, time_on, id",
+        )?;
+        let rows = stmt.query_map(params![from], |r| {
+            let (date, time_on, date_off, time_off): (String, String, String, String) = (r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?);
+            let on = unix_ms(&date, &time_on).unwrap_or(0);
+            let off = unix_ms(if date_off.is_empty() { &date } else { &date_off }, if time_off.is_empty() { &time_on } else { &time_off }).unwrap_or(on);
+            Ok((
+                QsoRecord {
+                    call: r.get(0)?,
+                    grid: r.get(1)?,
+                    band: r.get(2)?,
+                    mode: r.get(3)?,
+                    freq_hz: r.get::<_, i64>(4)?.max(0) as u64,
+                    rst_sent: r.get(5)?,
+                    rst_rcvd: r.get(6)?,
+                    time_ms: (on / 1000 % 86_400 * 1000) as u32,
+                    time_on_unix_ms: on,
+                    time_off_unix_ms: off,
+                    ..Default::default()
+                },
+                date,
+            ))
+        })?;
+        let mut out = Vec::new();
+        for row in rows {
+            let (q, date) = row?;
+            let record = adif::jtdx_record_with(&q, station, &date, None);
+            out.push((q.call.clone(), q.band.clone(), q.mode.clone(), q.time_on_unix_ms / 1000, record));
+        }
+        Ok(out)
+    }
+
     /// Aggiunge al log i QSO di un testo ADIF (per esempio il `wsjtx_log.adi` di JTDX). Un QSO gia' presente (stessa stazione, banda e modo,
     /// stesso giorno, inizio entro due minuti) non si aggiunge, neppure se e' ripetuto nel file; un record senza nominativo, banda o data valida
     /// si scarta. Tutto o niente: se la scrittura fallisce il log resta com'era.

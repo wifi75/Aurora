@@ -83,6 +83,11 @@ impl Queue {
         self.items.is_empty()
     }
 
+    /// Ci sono QSO in coda per `to`?
+    pub fn has_for(&self, to: SocketAddr) -> bool {
+        self.items.iter().any(|w| w.to == to)
+    }
+
     /// Vero se il QSO per `to` va in coda: ci sono gia' QSO in attesa per lui (l'ordine si rispetta) o nessuno ascolta sulla sua porta.
     pub fn should_hold(&self, to: SocketAddr) -> bool {
         self.items.iter().any(|w| w.to == to) || listening(to) == Some(false)
@@ -178,6 +183,49 @@ impl Queue {
         if let Err(e) = std::fs::write(&tmp, text).and_then(|()| std::fs::rename(&tmp, file)) {
             tracing::warn!("coda dei QSO per i log chiusi non salvata in {}: {e}", file.display());
         }
+    }
+}
+
+/// Quando un log passa da chiuso ad aperto (o Aurora parte con il log gia' aperto), una volta sola si cercano i QSO di Aurora che al log mancano:
+/// quelli fatti con il log chiuso e andati persi (prima del «Rimanda i QSO persi», o con la porta occupata da un altro programma) si recuperano
+/// da soli, senza doppioni.
+#[derive(Default)]
+pub struct Reconcile {
+    open_seen: HashMap<SocketAddr, u32>,
+    done: std::collections::HashSet<SocketAddr>,
+}
+
+impl Reconcile {
+    /// Un controllo (ogni 5 s). `open`: la porta di `to` e' aperta (`None` = non si sa); `busy`: ci sono QSO in coda per `to`.
+    /// Vero quando e' il momento di cercare i QSO mancanti: dopo tre controlli di fila con la porta aperta, la coda vuota e una volta sola
+    /// finche' il log non si richiude.
+    pub fn step(&mut self, to: SocketAddr, open: Option<bool>, busy: bool) -> bool {
+        match open {
+            Some(false) => {
+                self.open_seen.remove(&to);
+                self.done.remove(&to);
+                false
+            }
+            Some(true) if busy => {
+                self.open_seen.remove(&to);
+                false
+            }
+            Some(true) => {
+                let n = self.open_seen.entry(to).or_insert(0);
+                *n += 1;
+                if *n >= SEEN_BEFORE_SEND && !self.done.contains(&to) {
+                    self.done.insert(to);
+                    return true;
+                }
+                false
+            }
+            None => false,
+        }
+    }
+
+    /// La coda ha appena mandato QSO a `to`: il confronto con il log di quella volta non serve (non si rischia un doppione).
+    pub fn mark_done(&mut self, to: SocketAddr) {
+        self.done.insert(to);
     }
 }
 
@@ -378,5 +426,34 @@ mod tests {
         let q = Queue::load(Some(file));
         assert_eq!(q.len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_reconcile_runs_once_after_three_open_checks_with_an_empty_queue() {
+        let to: SocketAddr = "127.0.0.1:2236".parse().unwrap();
+        let mut r = Reconcile::default();
+        assert!(!r.step(to, Some(false), false), "porta chiusa: niente");
+        assert!(!r.step(to, Some(true), false));
+        assert!(!r.step(to, Some(true), false));
+        assert!(r.step(to, Some(true), false), "al terzo controllo con la porta aperta");
+        assert!(!r.step(to, Some(true), false), "una volta sola");
+        assert!(!r.step(to, Some(false), false));
+        assert!(!r.step(to, Some(true), false));
+        assert!(!r.step(to, Some(true), false));
+        assert!(r.step(to, Some(true), false), "si richiude e si riapre: di nuovo");
+    }
+
+    #[test]
+    fn the_reconcile_waits_for_the_queue_and_skips_after_a_resend() {
+        let to: SocketAddr = "127.0.0.1:2236".parse().unwrap();
+        let mut r = Reconcile::default();
+        for _ in 0..5 {
+            assert!(!r.step(to, Some(true), true), "con la coda piena si aspetta");
+        }
+        r.mark_done(to);
+        for _ in 0..5 {
+            assert!(!r.step(to, Some(true), false), "la coda ha appena mandato: niente confronto");
+        }
+        assert!(!r.step(to, None, false));
     }
 }
