@@ -1,0 +1,139 @@
+# SARTG New Year RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.sartg.com/contest/nyrules.htm (regolamento «New Year 2027»).
+
+[contest]
+id = "sartg-ny-rtty"
+nome = "SARTG New Year RTTY Contest"
+alias = ["SARTG New Year RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "Scandinavian Amateur Radio Teleprinter Group (SARTG)"
+sito = "https://www.sartg.com"
+regolamento_url = "https://www.sartg.com/contest/nyrules.htm"
+cabrillo_contest = "SARTG-NY-RTTY"
+note = "Solo RTTY su 80 e 40 metri, 3 ore il 1 gennaio (08:00-11:00 UTC). Scambio: RST + numero progressivo + nome + «Happy New Year» nella propria lingua. 1 punto per QSO; moltiplicatori per banda: paesi DXCC fuori dalla Scandinavia e, in Scandinavia, prefisso + cifra."
+
+[edizione]
+# Sempre il 1 gennaio, 08:00-11:00 UTC: la regola «ennesimo fine settimana pieno» non vale, le date si scrivono anno per anno qui sotto.
+mese = 1
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "08:00"
+durata_ore = 3
+invio_log_giorni = 30             # i log devono arrivare entro il 31 gennaio
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-01-01T08:00:00Z"
+fine = "2026-01-01T10:59:59Z"
+fonte = "https://www.sartg.com/contest/nyrules.htm: «January 1st, 0800-1100 UTC» (data fissa)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-01-01T08:00:00Z"
+fine = "2027-01-01T10:59:59Z"
+fonte = "https://www.sartg.com/contest/nyrules.htm (letto il 2026-11-24): «New Year 2027, January 1, 2027, 0800-1100 UTC»"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-01-01T08:00:00Z"
+fine = "2028-01-01T10:59:59Z"
+fonte = "calcolata: il 1 gennaio, data fissa del regolamento"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m"]
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "nome"
+etichetta_it = "Nome"
+etichetta_en = "Name"
+tipo = "testo"
+quando = "any"                    # senza nome o numero ricevuto il log e' un check log; il «Happy New Year» ricevuto non si scrive
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 001
+
+[[scambio.inviato]]
+nome = "nome"
+etichetta_it = "Nome e «Happy New Year» nella propria lingua"
+etichetta_en = "Name and «Happy New Year» in your own language"
+tipo = "testo"
+quando = "any"                    # si imposta in «La mia sezione / stato / club» della scheda (per esempio «MARIO BUON ANNO»); «HNY» non e' ammesso
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["A", "B", "C"]       # A: una radio, tutte le bande; B: due radio, tutte le bande; C: SWL (multi-operatore ammesso in A e B)
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "SARTG-NY-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CLAIMED-SCORE", "CREATED-BY", "SOAPBOX"]
+facoltativi = ["CATEGORY-POWER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["LOW", "HIGH"]
+invio = "caricamento sul robot dei log (ua9qcq.com) o e-mail a contest@sartg.com; nel SOAPBOX va il messaggio «Happy New Year» mandato; i log devono arrivare entro il 31 gennaio"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda (fuori dalla Scandinavia)", en = "DXCC countries by band (outside Scandinavia)" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["SM", "LA", "OH", "OZ", "TF", "OY", "OX", "JW", "JX", "OH0", "OJ0"]
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree scandinave (prefisso + cifra) per banda", en = "Scandinavian areas (prefix + digit) by band" }
+ordine = 2
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

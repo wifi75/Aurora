@@ -1,0 +1,141 @@
+# SP DX RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://pkrvg.org/strona,spdxrttyen.html (regolamento dell'edizione 2026, PK RVG).
+
+[contest]
+id = "sp-dx-rtty"
+nome = "SP DX RTTY Contest"
+alias = ["SPDX RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "PK RVG (Polish RTTY contest club) con PZK"
+sito = "https://pkrvg.org"
+regolamento_url = "https://pkrvg.org/strona,spdxrttyen.html"
+cabrillo_contest = "SPDX-RTTY"
+note = "Solo RTTY da 80 a 10 metri (senza le bande WARC), 24 ore. Scambio: RST + numero progressivo; le stazioni polacche mandano RST + sigla di due lettere del powiat. Punti 2 / 5 / 10 (paese / continente / altri continenti), 0 con UA ed EW; moltiplicatori: paesi DXCC e powiat per banda, continenti una volta sola."
+
+[edizione]
+# Quarto fine settimana pieno di aprile, da sabato 12:00 a domenica 12:00 UTC.
+mese = 4
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 7              # entro 7 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-25T12:00:00Z"
+fine = "2026-04-26T11:59:59Z"
+fonte = "https://pkrvg.org/strona,spdxrttyen.html (letto il 2026-11-24): «4th full weekend of April, 25/26 April 2026, 12.00 UTC Saturday - 12.00 UTC Sunday»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-24T12:00:00Z"
+fine = "2027-04-25T11:59:59Z"
+fonte = "calcolata: quarto fine settimana pieno di aprile"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]   # 3,5-28 MHz senza le bande WARC
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:SP"            # le stazioni estere mandano il numero progressivo
+
+[[scambio.ricevuto]]
+nome = "powiat"
+etichetta_it = "Powiat (due lettere)"
+etichetta_en = "Powiat (two letters)"
+tipo = "testo"
+quando = "dxcc:SP"                # le stazioni polacche mandano la sigla del powiat (DY, RU, KA, WA...)
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:SP"
+progressivo = true                # da 001
+
+[[scambio.inviato]]
+nome = "powiat"
+etichetta_it = "Powiat (due lettere)"
+etichetta_en = "Powiat (two letters)"
+tipo = "testo"
+quando = "my_dxcc:SP"             # solo per le stazioni polacche: si imposta nella scheda del contest
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]   # A: single op alta; B: bassa; C: QRP (fuori da SP); D: multi-op un TX; E: multi-multi; F: SWL; G/H: SP single op alta/bassa; I/J: SP multi-op; K: novizi (fuori da SP)
+potenza = ["HIGH", "LOW", "QRP"]
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "SPDX-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW", "QRP"]
+invio = "caricamento web su pkrvg.org/spdxrtty_import.html (preferito) o e-mail a sprtty@pzk.org.pl con il nominativo nell'oggetto; file chiamato nominativo.cbr; entro 7 giorni dalla fine"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["UA", "UA2", "UA9", "EU"]
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Powiat polacchi per banda", en = "Polish powiats by band" }
+ordine = 2
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Continenti", en = "Continents" }
+ordine = 3
+moltiplicatore = "continente"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 4
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 5
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

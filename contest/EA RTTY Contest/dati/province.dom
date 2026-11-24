@@ -1,0 +1,65 @@
+; EA RTTY Contest - sigle provinciali spagnole dello scambio (52 province, comprese Ceuta e Melilla) piu' HQ (la stazione speciale EA4URE).
+; Le sigle sono quelle automobilistiche delle province, come si usano negli scambi dei contest URE: da ricontrollare sul regolamento di ogni edizione.
+; Formato .dom (docs/contest-file.md).
+EA RTTY Contest - province spagnole
+
+EA:
+A = A
+AB = AB
+AL = AL
+AV = AV
+B = B
+BA = BA
+BI = BI
+BU = BU
+C = C
+CA = CA
+CC = CC
+CO = CO
+CR = CR
+CS = CS
+CU = CU
+GI = GI
+GR = GR
+GU = GU
+H = H
+HU = HU
+J = J
+L = L
+LE = LE
+LO = LO
+LU = LU
+M = M
+MA = MA
+MU = MU
+NA = NA
+O = O
+OR = OR
+P = P
+PO = PO
+S = S
+SA = SA
+SE = SE
+SG = SG
+SO = SO
+SS = SS
+T = T
+TE = TE
+TO = TO
+V = V
+VA = VA
+VI = VI
+Z = Z
+ZA = ZA
+HQ = HQ
+
+EA6:
+PM = PM
+
+EA8:
+GC = GC
+TF = TF
+
+EA9:
+CE = CE
+ML = ML

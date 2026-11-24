@@ -1,0 +1,118 @@
+# JARTS WW RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://jarl.org/English/4_Library/A-4-3_Contests/rtty_rules_en.html (pagina ufficiale JARL «JARL World Wide RTTY Contest»; il contest e' organizzato da JARL e ha sostituito il JARTS WW RTTY Contest).
+
+[contest]
+id = "jarts-ww-rtty"
+nome = "JARTS WW RTTY Contest"
+alias = ["JARTS RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "Japan Amateur Radio League (JARL)"
+sito = "https://www.jarl.com/contest/"
+regolamento_url = "https://jarl.org/English/4_Library/A-4-3_Contests/rtty_rules_en.html"
+cabrillo_contest = "JARTS-WW-RTTY"
+note = "Solo RTTY (Baudot) da 80 a 10 metri, 48 ore. Scambio: RST + eta' dell'operatore. Punti 2 (stesso continente) / 3 (altri continenti); moltiplicatori per banda: entita' DXCC (senza JA, W, VE, VK) e aree numeriche di JA, W, VE e VK. Punteggio: somma delle bande di punti x moltiplicatori della banda."
+
+[edizione]
+# Terzo sabato di ottobre alle 00:00 UTC fino alle 24:00 della domenica.
+mese = 10
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+invio_log_giorni = 10             # entro le 24:00 UTC del decimo giorno dopo il contest
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-10-17T00:00:00Z"
+fine = "2026-10-18T23:59:59Z"
+fonte = "calcolata dalla regola «third Saturday in October, 00:00 UTC - 24:00 UTC next day» (la pagina non scrive le date dell'anno)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-10-16T00:00:00Z"
+fine = "2027-10-17T23:59:59Z"
+fonte = "calcolata: terzo sabato di ottobre"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]   # 3,5 / 7 / 14 / 21 / 28 MHz
+
+[modi]
+ammessi = ["rtty"]                # RTTY, solo Baudot
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "eta"
+etichetta_it = "Eta'"
+etichetta_en = "Age"
+tipo = "testo"
+quando = "any"                    # eta' dell'operatore (media per i multi-op); 01, 00 o 99 se sconosciuta
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "eta"
+etichetta_it = "Eta'"
+etichetta_en = "Age"
+tipo = "testo"
+quando = "any"                    # si imposta nel campo «Numero da mandare» della scheda del contest
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["SOHP", "SOLP", "SOQRP", "MMHP", "MMLP"]   # single op alta, bassa, QRP; multi-op alta, bassa
+potenza = ["HIGH", "LOW", "QRP"]
+altre = ["YOUTH (sovrapposizione, single op fino a 25 anni)", "Checklog"]
+
+[cabrillo]
+contest = "JARTS-WW-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-OVERLAY", "CATEGORY-BAND", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW", "QRP"]
+invio = "caricamento su https://contest.jarl.org/upload-aa o e-mail a rtty@jarl.org entro le 24:00 UTC del decimo giorno; Cabrillo (consigliato) o formato elettronico JARL; frequenza in kHz consigliata"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Entita' DXCC per banda (senza JA, W, VE, VK)", en = "DXCC entities by band (not JA, W, VE, VK)" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["JA", "K", "VE", "VK"]
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree di JA, W, VE e VK per banda", en = "JA, W, VE and VK call areas by band" }
+ordine = 2
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

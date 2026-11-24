@@ -1,0 +1,197 @@
+# EA RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dalle bases EARTTY 2026 (https://concursos.ure.es/en/eartty, letto il 2026-11-24).
+# Due punti di vista: [prova] e' una stazione italiana (DX: manda il progressivo), [[altra_stazione]] una stazione spagnola (manda la provincia).
+# Nominativi di fantasia, edizione 2027 (sabato 3 aprile alle 12:00 UTC). Moltiplicatori: valore@modo, una volta per banda.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-04-03"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1201"
+nominativo = "EA3ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "B"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA@RTTY", "B@RTTY"], motivo = "DX con EA: 3 punti; paese EA e provincia B" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1205"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "DX con DX: 1 punto; paese DL" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "1210"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K@RTTY", "K1@RTTY"], motivo = "DX con DX: 1 punto; paese K e area K1 (due moltiplicatori)" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "1215"
+nominativo = "EA3ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "B"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1220"
+nominativo = "EA3ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "B"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA@RTTY", "B@RTTY"], motivo = "stessa stazione su 40 m: non e' doppio; paese e provincia nuovi sulla banda" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7041
+ora_utc = "1225"
+nominativo = "EA8ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "TF"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA8@RTTY", "TF@RTTY"], motivo = "DX con EA8: 3 punti; paese EA8 e provincia TF" }
+
+[[qso]]
+n = 7
+banda = 80
+modo = "RTTY"
+freq_khz = 3580
+ora_utc = "1230"
+nominativo = "EA4URE"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "HQ"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA@RTTY", "HQ@RTTY"], motivo = "DX con EA: 3 punti; paese EA e HQ" }
+
+[[qso]]
+n = 8
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "1235"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA@RTTY", "JA1@RTTY"], motivo = "DX con DX: 1 punto; paese JA e area JA1" }
+
+[[qso]]
+n = 9
+banda = 15
+modo = "RTTY"
+freq_khz = 21081
+ora_utc = "1240"
+nominativo = "EA6ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "PM"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA6@RTTY", "PM@RTTY"], motivo = "DX con EA6: 3 punti; paese EA6 e provincia PM" }
+
+[[qso]]
+n = 10
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "1245"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 1
+punti = 18
+moltiplicatori = 15
+punteggio = 270                   # 18 punti x 15 moltiplicatori (20 m: EA, B, DL, K, K1; 40 m: EA, B, EA8, TF; 80 m: EA, HQ; 15 m: JA, JA1, EA6, PM)
+
+[[altra_stazione]]
+nominativo_proprio = "EA3XYZ"
+locatore_proprio = "JN11"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1201"
+nominativo = "EA5ABC"
+rst_inviato = "599"
+scambio_inviato = "B"
+rst_ricevuto = "599"
+scambio_ricevuto = "V"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["EA@RTTY", "V@RTTY"], motivo = "EA con EA: 2 punti; paese EA e provincia V" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1205"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "B"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "EA con DX: 1 punto; paese DL" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1210"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "B"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K@RTTY", "K1@RTTY"], motivo = "EA con DX: 1 punto; paese K e area K1" }
+
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 0
+punti = 4
+moltiplicatori = 5
+punteggio = 20                    # 4 punti x 5 moltiplicatori (EA, V, DL, K, K1)

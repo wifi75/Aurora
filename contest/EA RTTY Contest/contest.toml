@@ -1,0 +1,146 @@
+# EA RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://concursos.ure.es/en/eartty (bases EARTTY 2026 di URE, Union de Radioaficionados Espanoles).
+
+[contest]
+id = "ea-rtty"
+nome = "EA RTTY Contest"
+alias = ["EA RTTY CONTEST"]       # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "URE (Union de Radioaficionados Espanoles)"
+sito = "https://concursos.ure.es"
+regolamento_url = "https://concursos.ure.es/en/eartty"
+cabrillo_contest = "EARTTY"
+note = "Solo RTTY (Baudot) da 80 a 10 metri, 24 ore. Stazioni EA: RST + sigla della provincia; resto del mondo: RST + numero progressivo. Punti 2/1/3/1; moltiplicatori per banda: paesi, province, aree di W, VE, JA, VK e HQ."
+
+[edizione]
+# Primo fine settimana pieno di aprile: sabato 12:00 UTC - domenica 11:59 UTC.
+mese = 4
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 16             # 2026: gara 4-5 aprile, log entro il 20 aprile 2026 (regola generale HF di URE: massimo 15 giorni)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-04T12:00:00Z"
+fine = "2026-04-05T11:59:59Z"
+fonte = "https://concursos.ure.es/en/eartty (letto il 2026-11-24): dalle 12:00 UTC di sabato 4 alle 11:59 UTC di domenica 5 aprile 2026; log entro il 20 aprile 2026"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-03T12:00:00Z"
+fine = "2027-04-04T11:59:59Z"
+fonte = "calcolata: primo fine settimana pieno di aprile (le bases 2027 non sono ancora pubblicate)"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # RTTY Baudot
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "provincia"
+etichetta_it = "Provincia (o HQ)"
+etichetta_en = "Province (or HQ)"
+tipo = "testo"
+quando = "dxcc:EA,EA6,EA8,EA9"
+elenco = "dati/province.dom"
+nota = "Tutte le stazioni che trasmettono dal territorio spagnolo, qualunque sia il prefisso. EA4URE manda HQ."
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:EA,EA6,EA8,EA9"
+nota = "Il resto del mondo manda un numero progressivo da 001."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "provincia"
+etichetta_it = "Provincia (o HQ)"
+etichetta_en = "Province (or HQ)"
+tipo = "testo"
+quando = "my_dxcc:EA,EA6,EA8,EA9"
+elenco = "dati/province.dom"
+nota = "Per chi opera dalla Spagna: la propria provincia (EA4URE: HQ) si scrive in «Numero da mandare» della scheda del contest, con l'incremento automatico spento; le macro la mandano con <NRS>."
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:EA,EA6,EA8,EA9"
+progressivo = true
+
+[doppi]
+per = "banda"                     # una volta per banda; i QSO in banda incrociata sono vietati
+
+[categorie]
+operatore = ["SINGLE-OP ALL HIGH", "SINGLE-OP ALL LOW", "SINGLE-OP ALL QRP", "SINGLE-OP ALL YOUTH", "SINGLE-OP 10M", "SINGLE-OP 15M", "SINGLE-OP 20M", "SINGLE-OP 40M", "SINGLE-OP 80M", "MULTI-MULTI ALL"]
+potenza = ["HIGH", "LOW", "QRP"]  # alta: limite legale del paese; bassa: fino a 100 W; QRP: fino a 5 W
+altre = ["Checklog"]              # classifiche separate per stazioni EA e DX; Youth: massimo 25 anni
+
+[cabrillo]
+contest = "EARTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "10M", "15M", "20M", "40M", "80M"]
+category_power = ["HIGH", "LOW", "QRP"]
+invio = "solo Cabrillo, caricato dal sito di invio dei log di URE (https://concursos.ure.es/en/logs/) entro il 20 aprile 2026; i log in ritardo diventano Checklog"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Province spagnole per banda", en = "Spanish provinces by band" }
+ordine = 2
+moltiplicatore = "stato"
+dominio = "dati/province.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree di W, VE, JA e VK per banda", en = "W, VE, JA and VK call areas by band" }
+ordine = 3
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 4
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 5
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

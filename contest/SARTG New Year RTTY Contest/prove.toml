@@ -1,0 +1,175 @@
+# SARTG New Year RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2027 (https://www.sartg.com/contest/nyrules.htm).
+# Stazione italiana. Nominativi di fantasia, edizione 2027 (1 gennaio). Moltiplicatori: valore@modo, una volta per banda.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-01-01"
+
+[[qso]]
+n = 1
+banda = 80
+modo = "RTTY"
+freq_khz = 3590
+ora_utc = "0801"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 HANS"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "1 punto; paese DL fuori dalla Scandinavia" }
+
+[[qso]]
+n = 2
+banda = 80
+modo = "RTTY"
+freq_khz = 3591
+ora_utc = "0805"
+nominativo = "SM3ABC"
+rst_inviato = "599"
+scambio_inviato = "002 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "002 LARS"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["SM3@RTTY"], motivo = "in Scandinavia conta l'area SM3, non il paese" }
+
+[[qso]]
+n = 3
+banda = 80
+modo = "RTTY"
+freq_khz = 3592
+ora_utc = "0810"
+nominativo = "SM5XYZ"
+rst_inviato = "599"
+scambio_inviato = "003 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "003 OLLE"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["SM5@RTTY"], motivo = "area SM5" }
+
+[[qso]]
+n = 4
+banda = 80
+modo = "RTTY"
+freq_khz = 3593
+ora_utc = "0815"
+nominativo = "SM3DEF"
+rst_inviato = "599"
+scambio_inviato = "004 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "004 PER"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "area SM3 gia' presa su 80 m" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0820"
+nominativo = "SM3ABC"
+rst_inviato = "599"
+scambio_inviato = "005 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "005 LARS"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["SM3@RTTY"], motivo = "altra banda: non e' doppio, l'area SM3 conta di nuovo" }
+
+[[qso]]
+n = 6
+banda = 80
+modo = "RTTY"
+freq_khz = 3594
+ora_utc = "0825"
+nominativo = "SM3ABC"
+rst_inviato = "599"
+scambio_inviato = "006 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "006 LARS"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 7
+banda = 80
+modo = "RTTY"
+freq_khz = 3595
+ora_utc = "0830"
+nominativo = "OH0ABC"
+rst_inviato = "599"
+scambio_inviato = "007 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "007 JARI"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OH00@RTTY"], motivo = "OH0 e' un'area scandinava a se' (non OH)" }
+
+[[qso]]
+n = 8
+banda = 80
+modo = "RTTY"
+freq_khz = 3596
+ora_utc = "0835"
+nominativo = "7S3ABC"
+rst_inviato = "599"
+scambio_inviato = "008 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "008 ERIK"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "7S3 conta come SM3: gia' preso su 80 m" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0840"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "009 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "009 HANS"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "20 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 80
+modo = "RTTY"
+freq_khz = 3597
+ora_utc = "0845"
+nominativo = "LA/G3XYZ"
+rst_inviato = "599"
+scambio_inviato = "010 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "010 GUS"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["LA0@RTTY"], motivo = "senza cifra nel prefisso LA l'area e' LA0" }
+
+[[qso]]
+n = 11
+banda = 80
+modo = "RTTY"
+freq_khz = 3598
+ora_utc = "0850"
+nominativo = "OZ150A"
+rst_inviato = "599"
+scambio_inviato = "011 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "011 METTE"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OZ1@RTTY"], motivo = "con piu' cifre vale la prima: area OZ1" }
+
+[[qso]]
+n = 12
+banda = 40
+modo = "RTTY"
+freq_khz = 7041
+ora_utc = "0855"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "012 MARIO BUON ANNO"
+rst_ricevuto = "599"
+scambio_ricevuto = "012 HANS"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "altra banda: il paese DL conta di nuovo" }
+
+# Totali (a mano): ammessi 1-5, 7, 8, 10-12 = 10; doppi 1 (n. 6); non ammessi 1 (n. 9)
+#   punti: 10 (1 per QSO)
+#   moltiplicatori: 80 m DL, SM3, SM5, OH0 (nel motore OH00), LA0, OZ1 (6); 40 m SM3, DL (2) = 8
+#   punteggio = 10 x 8 = 80
+[atteso]
+qso_ammessi = 10
+doppi = 1
+non_ammessi = 1
+punti = 10
+moltiplicatori = 8
+punteggio = 80

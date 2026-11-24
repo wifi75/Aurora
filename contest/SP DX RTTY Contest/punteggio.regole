@@ -1,0 +1,9 @@
+; SP DX RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2026 letto il 2026-11-24 su https://pkrvg.org/strona,spdxrttyen.html.
+;
+; bands: 80, 40, 20, 15, 10 m (senza WARC).
+; points: 0 con UA ed EW (Russia europea, Kaliningrad, Russia asiatica, Bielorussia), poi stesso paese 2, stesso continente 5, altri continenti 10.
+; mult: paesi DXCC per banda (esclusi UA ed EW); i powiat polacchi per banda (solo per i QSO con SP); i continenti una volta sola, moltiplicati a parte.
+bands=80,40,20,15,10
+points=dxcc:UA,UA2,UA9,EU=0; same_dxcc=2; same_cont=5; any=10
+mult=dxcc/band/except:UA,UA2,UA9,EU; exch/band/if:dxcc:SP; cont/product

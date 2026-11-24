@@ -1,0 +1,163 @@
+# SP DX RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://pkrvg.org/strona,spdxrttyen.html).
+# Stazione italiana. Nominativi di fantasia, edizione 2027 (sabato 24 aprile). Moltiplicatori: valore@modo; paesi e powiat una volta per banda, i continenti una volta sola.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-04-24"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1205"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["DL@RTTY", "EU@RTTY"], motivo = "stesso continente: 5 punti; paese DL e continente Europa" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1210"
+nominativo = "SP9ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "DY"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["SP@RTTY", "DY@RTTY"], motivo = "stesso continente: 5 punti; paese SP e powiat DY" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "1215"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["I@RTTY"], motivo = "stesso paese: 2 punti; il proprio paese e' un moltiplicatore" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "1220"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["K@RTTY", "NA@RTTY"], motivo = "altro continente: 10 punti; paese K e continente Nord America" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1225"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["K@RTTY"], motivo = "altra banda: non e' doppio; il paese conta di nuovo, il continente no" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "1230"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "1235"
+nominativo = "UA3ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = false, punti = 0, moltiplicatori = [], motivo = "UA: 0 punti e il paese non e' un moltiplicatore (il continente Europa c'e' gia')" }
+
+[[qso]]
+n = 8
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "1240"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["JA@RTTY", "AS@RTTY"], motivo = "altro continente: 10 punti; paese JA e continente Asia" }
+
+[[qso]]
+n = 9
+banda = 40
+modo = "RTTY"
+freq_khz = 7041
+ora_utc = "1245"
+nominativo = "SP9ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "DY"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["SP@RTTY", "DY@RTTY"], motivo = "altra banda: paese SP e powiat DY contano di nuovo" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "1250"
+nominativo = "SP5XYZ"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "KA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["KA@RTTY"], motivo = "SP gia' preso su 20 m; nuovo powiat KA" }
+
+[[qso]]
+n = 11
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "1255"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "011"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1-5, 7-10 = 9; doppi 1 (n. 6); non ammessi 1 (n. 11)
+#   punti: 5 + 5 + 2 + 10 + 10 + 0 + 10 + 5 + 5 = 52
+#   per banda: 20 m DL, SP, DY, I, K, KA (6); 40 m K, SP, DY (3); 15 m JA (1) = 10
+#   continenti: EU NA AS = 3 (una volta sola); totale moltiplicatori 10 x 3 = 30
+#   punteggio = 52 x 30 = 1560
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 52
+moltiplicatori = 30
+punteggio = 1560

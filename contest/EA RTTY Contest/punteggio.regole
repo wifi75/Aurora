@@ -1,0 +1,10 @@
+; EA RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Bases EARTTY 2026 lette il 2026-11-24 su https://concursos.ure.es/en/eartty (punteggio, moltiplicatori, punteggio finale).
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: EA con EA (anche EA6, EA8, EA9) 2; EA con DX 1; DX con DX 1; DX con EA 3.
+; mult, per banda: entita' DXCC; provincia (o HQ) dello scambio delle stazioni EA; aree numeriche di W, VE, JA e VK.
+;   Il primo QSO su una banda con W/VE/JA/VK vale due moltiplicatori (paese e area), con EA/EA6/EA8/EA9 due (paese e provincia).
+bands=80,40,20,15,10
+points=my_dxcc:EA,EA6,EA8,EA9&dxcc:EA,EA6,EA8,EA9=2; my_dxcc:EA,EA6,EA8,EA9=1; dxcc:EA,EA6,EA8,EA9=3; any=1
+mult=dxcc/band; exch/band/if:dxcc:EA,EA6,EA8,EA9; area:K,VE,JA,VK/band

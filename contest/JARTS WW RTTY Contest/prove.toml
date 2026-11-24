@@ -1,0 +1,150 @@
+# JARTS WW RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://jarl.org/English/4_Library/A-4-3_Contests/rtty_rules_en.html).
+# Stazione italiana. Nominativi di fantasia, edizione 2027 (sabato 16 ottobre). Moltiplicatori: valore@modo, una volta per banda.
+# Punteggio: somma, banda per banda, dei punti della banda x moltiplicatori della banda.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-10-16"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "42"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente: 2 punti; entita' DL" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "50"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["I@RTTY"], motivo = "stesso paese: 2 punti; il proprio paese e' un moltiplicatore" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "61"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K1@RTTY"], motivo = "altro continente: 3 punti; solo l'area K1 (gli Stati Uniti non contano come entita')" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0015"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "55"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA1@RTTY"], motivo = "solo l'area JA1 (il Giappone non conta come entita')" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0020"
+nominativo = "VK2ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "38"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["VK2@RTTY"], motivo = "solo l'area VK2" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0025"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "61"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K1@RTTY"], motivo = "stessa stazione su 40 m: non e' doppio, l'area K1 conta di nuovo sulla banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "0030"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "61"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "0035"
+nominativo = "K5ABC/1"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "45"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = [], motivo = "K5ABC/1 e' nell'area 1: K1 gia' preso su 20 m" }
+
+[[qso]]
+n = 9
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0040"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "42"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "0045"
+nominativo = "DL2ABC"
+rst_inviato = "599"
+scambio_inviato = "35"
+rst_ricevuto = "599"
+scambio_ricevuto = "01"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@RTTY"], motivo = "DL su 15 m: nuova entita' su questa banda; eta' sconosciuta 01" }
+
+# Totali (a mano): ammessi 1-6, 8, 10 = 8; doppi 1 (n. 7); non ammessi 1 (n. 9)
+#   punti: 20 m 2+2+3+3+3+3 = 16; 40 m 3; 15 m 2 = 21
+#   moltiplicatori: 20 m DL, I, K1, JA1, VK2 (5); 40 m K1 (1); 15 m DL (1) = 7
+#   punteggio = 16 x 5 + 3 x 1 + 2 x 1 = 85
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 1
+punti = 21
+moltiplicatori = 7
+punteggio = 85

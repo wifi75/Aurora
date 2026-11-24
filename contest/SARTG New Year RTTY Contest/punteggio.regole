@@ -1,0 +1,9 @@
+; SARTG New Year RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2027 letto il 2026-11-24 su https://www.sartg.com/contest/nyrules.htm.
+;
+; bands: 80 e 40 m.
+; points: 1 per QSO.
+; mult: paesi DXCC per banda fuori dalla Scandinavia; in Scandinavia (JW, JX, LA, OH, OH0, OJ0, OX, OY, OZ, SM, TF) ogni prefisso con cifra (area) per banda.
+bands=80,40
+points=any=1
+mult=dxcc/band/except:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0; area:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0/band

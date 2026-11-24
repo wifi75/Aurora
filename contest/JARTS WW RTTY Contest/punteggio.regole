@@ -1,0 +1,11 @@
+; JARTS WW RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento letto il 2026-11-24 su https://jarl.org/English/4_Library/A-4-3_Contests/rtty_rules_en.html.
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: stesso continente (anche stesso paese) 2, altri continenti 3.
+; mult: entita' DXCC per banda, escluse JA, W, VE e VK (terraferma); aree numeriche di JA, W, VE e VK per banda.
+; band_score: il punteggio e' la somma, banda per banda, dei punti della banda x i moltiplicatori della banda.
+bands=80,40,20,15,10
+points=same_cont=2; other_cont=3
+mult=dxcc/band/except:JA,K,VE,VK; area:JA,K,VE,VK/band
+band_score=1
