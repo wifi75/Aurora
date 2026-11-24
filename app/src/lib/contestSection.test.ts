@@ -20,7 +20,7 @@ describe('scambio con terzo elemento', () => {
   });
   it('pulisce la sezione', () => {
     expect(cleanExtra(' ny  ')).toBe('NY');
-    expect(cleanExtra('abcdefghijkl')).toBe('ABCDEFGH');
+    expect(cleanExtra('abcdefghijklmnopqrstuvwxyz')).toBe('ABCDEFGHIJKLMNOPQRST');
   });
   it('sceglie il nome della casella dal contest', () => {
     expect(extraLabelKey('UBA CW CONTEST')).toBe('ssbc.exLabel.uba');

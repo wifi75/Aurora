@@ -15,3 +15,6 @@ Cosa il motore non copre:
 - **«3 altri log»**: un QSO conta solo se la stazione compare in almeno 3 altri log o ha mandato il proprio: serve il confronto con i log degli altri, fuori portata.
 - Le zone dei punti sono quelle del database dei paesi (cty.dat), non quelle scritte nello scambio.
 - La tabella dei punti e' quella «REV. 2004» del sito; nella cella zona 21 - zona 38 il valore e' 19 (il vecchio file `.contest` aveva 10).
+
+## Cosa il motore non copre
+- Il Cabrillo di Aurora non scrive i punti del QSO in fondo alla riga come chiede il sito del contest, e il controllo di conformita' e' quello del sito (caricamento web).

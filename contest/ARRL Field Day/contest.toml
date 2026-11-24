@@ -35,7 +35,7 @@ fonte = "calcolata dalla regola 3 del regolamento («ALWAYS the fourth full week
 confermata = false
 
 [bande]
-ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m", "6 m", "2 m", "70 cm", "23 cm"]   # HF senza WARC e 60 m, poi dai 50 MHz in su (solo le bande che Aurora conosce); il satellite e' una «banda» a parte
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m", "6 m", "2 m", "1.25 m", "70 cm", "33 cm", "23 cm", "13 cm", "9 cm", "6 cm", "3 cm", "1.25 cm"]   # HF senza WARC e 60 m, poi tutte le bande dai 50 MHz in su fino ai 24 GHz (le microonde sopra non entrano: 6mm e 4mm si confondono con i 6 m dopo la normalizzazione delle bande); il satellite e' una «banda» a parte
 
 [modi]
 ammessi = []                      # fonia, CW e digitale (non CW): nessun limite

@@ -17,7 +17,7 @@
 - Per tutte: un solo segnale alla volta, cambio banda libero; reti di spot permesse, auto-spot no.
 
 ## Scambio
-- RST + numero progressivo da 001 + zona CQ (`599 001 15`). Il progressivo si manda con `<NRS>`; la zona CQ nelle macro di partenza e' 15 (Italia): cambiala se la tua stazione e' in un'altra zona.
+- RST + numero progressivo da 001 + zona CQ (`599 001 15`). Il progressivo si manda con `<NRS>`; la zona CQ propria si scrive nella scheda del contest («La mia sezione / stato / club») e le macro la mandano con `<MYSECT>`.
 
 ## Punti per QSO
 - Tabella delle zone: i punti dipendono dalla zona CQ propria e da quella del corrispondente (tabella 40 x 40, simmetrica, 2 punti per la stessa zona).

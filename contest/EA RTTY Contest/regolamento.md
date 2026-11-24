@@ -30,7 +30,7 @@
 - Cluster ammesso in tutte le categorie; vietato autoannunciarsi o farlo fare ad altri. Single op: un solo segnale; multi: un segnale per banda, tutti gli operatori nel log. Un solo nominativo per tutta la gara. Monobanda: si possono fare QSO su altre bande ma passano a Checklog.
 
 ## Log
-- Solo Cabrillo (`CONTEST: EARTTY`), caricato dal sito dei log di URE; conferma o errori per e-mail. Problemi: hf@ure.es (non per inviare log); manager: eb4z@ure.es.
+- Solo Cabrillo (`CONTEST: EARTTY`), caricato dal sito dei log di URE; conferma o errori per e-mail. Problemi: hf@ure.es (non per inviare log); il manager e' indicato nel regolamento ufficiale di URE.
 
 ## Premi
 - Targhe ai campioni di ogni categoria; diplomi ai secondi e terzi, al primo di USA, VE, JA, VK; per il premio cartaceo servono almeno 150 QSO validi in multibanda o 50 in monobanda e un minimo di partecipanti. I vincitori SOAB e MM possono operare come EA4URE (HQ) l'anno dopo.

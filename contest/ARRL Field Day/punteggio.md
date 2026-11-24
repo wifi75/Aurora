@@ -2,7 +2,7 @@
 
 | Riga | Cosa fa | Regolamento |
 |---|---|---|
-| `bands=160,80,40,20,15,10,6,2,70cm,23cm` | HF senza WARC e 60 m, piu' le bande sopra i 50 MHz che Aurora conosce | 2 |
+| `bands=160,80,40,20,15,10,6,2,1.25m,70cm,33cm,23cm,13cm,9cm,6cm,3cm,1.25cm` | HF senza WARC e 60 m, piu' tutte le bande dai 50 MHz ai 24 GHz | 2 |
 | `points=mode:SSB,USB,LSB,AM,FM,PHONE=1` | fonia: 1 punto per QSO | 7.1.1 |
 | `any=2` | CW e digitale (non CW): 2 punti per QSO | 7.1.2, 7.1.3 |
 

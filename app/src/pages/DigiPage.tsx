@@ -21,7 +21,7 @@ import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, rea
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
 import { getActiveTextContest, getTextContestCheck, type TextContest } from '../api/contestTesto';
-import { bandeAmmesse, modiDichiarati } from '../lib/contestVoci';
+import { bandeAmmesse, haSezionePropria, modiDichiarati } from '../lib/contestVoci';
 import { categoryValid, contestWindow, contestWindowStatus, grabExchange, startSerial, withContestMacros } from '../lib/textContest';
 import { ContestEditDialog, ContestListDialog, useSelectTextContest } from '../components/digi/ContestListDialog';
 import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useTextContestScore } from '../components/digi/ContestStatsDialog';
@@ -251,7 +251,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     refetchOnWindowFocus: false,
   });
   const sentSectionRef = useRef({ id: null as string | null, applies: false });
-  sentSectionRef.current = { id: textContest?.contest.id ?? null, applies: textContest !== null && ownExchQ.data?.exch_atteso === true };
+  sentSectionRef.current = { id: textContest?.contest.id ?? null, // il contest chiede la propria sezione se il punteggio ha un moltiplicatore sullo scambio (`exch_atteso`) o se la cartella dichiara un campo di testo da
+  // mandare (zona di Volta, sezione del Field Day, riferimento IOTA, nome del SARTG New Year): senza questo `<MYSECT>` e il log restavano vuoti
+  applies: textContest !== null && (ownExchQ.data?.exch_atteso === true || haSezionePropria(textContest.contest)) };
   const [contestList, setContestList] = useState(false);
   const [contestStats, setContestStats] = useState(false);
   /** La finestra dei QTC del WAE (mandare o ricevere), con il contest attivo che li prevede. */

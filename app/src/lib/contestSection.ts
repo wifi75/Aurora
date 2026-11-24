@@ -5,8 +5,8 @@
  */
 export const SECTION_KEY = 'aurora.digi.contestsect.';
 
-/** Lunghezza massima della sezione, dello stato o del club. */
-export const EXTRA_MAX = 8;
+/** Lunghezza massima della sezione, dello stato, del club o del valore proprio (il SARTG New Year chiede nome e augurio per esteso). */
+export const EXTRA_MAX = 20;
 
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 

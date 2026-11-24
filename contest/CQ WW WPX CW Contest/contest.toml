@@ -37,6 +37,27 @@ fine = "2027-05-30T23:59:59Z"
 fonte = "calcolata: ultimo fine settimana pieno di maggio (il regolamento letto non da' il 2027)"
 confermata = false
 
+[[edizione.date]]
+anno = 2028
+inizio = "2028-05-27T00:00:00Z"
+fine = "2028-05-28T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di maggio (la regola «5° weekend» non vale negli anni con quattro weekend pieni)"
+confermata = false
+
+[[edizione.date]]
+anno = 2029
+inizio = "2029-05-26T00:00:00Z"
+fine = "2029-05-27T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di maggio (la regola «5° weekend» non vale negli anni con quattro weekend pieni)"
+confermata = false
+
+[[edizione.date]]
+anno = 2030
+inizio = "2030-05-25T00:00:00Z"
+fine = "2030-05-26T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di maggio (la regola «5° weekend» non vale negli anni con quattro weekend pieni)"
+confermata = false
+
 [bande]
 ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]   # 1,8 / 3,5 / 7 / 14 / 21 / 28 MHz, niente WARC
 

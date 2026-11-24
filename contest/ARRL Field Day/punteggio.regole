@@ -5,5 +5,5 @@
 ; points: fonia 1 punto, CW 2, digitale (non CW) 2 (7.1). Il resto del punteggio (moltiplicatore di potenza 5/2/1 e bonus) non si calcola dal log:
 ;   punteggio finale = punti dei QSO x moltiplicatore di potenza + bonus (7.2, 7.3), sul riepilogo da mandare all'ARRL.
 ; Niente moltiplicatori: il punteggio mostrato e' la somma dei punti dei QSO.
-bands=160,80,40,20,15,10,6,2,70cm,23cm
+bands=160,80,40,20,15,10,6,2,1.25m,70cm,33cm,23cm,13cm,9cm,6cm,3cm,1.25cm
 points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2
