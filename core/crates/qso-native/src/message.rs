@@ -42,6 +42,22 @@ pub enum Message {
     Other,
 }
 
+/// La riga DXpedition di una Fox (`K1ABC RR73; W9XYZ <KH1/KH7Z> -08`, `i3=0 n3=1`) vale due messaggi diretti, come li legge WSJT-X:
+/// `K1ABC KH1/KH7Z RR73` (chiusura del QSO del primo Hound) e `W9XYZ KH1/KH7Z -08` (rapporto al secondo). Senza questa divisione
+/// la riga sembrava testo libero e un Hound non registrava mai il QSO all'RR73 della Fox (issue #103).
+pub fn split_fox(text: &str) -> Option<(String, String)> {
+    let tokens: Vec<&str> = text.split_whitespace().collect();
+    if tokens.len() != 5 || !tokens[1].eq_ignore_ascii_case("RR73;") {
+        return None;
+    }
+    let fox = tokens[3].trim_start_matches('<').trim_end_matches('>');
+    let (first, second) = (tokens[0].trim_matches(['<', '>']), tokens[2].trim_matches(['<', '>']));
+    if fox.is_empty() || fox == "..." || !is_callsign(first) || !is_callsign(second) || !is_callsign(fox) {
+        return None;
+    }
+    Some((format!("{first} {fox} RR73"), format!("{second} {fox} {}", tokens[4])))
+}
+
 /// Legge un messaggio. Il testo e' reso maiuscolo; i nominativi tra `<>` perdono le parentesi.
 pub fn parse(text: &str) -> Message {
     let tokens: Vec<String> = text
@@ -225,6 +241,14 @@ pub fn is_std_call(call: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_fox_line_splits_into_two_directed_messages() {
+        use super::split_fox;
+        assert_eq!(split_fox("IU3ABC RR73; W9XYZ <KH1/KH7Z> -08"), Some(("IU3ABC KH1/KH7Z RR73".to_string(), "W9XYZ KH1/KH7Z -08".to_string())));
+        assert_eq!(split_fox("IU3ABC RR73; W9XYZ <...> -08"), None);
+        assert_eq!(split_fox("IU3ABC K1ABC RR73"), None);
+    }
+
     use super::*;
 
     fn s(x: &str) -> String {

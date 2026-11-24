@@ -1280,7 +1280,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let screened = self.screen_callers(decoded, &mut log);
         let decoded = screened.as_slice();
         let slot = Slot(slot_start_ms / self.mode.period_ms());
-        let list: Vec<QDecoded> = decoded.iter().map(|(text, snr, freq)| QDecoded::new(text, *snr, *freq)).collect();
+        // la riga di una Fox («A RR73; B <DX> -08») entra nella sequenza come i suoi due messaggi diretti
+        let list: Vec<QDecoded> = decoded
+            .iter()
+            .flat_map(|(text, snr, freq)| match qso_native::message::split_fox(text) {
+                Some((a, b)) => vec![QDecoded::new(&a, *snr, *freq), QDecoded::new(&b, *snr, *freq)],
+                None => vec![QDecoded::new(text, *snr, *freq)],
+            })
+            .collect();
         self.enforce_contest_rules(&mut log);
         // modo Fox: la sequenza normale non c'entra, la Fox lavora fino a 5 Hound per periodo
         if self.controls.switch_on("fox") {
@@ -2485,6 +2492,24 @@ mod tests {
         d.handle(TxCommand::SetDx { call: Some("V26JJ".into()), grid: None, generate: true }, BASE + 1.0);
         d.after_slot(SLOT_MS, &[("R2PA V26JJ RR73".to_string(), -6, 480), ("R7RDE V26JJ -04".to_string(), -6, 480)], BASE + 14.2, 14_090_000, "20m");
         assert!(!controls.switch_on("hound"));
+    }
+
+    /// Issue #103 (AB7R, Hound): l'RR73 della Fox arriva nella riga DXpedition «IU3ABC RR73; W9XYZ <KH1/KH7Z> -08» e il QSO va a log.
+    #[test]
+    fn a_hound_logs_the_qso_when_the_fox_sends_the_combined_rr73() {
+        let (mut d, _port, controls) = driver();
+        controls.set_switch("hound", true);
+        d.handle(TxCommand::Option(OptionChange::Hound(true)), BASE);
+        d.handle(TxCommand::SetDx { call: Some("KH1/KH7Z".into()), grid: None, generate: true }, BASE + 1.0);
+        d.handle(TxCommand::Enable(true), BASE + 1.5);
+        d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_090_000, "20m");
+        let mut all = Vec::new();
+        for (slot, text) in [(SLOT_MS + 15_000, ""), (SLOT_MS + 30_000, "IU3ABC KH1/KH7Z -08"), (SLOT_MS + 45_000, ""), (SLOT_MS + 60_000, "IU3ABC RR73; W9XYZ <KH1/KH7Z> -08"), (SLOT_MS + 75_000, "")] {
+            let list: Vec<(String, i32, u32)> = if text.is_empty() { Vec::new() } else { vec![(text.to_string(), -10, 450)] };
+            let (q, _) = d.after_slot(slot, &list, slot as f64 / 1000.0 + 14.2, 14_090_000, "20m");
+            all.extend(q);
+        }
+        assert!(all.iter().any(|q| q.call == "KH1/KH7Z"), "{all:?}");
     }
 
     /// Wait and Pounce: armato con la trasmissione spenta, risponde al CQ del criterio (qui il segnale piu' forte), scarta chi e' gia' collegato e si disarma.
