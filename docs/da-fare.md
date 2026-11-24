@@ -77,6 +77,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Richieste da mostrare al proprietario
 
+- ab7r (Greg), #105 (2026-11-24, 22:06 UTC): RTTY, pulsante TX con la casella vuota: oggi non trasmette (le macro vogliono testo dal decodificatore); come MMTTY vuole che TX metta subito in trasmissione e mandi i diddle (LTRS) finche' non si preme RX. 🟡 da decidere (il diddle in attesa di testo c'e' gia' in `tx_stream.rs`, manca l'avvio senza testo).
+- ab7r (Greg), #105: un log completo che segua i diplomi (DXCC, WAS...) al posto di OpsLog/SliceMaster. 🟡 grande, non previsto; per ora usa il server TCP verso il suo log.
 - ab7r (Greg), #105 (2026-11-24, 21:30-21:46 UTC): vuole che il clic su uno spot di qualunque modo apra la pagina di quel modo (CW nella pagina PSK/RTTY/SSTV con il modo CW scelto) e metta la radio in quel modo. Oggi: FT4/FT8 cambiano il MODO nella stessa pagina, RTTY/PSK aprono la pagina dei modi testuali, CW e SSB spostano solo la frequenza (il CW resta li' per lo Split DX del doppio clic sulle DXpedition). DECISO dal proprietario (2026-11-24): si fa come scelta selezionabile, spenta di base. FATTO in locale (chip «Apri la pagina del modo» nel pannello DX Cluster), non pubblicato.
 - ab7r (Greg), #104: DECISO dal proprietario (2026-11-24): non si fa. Aurora non legge il log SQLite di altri programmi; l'invio live dei QSO (UDP/ADIF) c'e' gia'. Nessun lavoro da fare.
 - ab7r (Greg), #105: DECISO dal proprietario (2026-11-24): niente scrittura automatica del modo al clic su uno spot. Il modo della radio lo sceglie l'utente in «Modo scritto nella radio» (Nessuno/USB/Dati) e Aurora scrive solo quello; mai USB-D di default. Nessun lavoro da fare.
