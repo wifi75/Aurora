@@ -419,6 +419,8 @@ html[data-theme='light'] .sstv-log-info { color: #46556f; }
 .sstv-strip-wrap .sstv-strip { flex: 1 1 auto; min-width: 0; }
 .sstv-strip-arrow { flex: none; width: 1.7rem; padding: 0; border-radius: 8px; font-size: 0.8rem; line-height: 1; cursor: pointer; }
 .sstv-strip-arrow:disabled { opacity: 0.3; cursor: default; }
+/* quando tutte le immagini ci stanno non c'e' niente da scorrere: le frecce spente non occupano posto e le miniature partono dal bordo sinistro */
+.sstv-strip-wrap:not(:has(.sstv-strip-arrow:not(:disabled))) .sstv-strip-arrow { display: none; }
 /* frecce eleganti: un chevron sottile al posto del triangolo, in un pulsante a pillola che si accende al passaggio */
 .sstv-chev { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .sstv-strip-arrow, .sstv-lightbox-nav { display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted, #a7b6cf); border-radius: 999px; transition: color .15s, background .15s, border-color .15s; }

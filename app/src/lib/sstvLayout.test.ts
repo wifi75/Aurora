@@ -21,4 +21,9 @@ describe('SSTV in ricezione: disposizione delle colonne', () => {
   it("lo schermo dell'immagine e' 4:3 e non piu' largo di 46rem", () => {
     expect(css).toMatch(/\.sstv-rx \.sstv-screen \{[^}]*max-width: 46rem;[^}]*aspect-ratio: 4 \/ 3 !important;/);
   });
+
+  // le frecce di scorrimento spente non tengono occupato il lato sinistro: le miniature partono dal bordo (richiesta del proprietario)
+  it('le frecce spente delle miniature non occupano posto', () => {
+    expect(css).toMatch(/\.sstv-strip-wrap:not\(:has\(\.sstv-strip-arrow:not\(:disabled\)\)\) \.sstv-strip-arrow \{ display: none; \}/);
+  });
 });
