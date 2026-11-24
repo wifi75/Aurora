@@ -77,7 +77,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Richieste da mostrare al proprietario
 
-- ab7r (Greg), #104 (2026-11-24): vuole collegare Aurora al log di OpsLog/SliceMaster (Flex 8600), che usa un database SQLite; idea: leggere il log SQLite esterno per sapere cosa serve, oltre all'invio live UDP/ADIF che c'e' gia'. Risposto spiegando cosa c'e' oggi; non fatto.
+- ab7r (Greg), #104: DECISO dal proprietario (2026-11-24): non si fa. Aurora non legge il log SQLite di altri programmi; l'invio live dei QSO (UDP/ADIF) c'e' gia'. Nessun lavoro da fare.
 - ab7r (Greg), #105: DECISO dal proprietario (2026-11-24): niente scrittura automatica del modo al clic su uno spot. Il modo della radio lo sceglie l'utente in «Modo scritto nella radio» (Nessuno/USB/Dati) e Aurora scrive solo quello; mai USB-D di default. Nessun lavoro da fare.
 - Casella «Mostra gli spot del mio nominativo» nelle Impostazioni: DECISO dal proprietario (2026-11-24): non si fa, basta il pulsante «I miei spot» del pannello DX Cluster.
 - Pere EA3CUU, #92 (2026-11-24, commento delle 12:39 UTC): nella Finestra RX e in Attivita' di banda (FT8) la prima trasmissione del QSO («LZ1JZ EA3CUU JN12») compare DOPO la risposta dell'altra stazione che la segue, le successive (R-25, 73) sono in ordine: PROBLEMA di ordine delle righe Tx (`withOwnTx` in `Live.tsx`, orario `time_ms` della riga Tx in `state/station.ts`), causa non trovata; gli ho chiesto il pacchetto subito dopo un QSO cosi'. RICHIESTA (🟡): far vedere nella finestra perche' Aurora smette di trasmettere (per esempio «il corrispondente ha risposto a un'altra stazione»).
