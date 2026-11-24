@@ -223,6 +223,13 @@ struct Inner {
     /// Trasmissione comandata fuori dal CAT (PTT su RTS/DTR di un'altra porta): la dice il motore, cosi' i misuratori passano subito a
     /// potenza/ROS/ALC invece di aspettare la lettura del PTT dalla radio (ogni `poll_secs`), che non sempre vede quel PTT.
     external_tx: AtomicBool,
+    /// Aurora ha acceso il PTT con il CAT e non l'ha ancora spento (serve a riconoscere un PTT acceso da altri).
+    keyed_by_us: AtomicBool,
+    /// Quando Aurora ha spento il PTT l'ultima volta (con il CAT).
+    last_unkeyed: Mutex<Option<Instant>>,
+    /// Letture di fila in cui la radio dice «in trasmissione» senza che Aurora l'abbia accesa, e quante volte si e' rimandato `T 0` per questo.
+    stray_polls: AtomicU32,
+    stray_resent: AtomicU32,
     tx_audio_hz: AtomicU32,
     rx_dial: AtomicU64,
     emulate_restore: Mutex<Option<u64>>,
@@ -780,6 +787,36 @@ impl Inner {
     }
 
     /// Una lettura periodica. In trasmissione solo il PTT.
+    /// Quanto dopo che Aurora ha spento il PTT una radio che risulta in trasmissione si considera «rimasta» o «tornata» in trasmissione da sola.
+    const STRAY_WINDOW: Duration = Duration::from_secs(30);
+
+    /// La radio dice «in trasmissione» ma Aurora non l'ha accesa e l'ha spenta da poco: con alcune radio (TS-850 con la seriale USB, pacchetto
+    /// 2948CDCC) la radio resta o torna in trasmissione dopo il nostro `T 0` e nessuno la spegneva piu', mentre Aurora, vedendo il PTT acceso,
+    /// non decodificava piu'. Dopo due letture di fila si rimanda `T 0`, al massimo tre volte per episodio (il PTT acceso a mano dall'operatore
+    /// dopo la finestra non si tocca, e un PTT tenuto da un filo RTS/DTR non lo spegne comunque il CAT).
+    fn watch_stray_ptt(&self, link: &Link, radio_ptt: bool) {
+        if !radio_ptt || self.keyed_by_us.load(Ordering::SeqCst) || self.external_tx.load(Ordering::SeqCst) {
+            self.stray_polls.store(0, Ordering::SeqCst);
+            if !radio_ptt {
+                self.stray_resent.store(0, Ordering::SeqCst);
+            }
+            return;
+        }
+        let recent = self.last_unkeyed.lock().ok().and_then(|t| *t).is_some_and(|t| t.elapsed() <= Self::STRAY_WINDOW);
+        if !recent || self.stray_polls.fetch_add(1, Ordering::SeqCst) + 1 < 2 {
+            return;
+        }
+        self.stray_polls.store(0, Ordering::SeqCst);
+        let sent = self.stray_resent.fetch_add(1, Ordering::SeqCst);
+        if sent >= 3 {
+            return;
+        }
+        tracing::warn!("CAT: la radio risulta in trasmissione ma Aurora aveva spento il PTT: rimando T 0 ({} di 3)", sent + 1);
+        if let Err(e) = self.ptt_off(link, 1) {
+            tracing::warn!("CAT: T 0 non passato: {}", e.0);
+        }
+    }
+
     fn poll_once(&self) -> Result<(), RigError> {
         let link = self.connected_link()?;
         if !link.alive() {
@@ -809,6 +846,9 @@ impl Inner {
         } else {
             None
         };
+        if let Some(p) = ptt {
+            self.watch_stray_ptt(&link, p);
+        }
         if let Some(f) = freq {
             self.rx_dial.store(f, Ordering::SeqCst);
             if self.status.lock().is_ok_and(|s| s.frequency_hz.is_some_and(|old| old != f)) {
@@ -1234,7 +1274,10 @@ impl Inner {
         let mut last = RigError("nessun tentativo".into());
         for i in 0..tries {
             match link.client().set_ptt(false) {
-                Ok(()) => return Ok(()),
+                Ok(()) => {
+                    self.keyed_by_us.store(false, Ordering::SeqCst);
+                    return Ok(());
+                }
                 Err(e) => last = e,
             }
             if i + 1 < tries {
@@ -1290,6 +1333,10 @@ impl HamlibRig {
             reconnect_wanted: AtomicBool::new(false),
             reconnect_asked_at: Mutex::new(None),
             external_tx: AtomicBool::new(false),
+            keyed_by_us: AtomicBool::new(false),
+            last_unkeyed: Mutex::new(None),
+            stray_polls: AtomicU32::new(0),
+            stray_resent: AtomicU32::new(0),
             tx_audio_hz: AtomicU32::new(0),
             rx_dial: AtomicU64::new(0),
             emulate_restore: Mutex::new(None),
@@ -1361,10 +1408,19 @@ impl HamlibRig {
             if inner.config.split == SplitMode::Emulate {
                 self.emulate_begin(&link);
             }
-            link.client().set_ptt_source(true, inner.config.ptt_data).map_err(|e| RigError(friendly_error(&e.0)))?;
+            inner.keyed_by_us.store(true, Ordering::SeqCst);
+            inner.stray_resent.store(0, Ordering::SeqCst);
+            if let Err(e) = link.client().set_ptt_source(true, inner.config.ptt_data) {
+                inner.keyed_by_us.store(false, Ordering::SeqCst);
+                return Err(RigError(friendly_error(&e.0)));
+            }
         } else {
             // un solo tentativo: la scala dei tentativi e' di chi spegne (`tx_native::ptt_release`), che non deve moltiplicarla
             inner.ptt_off(&link, 1).map_err(|e| RigError(format!("PTT non spento: {}", friendly_error(&e.0))))?;
+            // da ora la radio che risulta in trasmissione senza che l'abbiamo accesa e' una radio «rimasta» o «tornata» in TX (`watch_stray_ptt`)
+            if let Ok(mut t) = inner.last_unkeyed.lock() {
+                *t = Some(Instant::now());
+            }
             self.emulate_end(&link);
         }
         inner.update(|s| s.ptt = on);
@@ -2204,6 +2260,31 @@ mod tests {
         let s = rig.status();
         assert_eq!((s.frequency_hz, s.mode.as_deref(), s.ptt), (Some(14_074_000), Some("PKTUSB"), false));
         assert_eq!(rig.frequency().expect("frequenza"), 14_074_000);
+    }
+
+    /// TS-850 (pacchetto 2948CDCC): dopo il nostro `T 0` la radio torna in trasmissione da sola e nessuno la spegneva piu'.
+    #[test]
+    fn a_radio_that_goes_back_to_transmit_after_our_ptt_off_gets_another_t0() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("acceso");
+        rig.set_ptt(false).expect("spento");
+        fake.set_ptt(true); // la radio torna in trasmissione da sola
+        wait_until("la radio viene spenta di nuovo", || !fake.ptt());
+        wait_until("lo stato segue la radio", || !rig.status().ptt);
+    }
+
+    /// Un PTT acceso a mano, senza una nostra trasmissione appena finita, non si tocca.
+    #[test]
+    fn a_ptt_that_nobody_here_turned_on_is_left_alone() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        std::thread::sleep(Duration::from_millis(300));
+        fake.set_ptt(true); // l'operatore preme il PTT sul microfono: Aurora non ha trasmesso
+        std::thread::sleep(Duration::from_millis(900));
+        assert!(fake.ptt(), "nessuno lo spegne");
+        drop(rig);
     }
 
     #[test]

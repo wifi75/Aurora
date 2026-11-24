@@ -94,14 +94,15 @@ pub fn evict(port: u16) {
 
 /// Aspetta che il sistema liberi la porta dopo aver chiuso un Aurora: finche' il vecchio processo la tiene, il nuovo avvio fallisce con
 /// «la porta e' gia' usata» (pacchetto del 2026-11-23 sulla 0.11.338: dopo l'aggiornamento il primo avvio falliva e il secondo riusciva). Al massimo
-/// sei secondi, poi si prosegue lo stesso; un minimo di mezzo secondo lascia chiudere i socket.
+/// sei secondi veri (il controllo stesso lancia `netstat` e costa tempo), poi si prosegue lo stesso; un minimo di mezzo secondo lascia chiudere i socket.
 fn wait_until_free(is_free: impl Fn() -> bool) {
-    wait_until_free_with(is_free, 30, Duration::from_millis(200), Duration::from_millis(500));
+    wait_until_free_with(is_free, Duration::from_secs(6), Duration::from_millis(200), Duration::from_millis(500));
 }
 
-fn wait_until_free_with(is_free: impl Fn() -> bool, attempts: u32, step: Duration, minimum: Duration) {
+fn wait_until_free_with(is_free: impl Fn() -> bool, max: Duration, step: Duration, minimum: Duration) {
+    let start = std::time::Instant::now();
     std::thread::sleep(minimum);
-    for _ in 0..attempts {
+    while start.elapsed() < max {
         if is_free() {
             return;
         }
@@ -112,7 +113,12 @@ fn wait_until_free_with(is_free: impl Fn() -> bool, attempts: u32, step: Duratio
 /// Chiude l'Aurora di un'altra versione che risponde sulla porta; al massimo tre tentativi.
 fn evict_answering(port: u16) {
     let mine = env!("CARGO_PKG_VERSION");
+    let start = std::time::Instant::now();
     for _ in 0..3 {
+        // l'avvio non resta fermo piu' di una decina di secondi in tutto (la finestra non c'e' ancora): se `taskkill` non riesce, e' inutile insistere
+        if start.elapsed() > Duration::from_secs(10) {
+            return;
+        }
         let Some(other) = answering_version(port) else { return };
         if other == mine {
             // la stessa versione (un'altra copia di questo programma): ci pensa il controllo dell'istanza unica
@@ -136,14 +142,17 @@ mod tests {
     #[test]
     fn it_waits_until_the_port_is_free_and_not_longer() {
         let calls = AtomicU32::new(0);
-        wait_until_free_with(|| calls.fetch_add(1, Ordering::SeqCst) >= 3, 30, Duration::from_millis(5), Duration::from_millis(1));
+        wait_until_free_with(|| calls.fetch_add(1, Ordering::SeqCst) >= 3, Duration::from_secs(5), Duration::from_millis(5), Duration::from_millis(1));
         assert_eq!(calls.load(Ordering::SeqCst), 4, "si ferma al primo controllo con la porta libera");
     }
 
     #[test]
-    fn it_gives_up_after_the_attempts() {
+    fn it_gives_up_after_the_time_even_when_every_check_is_slow() {
         let calls = AtomicU32::new(0);
-        wait_until_free_with(|| { calls.fetch_add(1, Ordering::SeqCst); false }, 5, Duration::from_millis(2), Duration::from_millis(1));
-        assert_eq!(calls.load(Ordering::SeqCst), 5, "con la porta sempre occupata si prosegue lo stesso");
+        let start = std::time::Instant::now();
+        // ogni controllo costa 30 ms (come `netstat`): il limite e' sul tempo vero, non sul numero dei controlli
+        wait_until_free_with(|| { calls.fetch_add(1, Ordering::SeqCst); std::thread::sleep(Duration::from_millis(30)); false }, Duration::from_millis(200), Duration::from_millis(2), Duration::from_millis(1));
+        assert!(start.elapsed() < Duration::from_millis(500), "si proseguisce dopo il tempo massimo: {:?}", start.elapsed());
+        assert!(calls.load(Ordering::SeqCst) >= 3, "ha controllato piu' volte");
     }
 }
