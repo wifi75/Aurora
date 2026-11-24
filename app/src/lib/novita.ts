@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.346',
+    released: '2026-11-24T19:40:17Z',
+    kind: 'fixed',
+    title: [
+      'Hound registra il QSO, filtro «Senza skimmer» e motivo dello stop',
+      'Hound logs the QSO, “No skimmers” filter and the reason for a stop',
+      'Hound loggt das QSO, Filter „Ohne Skimmer“ und Grund für den Stopp',
+      'Hound enregistre le QSO, filtre « Sans skimmers » et motif de l’arrêt',
+      'Hound registra el QSO, filtro «Sin skimmers» y motivo de la parada',
+      'Hound regista o QSO, filtro «Sem skimmers» e motivo da paragem',
+    ],
+    text: [
+      'In modo Hound il QSO ora va a log quando la Fox chiude con il messaggio doppio «TUO-NOMINATIVO RR73; ALTRA <FOX> -08» (prima Aurora non lo capiva e continuava a mandare il rapporto, #103). Nel DX Cluster c’è il nuovo pulsante «Senza skimmer», che nasconde gli spot mandati dagli skimmer automatici (nominativo che finisce con «-#»). Quando Aurora smette di trasmettere da sola, nel pannello Tx compare per due minuti il motivo (il DX ha risposto a un’altra stazione, timer di sicurezza scaduto, niente più da trasmettere, «1 QSO», QSO finito, #92).',
+      'In Hound mode the QSO is now logged when the Fox closes with the double message “YOURCALL RR73; OTHER <FOX> -08” (before, Aurora did not understand it and kept sending the report, #103). The DX Cluster has a new “No skimmers” button that hides spots sent by automatic skimmers (call ending in “-#”). When Aurora stops transmitting by itself, the Tx panel shows the reason for two minutes (the DX answered another station, safety timer ran out, nothing left to send, “1 QSO”, QSO finished, #92).',
+      'Im Hound-Modus wird das QSO jetzt geloggt, wenn die Fox mit der Doppelnachricht „DEINRUFZEICHEN RR73; ANDERE <FOX> -08“ abschließt (vorher verstand Aurora sie nicht und sendete weiter den Rapport, #103). Im DX-Cluster gibt es den neuen Knopf „Ohne Skimmer“, der Spots automatischer Skimmer (Rufzeichen endet auf „-#“) ausblendet. Wenn Aurora von selbst aufhört zu senden, zeigt das Sendefeld zwei Minuten lang den Grund (DX hat eine andere Station beantwortet, Sicherheits-Timer abgelaufen, nichts mehr zu senden, „1 QSO“, QSO beendet, #92).',
+      'En mode Hound, le QSO est maintenant enregistré quand la Fox termine par le message double « TONINDICATIF RR73; AUTRE <FOX> -08 » (avant, Aurora ne le comprenait pas et continuait à envoyer le report, #103). Le DX Cluster a un nouveau bouton « Sans skimmers » qui masque les spots envoyés par les skimmers automatiques (indicatif finissant par « -# »). Quand Aurora cesse d’émettre toute seule, le panneau Tx affiche pendant deux minutes le motif (le DX a répondu à une autre station, minuteur de sécurité expiré, plus rien à émettre, « 1 QSO », QSO terminé, #92).',
+      'En modo Hound, el QSO ahora se registra cuando la Fox cierra con el mensaje doble «TUINDICATIVO RR73; OTRA <FOX> -08» (antes Aurora no lo entendía y seguía enviando el informe, #103). El DX Cluster tiene un botón nuevo «Sin skimmers» que oculta los spots enviados por skimmers automáticos (indicativo que termina en «-#»). Cuando Aurora deja de transmitir sola, el panel Tx muestra durante dos minutos el motivo (el DX respondió a otra estación, se agotó el temporizador de seguridad, ya no queda nada que enviar, «1 QSO», QSO terminado, #92).',
+      'No modo Hound, o QSO é agora registado quando a Fox termina com a mensagem dupla «OTEUINDICATIVO RR73; OUTRA <FOX> -08» (antes o Aurora não a entendia e continuava a enviar o relatório, #103). O DX Cluster tem um novo botão «Sem skimmers» que oculta os spots enviados por skimmers automáticos (indicativo que termina em «-#»). Quando o Aurora deixa de transmitir sozinho, o painel Tx mostra durante dois minutos o motivo (o DX respondeu a outra estação, o temporizador de segurança expirou, já não havia nada para enviar, «1 QSO», QSO terminado, #92).',
+    ],
+  },
+  {
     version: '0.11.345',
     released: '2026-11-24T18:19:01Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans la visionneuse, Suppr supprime la photo et Entrée confirme. L’enregistrement est plus fiable et les photos incomplètes vont à la fin des miniatures.',
       'En el visor, Supr borra la foto e Intro confirma. El guardado es más fiable y las fotos incompletas van al final de las miniaturas.',
       'No visor, Del apaga a foto e Enter confirma. A gravação é mais fiável e as fotos incompletas vão para o fim das miniaturas.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'changed',
-    title: [
-      'Pagine testuali e barre più ordinate; Guida aggiornata',
-      'Tidier text pages and bars; Guide updated',
-      'Übersichtlichere Textseiten und Leisten; Anleitung aktualisiert',
-      'Pages de texte et barres plus ordonnées ; Guide mis à jour',
-      'Páginas de texto y barras más ordenadas; Guía actualizada',
-      'Páginas de texto e barras mais ordenadas; Guia atualizado',
-    ],
-    text: [
-      'Le pagine testuali (PSK, RTTY, CW) e Fox hanno lo stesso stile degli altri modi, e le caselle nelle barre di WEFAX e SSTV non si sovrappongono più. La Guida descrive le nuove funzioni.',
-      'The text pages (PSK, RTTY, CW) and Fox have the same style as the other modes, and the checkboxes in the WEFAX and SSTV bars no longer overlap. The Guide describes the new features.',
-      'Die Textseiten (PSK, RTTY, CW) und Fox haben denselben Stil wie die anderen Betriebsarten, und die Kästchen in den Leisten von WEFAX und SSTV überlappen sich nicht mehr. Die Anleitung beschreibt die neuen Funktionen.',
-      'Les pages de texte (PSK, RTTY, CW) et Fox ont le même style que les autres modes, et les cases dans les barres de WEFAX et SSTV ne se chevauchent plus. Le Guide décrit les nouvelles fonctions.',
-      'Las páginas de texto (PSK, RTTY, CW) y Fox tienen el mismo estilo que los demás modos, y las casillas de las barras de WEFAX y SSTV ya no se solapan. La Guía describe las nuevas funciones.',
-      'As páginas de texto (PSK, RTTY, CW) e Fox têm o mesmo estilo dos outros modos, e as caixas nas barras de WEFAX e SSTV já não se sobrepõem. O Guia descreve as novas funções.',
     ],
   },
 ];

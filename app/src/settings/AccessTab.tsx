@@ -22,6 +22,9 @@ import { Check } from './common';
 import { Cell, Cells, Group, Message, Page } from './layout';
 import { useAutosave } from './useAutosave';
 
+/** Spento finche' l'hotspot non e' provato dal proprietario. */
+const HOTSPOT_BUTTON = false;
+
 function errorText(error: unknown, t: T): string {
   return error instanceof ApiError && error.code === 'local_only' ? t('acc.pcOnly') : t('set.saveFailed');
 }
@@ -147,7 +150,8 @@ export function AccessTab() {
             </ul>
           </div>
         ) : null}
-        {offer ? (
+        {/* la rete Wi-Fi di Aurora (hotspot) e' pronta ma resta spenta finche' il proprietario non l'ha provata con una scheda Wi-Fi vera */}
+        {offer && HOTSPOT_BUTTON ? (
           <div className="acc-hot">
             <p className="acc-alt-title">{t('acc.hot.title')}</p>
             {hotspot ? (
