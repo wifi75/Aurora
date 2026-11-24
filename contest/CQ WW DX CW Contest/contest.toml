@@ -71,7 +71,7 @@ etichetta_it = "Zona CQ"
 etichetta_en = "CQ zone"
 tipo = "zona_cq"
 quando = "any"
-nota = "La propria zona CQ (IO91wm = 14); si scrive in «Numero di partenza» senza incremento."
+nota = "La propria zona CQ (IO91wm = 14); si scrive in «La mia zona CQ» (Numero da mandare), senza incremento."
 
 [doppi]
 per = "banda"                     # una volta per banda; i doppi si tolgono senza penalita'

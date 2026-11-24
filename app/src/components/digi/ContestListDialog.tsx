@@ -7,7 +7,7 @@ import { askConfirm } from '../ConfirmHost';
 import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
 import { EXTRA_MAX, cleanExtra, readSection, writeSection } from '../../lib/contestSection';
-import { blocchiRegolamento, inCartella, pezziInline, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
+import { blocchiRegolamento, inCartella, mandaZonaCq, pezziInline, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
 import { browserStorage } from '../../lib/theme';
 import { CONTEST_MODE_TABS, contestModes, type ContestModeTab } from '../../lib/contestModes';
 import '../../styles/digi-contest.css';
@@ -494,7 +494,7 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
           </Group>
           <Group title={t('ctest.g.serial')}>
             <label className={cls('nrs')} title={tipOf('nrs', t('ctest.tip.nrs'))}>
-              <span>{t('ctest.f.nrs')}</span>
+              <span>{t(mandaZonaCq(view) ? 'ctest.f.nrsZone' : 'ctest.f.nrs')}</span>
               <input type="text" value={c.nrs} disabled={lock('nrs')} onChange={(e) => set({ nrs: e.target.value })} />
             </label>
             <label className={cls('mySect')} title={tipOf('mySect', t('ctest.tip.mySect'))}>
@@ -502,7 +502,7 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
               <input type="text" value={mySect} disabled={lock('mySect')} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => setMySect(cleanExtra(e.target.value))} />
             </label>
             {check('auto_inc', t('ctest.f.autoInc'), t('ctest.tip.autoInc'))}
-            <p className="ctest-hint">{c.auto_inc ? t('ctest.nrsAuto', { n: String(startSerial(c.nrs)).padStart(3, '0') }) : c.nrs.trim() !== '' ? t('ctest.nrsFixed', { nrs: c.nrs.trim() }) : t('ctest.nrsFixedNone')}</p>
+            <p className="ctest-hint">{c.auto_inc ? t('ctest.nrsAuto', { n: String(startSerial(c.nrs)).padStart(3, '0') }) : c.nrs.trim() !== '' ? t('ctest.nrsFixed', { nrs: c.nrs.trim() }) : mandaZonaCq(view) ? t('ctest.nrsZoneNone') : t('ctest.nrsFixedNone')}</p>
           </Group>
           <Group title={t('ctest.g.validity')}>
             {check('valid_cw', t('ctest.f.validCw'), t('ctest.tip.valid'))}

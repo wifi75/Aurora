@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -4883,7 +4883,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","Met deze keuzes: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,de rotor gaat {n} s eerder naar het opkomstpunt
 sat.trk.sumBeforeOff,the rotator does not move before the rise,de rotor beweegt niet voor de opkomst
-sat.trk.sumStart," (from {e}° elevation)"," (vanaf {e}° elevatie)"
+sat.trk.sumStart, (from {e}° elevation), (vanaf {e}° elevatie)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,volgt de satelliet{start} elke {i} s als hij meer dan {d}° verschuift
 sat.trk.sumStay,at the end of the pass it stays put,aan het einde van de passage blijft hij staan
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,{n} s na LOS gaat hij naar {az}°/{el}°
@@ -5408,6 +5408,8 @@ ctest.propose,Suggest: {what},Voorstel: {what}
 ctest.tip.propose,"Sets the start and end of this year's edition (last full weekend of the contest month, 00:00:00 to 23:59:59 UTC). Check the rules before saving.","Zet begin en einde van de editie van dit jaar (laatste volledige weekend van de contestmaand, 00:00:00 tot 23:59:59 UTC). Controleer het reglement voor je opslaat."
 ctest.nrsAuto,Starts at number {n}; it goes up by one after every logged QSO.,Begint bij nummer {n}; het gaat na elke gelogde QSO met één omhoog.
 ctest.nrsFixed,Fixed exchange: {nrs} is always sent.,Vaste uitwisseling: er wordt altijd {nrs} verzonden.
+ctest.f.nrsZone,My CQ zone,Mijn CQ-zone
+ctest.nrsZoneNone,This contest wants your CQ zone in the exchange: write it above (for example 15). If it stays empty the serial number is sent.,"Deze contest wil je CQ-zone in de uitwisseling: schrijf hem hierboven (bijvoorbeeld 15). Blijft het veld leeg, dan wordt het volgnummer verzonden."
 ctest.nrsFixedNone,No fixed exchange: the serial number is sent.,Geen vaste uitwisseling: het serienummer wordt verzonden.
 ctest.gt.none,None,Geen
 ctest.gt.serial,Serial,Serienummer

@@ -71,7 +71,7 @@ etichetta_it = "Regione UE o zona ITU"
 etichetta_en = "EU region or ITU zone"
 tipo = "testo"
 quando = "any"
-nota = "La propria regione (UE) o zona ITU; si scrive in «Numero di partenza» senza incremento."
+nota = "La propria regione (UE) o zona ITU; si scrive in «La mia zona CQ» (Numero da mandare), senza incremento."
 
 [doppi]
 per = "banda+modo"                # stessa stazione, stessa banda e stesso modo: 0 punti

@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -4883,7 +4883,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
+sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°
@@ -5408,6 +5408,8 @@ ctest.propose,Suggest: {what},Предложить: {what}
 ctest.tip.propose,"Sets the start and end of this year's edition (last full weekend of the contest month, 00:00:00 to 23:59:59 UTC). Check the rules before saving.","Задаёт начало и конец издания этого года (последние полные выходные месяца контеста, с 00:00:00 до 23:59:59 UTC). Перед сохранением проверьте правила."
 ctest.nrsAuto,Starts at number {n}; it goes up by one after every logged QSO.,Начинается с номера {n}; увеличивается на единицу после каждого записанного QSO.
 ctest.nrsFixed,Fixed exchange: {nrs} is always sent.,Фиксированный обмен: {nrs} отправляется всегда.
+ctest.f.nrsZone,My CQ zone,Моя зона CQ
+ctest.nrsZoneNone,This contest wants your CQ zone in the exchange: write it above (for example 15). If it stays empty the serial number is sent.,"Этому контесту нужна ваша зона CQ в обмене: впишите её выше (например, 15). Если поле пустое, отправляется порядковый номер."
 ctest.nrsFixedNone,No fixed exchange: the serial number is sent.,Фиксированного обмена нет: отправляется порядковый номер.
 ctest.gt.none,None,Нет
 ctest.gt.serial,Serial,Порядковый

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newTextContest, type ContestDeclaration, type ExchangeField, type TextContest } from '../api/contestTesto';
-import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, modiAmmessi, moltiplicatoriPerBanda, pezziInline, voceAttiva, voceModificabile, VOCI_PERSONALI, type Voce } from './contestVoci';
+import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, mandaZonaCq, modiAmmessi, moltiplicatoriPerBanda, pezziInline, voceAttiva, voceModificabile, VOCI_PERSONALI, type Voce } from './contestVoci';
 
 const campo = (nome: string, tipo: string, extra: Partial<ExchangeField> = {}): ExchangeField => ({ nome, tipo, ...extra });
 const dich = (p: Partial<ContestDeclaration>): ContestDeclaration => ({
@@ -254,5 +254,16 @@ describe('pezziInline', () => {
   });
   it('una riga senza segni e un solo pezzo di testo', () => {
     expect(pezziInline('solo testo')).toEqual([{ tipo: 'testo', testo: 'solo testo' }]);
+  });
+});
+
+describe('mandaZonaCq', () => {
+  it('vale per i contest che mandano la propria zona CQ, non per gli altri', () => {
+    const base = newTextContest();
+    expect(mandaZonaCq(base)).toBe(false);
+    expect(mandaZonaCq({ ...base, grab_number_type: 2 })).toBe(true);
+    const campo = { nome: 'zona', etichetta_it: 'Zona CQ', etichetta_en: 'CQ zone', tipo: 'zona_cq', quando: 'any' } as unknown as ExchangeField;
+    expect(mandaZonaCq({ ...base, scambio: { ricevuto: [], inviato: [campo] } } as TextContest)).toBe(true);
+    expect(mandaZonaCq({ ...base, scambio: { ricevuto: [campo], inviato: [] } } as TextContest)).toBe(false);
   });
 });

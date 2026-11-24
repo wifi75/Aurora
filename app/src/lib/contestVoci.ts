@@ -159,6 +159,11 @@ export function haSezionePropria(c: TextContest): boolean {
   return hasExchMultiplier(c.score) || (inCartella(c) && haCampo(c.scambio?.inviato, (x) => x.tipo === 'testo'));
 }
 
+/** Il contest vuole la propria zona CQ nello scambio mandato (campo `zona_cq` fra gli inviati): si scrive in «Numero da mandare». */
+export function mandaZonaCq(c: TextContest): boolean {
+  return c.grab_number_type === 2 || haCampo(c.scambio?.inviato, (x) => x.tipo === 'zona_cq' && !x.progressivo);
+}
+
 // ---------------------------------------------------------------- l'elenco delle voci attive
 
 /** La voce vale per questo contest? Se no la finestra la mostra grigia, non modificabile, con «Non previsto da questo contest». */
