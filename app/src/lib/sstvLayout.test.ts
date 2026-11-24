@@ -16,4 +16,9 @@ describe('SSTV in ricezione: disposizione delle colonne', () => {
     expect(css).toMatch(/\.sstv-rx \{ display: grid; grid-template-columns: minmax\(300px, 420px\) minmax\(0, 1fr\);/);
     expect(css).toMatch(/\.sstv-rx--log \{ grid-template-columns: minmax\(290px, 380px\) minmax\(0, 1fr\) minmax\(200px, 240px\);/);
   });
+
+  // la finestra dell'immagine non si allunga su tutta la colonna: resta a 4:3 con una larghezza massima (segnalazione del proprietario, 2026-11-24)
+  it("lo schermo dell'immagine e' 4:3 e non piu' largo di 46rem", () => {
+    expect(css).toMatch(/\.sstv-rx \.sstv-screen \{[^}]*max-width: 46rem;[^}]*aspect-ratio: 4 \/ 3 !important;/);
+  });
 });
