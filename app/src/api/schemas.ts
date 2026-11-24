@@ -57,6 +57,8 @@ export const StationStatusSchema = z.object({
   tx_df: z.number().nullable().optional(),
   rx_df: z.number().nullable().optional(),
   tx_message: z.string().nullable().optional(),
+  /** Inizio del periodo in cui il motore trasmette (ms dalla mezzanotte UTC), con l'orologio del motore. */
+  tx_slot_ms: z.number().nullable().optional(),
   tr_period: z.number().nullable().optional(),
   own_continent: z.string().nullable().optional(),
   meters: RadioMetersSchema.nullable().optional(),

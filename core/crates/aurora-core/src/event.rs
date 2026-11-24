@@ -29,6 +29,11 @@ pub struct StationStatus {
     /// Messaggio in trasmissione o pronto.
     #[serde(default)]
     pub tx_message: Option<String>,
+    /// Inizio (millisecondi dalla mezzanotte UTC) del periodo in cui il motore sta trasmettendo, secondo il suo orologio. La pagina data la riga Tx
+    /// con questa ora e non con la propria al momento in cui arriva lo stato: su un PC lento (decodifica profonda di 3-8 s) lo stato arriva in ritardo
+    /// e la prima riga Tx del QSO finiva dopo la risposta che la segue (Pere, #92).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tx_slot_ms: Option<u32>,
     /// Durata del ciclo, in secondi.
     #[serde(default)]
     pub tr_period: Option<u32>,

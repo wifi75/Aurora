@@ -50,6 +50,24 @@ describe('useStation', () => {
     expect(useStation.getState().connection).toBe('open');
   });
 
+  it("the Tx row takes the period time from the engine, not the time the status arrives (slow PC)", () => {
+    const { apply } = useStation.getState();
+    const slot = (14 * 3600 + 15 * 60 + 45) * 1000; // il periodo in cui il motore ha trasmesso: 14:15:45
+    // lo stato arriva con un periodo di ritardo (decodifica profonda): per il browser sono le 14:16:40
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 10, 24, 14, 16, 40));
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'UR5LY EA3CUU JN12', tx_slot_ms: slot });
+    spy.mockRestore();
+    expect(useStation.getState().txLog[0]?.time_ms).toBe(slot);
+  });
+
+  it("without the engine time (old engine) the Tx row falls back to the browser clock", () => {
+    const { apply } = useStation.getState();
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 10, 24, 14, 16, 16));
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'UR5LY EA3CUU R-14' });
+    spy.mockRestore();
+    expect(useStation.getState().txLog[0]?.time_ms).toBe((14 * 3600 + 16 * 60 + 15) * 1000);
+  });
+
   it('logs what we transmit once per transmission, newest first, with negative ids', () => {
     const { apply } = useStation.getState();
     apply({ type: 'status', ...status, transmitting: true, tx_message: 'CQ AA1AA FN42', tx_df: 1200 });

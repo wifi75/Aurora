@@ -270,7 +270,10 @@ export const useStation = create<StationState>((set) => ({
             id: nextTxId--,
             // l'inizio del periodo, come i messaggi ricevuti (13:14:45 e non 13:14:46): la trasmissione si vede partire un attimo dopo
             // (Luc ON7KEC, 2026-11-10). Un secondo di margine se lo stato arriva appena prima del cambio di periodo
+            // meglio l'ora del motore: quella del browser e' l'ora in cui lo stato e' stato elaborato, in ritardo se il PC e' lento (decodifica
+            // profonda): la riga Tx finiva dopo la risposta che la segue. Senza (motore vecchio) si calcola come prima
             time_ms: (() => {
+              if (typeof status.tx_slot_ms === 'number') return status.tx_slot_ms;
               const p = periodSecs(status.mode) * 1000;
               return Math.floor(((Date.now() % 86_400_000) + 1000) / p) * p;
             })(),

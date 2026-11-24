@@ -220,6 +220,11 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     // lo segue, come il `rptSpinBox` di WSJT-X che cambia a ogni stazione scelta
                     report: view.report.map(|r| format!("{r:+03}")),
                     tx_message: selected_text,
+                    // il periodo in cui si sta trasmettendo, con l'orologio del motore (vedi `StationStatus::tx_slot_ms`)
+                    tx_slot_ms: live.controls.transmitting.load(Ordering::Relaxed).then(|| {
+                        let period = live.controls.mode().period_ms().max(1);
+                        (now_unix_ms() % DAY_MS / period * period) as u32
+                    }),
                     decoding: live.controls.is_decoding(),
                     de_call: live.de_call.clone(),
                     de_grid: live.controls.grid_or(&live.de_grid),
@@ -1839,6 +1844,38 @@ mod tests {
             band_of: Arc::new(|_| Some("20m".to_string())),
             annotate: Arc::new(|_, _| (None, None, None, false)),
         }
+    }
+
+    /// Durante la trasmissione lo stato porta l'inizio del periodo secondo l'orologio del motore (Pere, #92): la pagina data la riga Tx con quell'ora,
+    /// non con quella in cui lo stato arriva (in ritardo su un PC lento); in ricezione non c'e'.
+    #[test]
+    fn the_status_carries_the_tx_period_start_only_while_transmitting() {
+        let controls = Arc::new(NativeControls::default());
+        let (events, mut bus) = broadcast::channel(64);
+        // il motore pubblica lo stato con un task: serve un runtime che giri da solo (un solo thread)
+        let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(1).enable_all().build().expect("runtime");
+        let _guard = runtime.enter();
+        publish_status(events, live_config(Arc::clone(&controls)));
+        let next = |bus: &mut broadcast::Receiver<Event>, want_tx: bool| -> StationStatus {
+            let until = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            loop {
+                if let Ok(Event::Status(s)) = bus.try_recv()
+                    && s.transmitting == want_tx
+                {
+                    return s;
+                }
+                assert!(std::time::Instant::now() < until, "stato non arrivato (transmitting = {want_tx})");
+                std::thread::sleep(std::time::Duration::from_millis(20));
+            }
+        };
+        assert_eq!(next(&mut bus, false).tx_slot_ms, None, "in ricezione niente");
+        controls.transmitting.store(true, Ordering::Relaxed);
+        let on = next(&mut bus, true);
+        let slot = on.tx_slot_ms.expect("durante la trasmissione c'e'");
+        let period = Mode::Ft8.period_ms() as u32;
+        assert_eq!(slot % period, 0, "e' l'inizio di un periodo: {slot}");
+        let now = (now_unix_ms() % DAY_MS) as u32;
+        assert!(now >= slot && now - slot < period + 1_000, "e' il periodo in corso: ora {now}, inizio {slot}");
     }
 
     /// Hound: la riga OTP del Fox classico si nasconde (di fabbrica) e, se il codice non e' 000000, si chiede la verifica; senza Hound passa com'e'.

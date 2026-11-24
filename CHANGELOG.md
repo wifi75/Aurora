@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Finestra RX e Attivita' di banda (FT8): su un PC lento, con la decodifica «Profonda» (3-8 s per periodo), la prima riga «Tx» del QSO compariva dopo la risposta che la segue (Pere, #92: con «Normal» era giusto). Causa: la riga Tx prendeva l'ora dal browser nel momento in cui elaborava lo stato, in ritardo se il PC e' occupato a decodificare, mentre i messaggi ricevuti hanno l'ora del periodo scritta dal motore. Ora il motore scrive nello stato l'inizio del periodo in cui trasmette (`tx_slot_ms`, `StationStatus`) e la pagina usa quello (il vecchio calcolo resta come ripiego per un motore vecchio). Prove `the_status_carries_the_tx_period_start_only_while_transmitting` e due in `station.test.ts`.
 
 ## 0.11.344 - 2026-11-24
 - CQ WW 160 m: nuova cartella «CQ WW 160 Meter Contest SSB» dal regolamento ufficiale (27 febbraio - 1 marzo 2026; il vecchio contest CW e SSB valeva per tutti e due i weekend, la cartella CW lo copriva solo in CW); in entrambe i moltiplicatori contano anche le entita' WAE (IT9, GM/s, IG9, TA1, 4U1V) con uno script, come negli altri contest europei: K1ABC con IT9ABC passa da 472 a 621 nella prova. Limite: l'elenco WAE del regolamento non e' stato confrontato voce per voce con il database dei paesi.
