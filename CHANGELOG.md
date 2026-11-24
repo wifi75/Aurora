@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.341 - 2026-11-24
 - Contest che chiedono la propria zona CQ nello scambio (CQ WW; segnalazione di Luc, #98): la finestra del contest mostra il campo «La mia zona CQ» (stesso valore di «Numero da mandare») con il suggerimento di scriverla li' (per esempio 15), al posto di «si manda il numero progressivo»; nella Guida si dice che ogni contest prende i dati dalla propria scheda. Dai `.contest` distribuiti sono stati tolti i valori fissi dell'altro operatore rimasti come scambio da mandare (zona 14, 27, 50, 62, 05, 001, un locator, sigle di club), cosi' un contest non manda piu' di nascosto lo scambio di un altro. Prova `mandaZonaCq` in `contestVoci.test.ts`.
 
 ## 0.11.340 - 2026-11-24
