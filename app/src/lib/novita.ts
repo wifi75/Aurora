@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.347',
-    released: '2026-11-24T20:39:43Z',
+    released: '2026-11-24T20:46:59Z',
     kind: 'fixed',
     title: [
       'Di nuovo Linux e macOS, e lo schermo SSTV più compatto',
