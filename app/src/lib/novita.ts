@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.348',
-    released: '2026-11-24T22:15:29Z',
+    released: '2026-11-24T22:23:45Z',
     kind: 'new',
     title: [
       'Apri la pagina del modo dal cluster, pacchetto Linux e SSTV più ordinata',
