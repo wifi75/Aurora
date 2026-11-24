@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Contest dei modi testuali: rimessi fra quelli distribuiti 20 contest RTTY e CW che erano stati tolti perche' non piu' organizzati (10-Meter RTTY, Aegean RTTY, CBNR CW, CQ BDM RTTY WW, Croatian CW, DL DX RTTY, DMC RTTY, DRCG WW RTTY, Jakarta RTTY, Mongolian DX CW-SSB e RTTY, RTTYOPS WW DX, SCC RTTY Championship, TARA Melee, Skirmish, Grid Dip e Rumble, Taras 200, Ukrainian DX Classic RTTY, Ukrainian RTTY Championship), con le loro macro e senza valori personali nello scambio da mandare. Richiesta del proprietario, 2026-11-24.
 
 ## 0.11.341 - 2026-11-24
 - Contest che chiedono la propria zona CQ nello scambio (CQ WW; segnalazione di Luc, #98): la finestra del contest mostra il campo «La mia zona CQ» (stesso valore di «Numero da mandare») con il suggerimento di scriverla li' (per esempio 15), al posto di «si manda il numero progressivo»; nella Guida si dice che ogni contest prende i dati dalla propria scheda. Dai `.contest` distribuiti sono stati tolti i valori fissi dell'altro operatore rimasti come scambio da mandare (zona 14, 27, 50, 62, 05, 001, un locator, sigle di club), cosi' un contest non manda piu' di nascosto lo scambio di un altro. Prova `mandaZonaCq` in `contestVoci.test.ts`.
