@@ -20,6 +20,8 @@ ilascio-windows.ps1`
    Controllare dopo 10-15 minuti che Linux e macOS siano verdi.
    **Note multilingua**: le leggono da tutto il mondo. In cima la sezione del CHANGELOG in inglese, poi un blocco
    `<details><summary>🇮🇹 Italiano</summary>` … `</details>` per italiano, tedesco, francese, spagnolo, portoghese e olandese.
+   **Riga fissa in fondo, sempre** (per dare un link in ingresso al sito da ogni release), in inglese, dopo l'ultimo blocco `</details>` e una riga vuota:
+   `Official site, manuals and downloads: https://aurora.iu3wjq.com`
 6. Ora vera nelle Novita' (`gh release view vX.Y.Z --json publishedAt`), commit e push; pagina web con `scripts/pubblica-sito.ps1`.
 7. File dei paesi: i lavori di GitHub (e `rilascio-windows.ps1` sul PC) scaricano da soli `cty.dat` da country-files.com in `desktop/src-tauri/cty/` e si fermano se non ci riescono.
 8. Linux: niente da fare. Alla pubblicazione della release GitHub Actions (`Linux`) allega da sola `Aurora-Linux-x86_64.AppImage`, `Aurora-Linux-amd64.deb` e `SHA256SUMS-linux.txt`; si controlla solo che il lavoro sia verde.
