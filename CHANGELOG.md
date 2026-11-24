@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.348 - 2026-11-24
 - SSTV, miniature Ricevute e Trasmesse: le frecce di scorrimento spente non occupano piu' il lato sinistro, cosi' le immagini partono dal bordo (si vedono solo se c'e' qualcosa da scorrere). Prova in `sstvLayout.test.ts`; non visto a schermo.
 - SSTV, pagina in ricezione con il Log QSO: il riquadro del log sta subito accanto all'immagine e non piu' lontano, all'estremo destro (la colonna dell'immagine ha una larghezza massima di 46 rem, come lo schermo a 4:3). Prova in `sstvLayout.test.ts`; non visto a schermo.
 - DX Cluster, scelta «Apri la pagina del modo» (richiesta di Greg, #105): spenta di base. Accesa, un clic su uno spot porta alla pagina del suo modo: CW, RTTY e PSK nella pagina dei modi testuali, FT8 e FT4 nella pagina principale (anche da quella dei modi testuali); SSB e gli altri modi spostano solo la frequenza. Spenta, tutto come prima (il CW sposta solo la frequenza, cosi' il doppio clic sulle DXpedition resta lo Split DX). Si ricorda nel browser. Prova in `spotOptions.test.ts`.

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.348',
+    released: '2026-11-24T22:15:29Z',
+    kind: 'new',
+    title: [
+      'Apri la pagina del modo dal cluster, pacchetto Linux e SSTV più ordinata',
+      'Open the mode page from the cluster, Linux package and a tidier SSTV page',
+      'Modusseite aus dem Cluster öffnen, Linux-Paket und aufgeräumtere SSTV-Seite',
+      'Ouvrir la page du mode depuis le cluster, paquet Linux et page SSTV plus nette',
+      'Abrir la página del modo desde el clúster, paquete Linux y página SSTV más ordenada',
+      'Abrir a página do modo a partir do cluster, pacote Linux e página SSTV mais arrumada',
+    ],
+    text: [
+      'Nel DX Cluster c’è il nuovo pulsante «Apri la pagina del modo» (spento di base): acceso, un clic su uno spot porta alla pagina del suo modo, CW, RTTY e PSK nella pagina dei modi testuali, FT8 e FT4 nella principale (#105). Il pacchetto .deb per Linux si chiama ora «aurora-multimode» e toglie da solo un vecchio pacchetto «aurora», per non essere scambiato con un altro programma con lo stesso nome (#99). Nella pagina SSTV in ricezione il Log QSO sta accanto all’immagine e le miniature partono dal bordo sinistro. La Guida spiega anche il filtro «Senza skimmer» e l’avviso con il motivo dello stop della trasmissione.',
+      'The DX Cluster has a new “Open the mode page” button (off by default): when on, a click on a spot takes you to the page of its mode, CW, RTTY and PSK in the text-modes page, FT8 and FT4 in the main page (#105). The Linux .deb package is now called “aurora-multimode” and removes an old “aurora” package by itself, so it is not confused with another program of the same name (#99). In the SSTV receive page the QSO log sits next to the picture and the thumbnails start at the left edge. The Guide also explains the “No skimmers” filter and the notice with the reason for a transmit stop.',
+      'Im DX-Cluster gibt es den neuen Knopf „Modusseite öffnen“ (standardmäßig aus): eingeschaltet führt ein Klick auf einen Spot zur Seite seines Modus, CW, RTTY und PSK auf die Textmodus-Seite, FT8 und FT4 auf die Hauptseite (#105). Das Linux-Paket .deb heißt jetzt „aurora-multimode“ und entfernt ein altes Paket „aurora“ selbst, damit es nicht mit einem anderen Programm gleichen Namens verwechselt wird (#99). In der SSTV-Empfangsseite steht das QSO-Log neben dem Bild und die Miniaturen beginnen am linken Rand. Die Anleitung erklärt auch den Filter „Ohne Skimmer“ und den Hinweis mit dem Grund für einen Sendestopp.',
+      'Le DX Cluster a un nouveau bouton « Ouvrir la page du mode » (désactivé par défaut) : activé, un clic sur un spot mène à la page de son mode, CW, RTTY et PSK dans la page des modes texte, FT8 et FT4 dans la page principale (#105). Le paquet .deb pour Linux s’appelle maintenant « aurora-multimode » et retire seul un ancien paquet « aurora », pour ne pas être confondu avec un autre programme du même nom (#99). Dans la page SSTV en réception, le journal QSO est à côté de l’image et les miniatures partent du bord gauche. Le Guide explique aussi le filtre « Sans skimmers » et l’avis donnant le motif d’un arrêt de l’émission.',
+      'El DX Cluster tiene un botón nuevo «Abrir la página del modo» (desactivado por defecto): activado, un clic en un spot lleva a la página de su modo, CW, RTTY y PSK en la página de modos de texto, FT8 y FT4 en la principal (#105). El paquete .deb para Linux se llama ahora «aurora-multimode» y quita solo un paquete «aurora» antiguo, para no confundirse con otro programa del mismo nombre (#99). En la página SSTV en recepción el registro QSO está junto a la imagen y las miniaturas empiezan en el borde izquierdo. La Guía explica también el filtro «Sin skimmers» y el aviso con el motivo de una parada de la transmisión.',
+      'O DX Cluster tem um novo botão «Abrir a página do modo» (desligado por omissão): ligado, um clique num spot leva à página do seu modo, CW, RTTY e PSK na página dos modos de texto, FT8 e FT4 na principal (#105). O pacote .deb para Linux chama-se agora «aurora-multimode» e retira sozinho um pacote «aurora» antigo, para não ser confundido com outro programa com o mesmo nome (#99). Na página SSTV em receção o registo QSO fica junto à imagem e as miniaturas começam no bordo esquerdo. O Guia explica também o filtro «Sem skimmers» e o aviso com o motivo de uma paragem da transmissão.',
+    ],
+  },
+  {
     version: '0.11.347',
     released: '2026-11-24T20:46:59Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Le curseur « Lvl TX » affiche les dB, et le niveau de réception est écrit en dB sous la barre. Nouvelles cases, toutes désactivées par défaut : « Ne pas toucher aux volumes de Windows », « Mémoriser la puissance par bande et mode » et « Niveau séparé pour le Tune, mémorisé par bande » (comme dans WSJT-X).',
       'El control «Lvl TX» muestra los dB y el nivel de recepción está escrito en dB bajo la barra. Casillas nuevas, todas desactivadas de base: «No tocar los volúmenes de Windows», «Recordar la potencia por banda y modo» y «Nivel separado para el Tune, recordado por banda» (como en WSJT-X).',
       'O cursor «Lvl TX» mostra os dB e o nível de receção está escrito em dB por baixo da barra. Novas caixas, todas desligadas por defeito: «Não mexer nos volumes do Windows», «Lembrar a potência por banda e modo» e «Nível separado para o Tune, lembrado por banda» (como no WSJT-X).',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'fixed',
-    title: [
-      'Satelliti con la manopola (IC-820H) più affidabili',
-      'Satellites with the tuning knob (IC-820H) more reliable',
-      'Satelliten mit Abstimmknopf (IC-820H) zuverlässiger',
-      'Satellites avec le bouton d’accord (IC-820H) plus fiables',
-      'Satélites con la rueda de sintonía (IC-820H) más fiables',
-      'Satélites com o botão de sintonia (IC-820H) mais fiáveis',
-    ],
-    text: [
-      'La nuova frequenza si accetta solo dopo quattro letture uguali, la conferma CI-V ammette gli arrotondamenti della radio e una trasmissione CI-V fallita si riprova dopo 15 secondi.',
-      'The new frequency is accepted only after four identical readings, the CI-V confirmation allows for the radio’s rounding, and a failed CI-V transmission is retried after 15 seconds.',
-      'Die neue Frequenz wird erst nach vier gleichen Messwerten übernommen, die CI-V-Bestätigung lässt Rundungen des Funkgeräts zu, und eine fehlgeschlagene CI-V-Sendung wird nach 15 Sekunden erneut versucht.',
-      'La nouvelle fréquence n’est acceptée qu’après quatre lectures identiques, la confirmation CI-V admet les arrondis de la radio et une émission CI-V échouée est retentée après 15 secondes.',
-      'La nueva frecuencia se acepta solo tras cuatro lecturas iguales, la confirmación CI-V admite los redondeos de la radio y una transmisión CI-V fallida se reintenta tras 15 segundos.',
-      'A nova frequência só é aceite após quatro leituras iguais, a confirmação CI-V admite os arredondamentos do rádio e uma transmissão CI-V falhada é repetida após 15 segundos.',
     ],
   },
 ];
