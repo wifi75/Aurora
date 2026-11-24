@@ -77,6 +77,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Richieste da mostrare al proprietario
 
+- ab7r (Greg), #105 (2026-11-24, 21:30 UTC): vuole che il clic su uno spot (CW, SSB, qualunque modo) apra la pagina di quel modo e metta la radio in quel modo; oggi solo gli spot RTTY/PSK aprono la pagina dei modi testuali, gli altri spostano la frequenza. 🟡 da decidere (e' diverso da «USB-D di default»: gia' deciso di no).
 - ab7r (Greg), #104: DECISO dal proprietario (2026-11-24): non si fa. Aurora non legge il log SQLite di altri programmi; l'invio live dei QSO (UDP/ADIF) c'e' gia'. Nessun lavoro da fare.
 - ab7r (Greg), #105: DECISO dal proprietario (2026-11-24): niente scrittura automatica del modo al clic su uno spot. Il modo della radio lo sceglie l'utente in «Modo scritto nella radio» (Nessuno/USB/Dati) e Aurora scrive solo quello; mai USB-D di default. Nessun lavoro da fare.
 - Casella «Mostra gli spot del mio nominativo» nelle Impostazioni: DECISO dal proprietario (2026-11-24): non si fa, basta il pulsante «I miei spot» del pannello DX Cluster.
