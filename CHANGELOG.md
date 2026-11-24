@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.345 - 2026-11-24
 - SSTV, pagina in ricezione (richiesta di Luc, #102): le informazioni (modo, nominativo FSK ID, riga, sincronismo, livello, sintonia, pulsanti) stanno ora a sinistra e l'immagine ricevuta grande al centro (con il registro del QSO, a destra); con una colonna sola (finestra sotto gli 820 px) l'immagine sta sopra. Solo disposizione, niente cambia nella ricezione. Provato nel browser (finestra larga e stretta) e con `sstvLayout.test.ts`.
 - Finestra RX e Attivita' di banda (FT8): su un PC lento, con la decodifica «Profonda» (3-8 s per periodo), la prima riga «Tx» del QSO compariva dopo la risposta che la segue (Pere, #92: con «Normal» era giusto). Causa: la riga Tx prendeva l'ora dal browser nel momento in cui elaborava lo stato, in ritardo se il PC e' occupato a decodificare, mentre i messaggi ricevuti hanno l'ora del periodo scritta dal motore. Ora il motore scrive nello stato l'inizio del periodo in cui trasmette (`tx_slot_ms`, `StationStatus`) e la pagina usa quello (il vecchio calcolo resta come ripiego per un motore vecchio). Prove `the_status_carries_the_tx_period_start_only_while_transmitting` e due in `station.test.ts`.
 

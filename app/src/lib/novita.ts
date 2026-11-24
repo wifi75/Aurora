@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.345',
+    released: '2026-11-24T19:30:00Z',
+    kind: 'changed',
+    title: [
+      'Pagina SSTV riordinata e righe Tx al posto giusto',
+      'SSTV page rearranged and Tx rows in the right place',
+      'SSTV-Seite neu geordnet und Tx-Zeilen an der richtigen Stelle',
+      'Page SSTV réorganisée et lignes Tx à la bonne place',
+      'Página SSTV reordenada y líneas Tx en su sitio',
+      'Página SSTV reorganizada e linhas Tx no sítio certo',
+    ],
+    text: [
+      'Nella pagina SSTV in ricezione le informazioni (modo, righe, sincronismo, livello, sintonia) stanno ora a sinistra e l’immagine ricevuta è grande al centro; con una finestra stretta l’immagine sta sopra (richiesta di Luc, #102). Nella Finestra RX e in Attività di banda dell’FT8 la prima riga «Tx» del QSO non finisce più dopo la risposta che la segue su un PC lento con la decodifica «Profonda»: l’ora della riga la scrive ora il motore, non il browser (segnalato da Pere, #92).',
+      'In the SSTV receive page the information (mode, lines, sync, level, tuning) is now on the left and the received picture is large in the middle; with a narrow window the picture goes on top (requested by Luc, #102). In the FT8 RX window and Band activity the first “Tx” row of the QSO no longer ends up after the reply that follows it on a slow PC with “Deep” decoding: the time of the row is now written by the engine, not by the browser (reported by Pere, #92).',
+      'In der SSTV-Empfangsseite stehen die Angaben (Modus, Zeilen, Sync, Pegel, Abstimmung) jetzt links und das empfangene Bild groß in der Mitte; bei einem schmalen Fenster steht das Bild oben (Wunsch von Luc, #102). Im RX-Fenster und in der Bandaktivität von FT8 landet die erste „Tx“-Zeile des QSOs auf einem langsamen PC mit „Tiefer“ Dekodierung nicht mehr hinter der Antwort, die darauf folgt: Die Uhrzeit der Zeile schreibt jetzt das Programm, nicht der Browser (gemeldet von Pere, #92).',
+      'Dans la page SSTV en réception, les informations (mode, lignes, synchro, niveau, accord) sont maintenant à gauche et l’image reçue est grande au centre ; avec une fenêtre étroite l’image est au-dessus (demande de Luc, #102). Dans la fenêtre RX et l’activité de bande du FT8, la première ligne « Tx » du QSO ne passe plus après la réponse qui la suit sur un PC lent avec le décodage « Profond » : l’heure de la ligne est maintenant écrite par le moteur, pas par le navigateur (signalé par Pere, #92).',
+      'En la página SSTV en recepción, la información (modo, líneas, sincronismo, nivel, sintonía) está ahora a la izquierda y la imagen recibida es grande en el centro; con una ventana estrecha la imagen va arriba (petición de Luc, #102). En la ventana RX y en la actividad de banda de FT8, la primera línea «Tx» del QSO ya no queda detrás de la respuesta que la sigue en un PC lento con la decodificación «Profunda»: la hora de la línea la escribe ahora el motor, no el navegador (aviso de Pere, #92).',
+      'Na página SSTV em receção, a informação (modo, linhas, sincronismo, nível, sintonia) está agora à esquerda e a imagem recebida é grande ao centro; com uma janela estreita a imagem fica por cima (pedido do Luc, #102). Na janela RX e na atividade de banda do FT8, a primeira linha «Tx» do QSO já não fica depois da resposta que a segue num PC lento com a descodificação «Profunda»: a hora da linha é agora escrita pelo motor, não pelo navegador (aviso do Pere, #92).',
+    ],
+  },
+  {
     version: '0.11.344',
     released: '2026-11-24T15:35:14Z',
     kind: 'fixed',
@@ -842,28 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Les pages de texte (PSK, RTTY, CW) et Fox ont le même style que les autres modes, et les cases dans les barres de WEFAX et SSTV ne se chevauchent plus. Le Guide décrit les nouvelles fonctions.',
       'Las páginas de texto (PSK, RTTY, CW) y Fox tienen el mismo estilo que los demás modos, y las casillas de las barras de WEFAX y SSTV ya no se solapan. La Guía describe las nuevas funciones.',
       'As páginas de texto (PSK, RTTY, CW) e Fox têm o mesmo estilo dos outros modos, e as caixas nas barras de WEFAX e SSTV já não se sobrepõem. O Guia descreve as novas funções.',
-    ],
-  },
-  {
-    version: '0.11.330',
-    released: '2026-11-22T08:53:03Z',
-    kind: 'new',
-    featured: false,
-    title: [
-      'Satelliti: il Doppler segue la manopola della radio',
-      'Satellites: Doppler follows the radio’s tuning knob',
-      'Satelliten: Der Doppler folgt dem Abstimmknopf des Funkgeräts',
-      'Satellites : le Doppler suit le bouton d’accord de la radio',
-      'Satélites: el Doppler sigue la rueda de sintonía de la radio',
-      'Satélites: o Doppler segue o botão de sintonia do rádio',
-    ],
-    text: [
-      'Con il Doppler acceso, girando la manopola per sintonizzare una stazione (per esempio RS-44 in SSB) Aurora prende la nuova frequenza come quella scelta e la trasmissione la segue con lo stesso scarto, senza riportare la radio dov’era. Nelle impostazioni dei satelliti c’è la casella «Segui la manopola della radio», accesa di fabbrica.',
-      'With Doppler on, when you turn the knob to tune a station (for example RS-44 in SSB) Aurora takes the new frequency as the chosen one and the transmit frequency follows it with the same offset, without moving the radio back to where it was. In the satellite settings there is a “Follow the radio’s tuning knob” checkbox, on by default.',
-      'Bei eingeschaltetem Doppler übernimmt Aurora beim Drehen des Knopfs zum Abstimmen einer Station (zum Beispiel RS-44 in SSB) die neue Frequenz als gewählte, und die Sendefrequenz folgt ihr mit demselben Abstand, ohne das Funkgerät dorthin zurückzusetzen, wo es war. In den Satelliteneinstellungen gibt es das Kästchen „Dem Abstimmknopf des Funkgeräts folgen“, standardmäßig eingeschaltet.',
-      'Avec le Doppler activé, en tournant le bouton pour accorder une station (par exemple RS-44 en SSB) Aurora prend la nouvelle fréquence comme celle choisie et l’émission la suit avec le même écart, sans ramener la radio là où elle était. Dans les paramètres des satellites il y a la case « Suivre le bouton d’accord de la radio », activée par défaut.',
-      'Con el Doppler activado, al girar la rueda para sintonizar una estación (por ejemplo RS-44 en SSB) Aurora toma la nueva frecuencia como la elegida y la transmisión la sigue con el mismo desfase, sin devolver la radio a donde estaba. En los ajustes de los satélites está la casilla «Seguir la rueda de sintonía de la radio», activada de base.',
-      'Com o Doppler ligado, ao rodar o botão para sintonizar uma estação (por exemplo RS-44 em SSB) a Aurora toma a nova frequência como a escolhida e a transmissão segue-a com o mesmo desvio, sem repor o rádio onde estava. Nas definições dos satélites há a caixa «Seguir o botão de sintonia do rádio», ligada por defeito.',
     ],
   },
 ];
