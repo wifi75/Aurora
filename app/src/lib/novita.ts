@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.343',
+    released: '2026-11-24T15:00:00Z',
+    kind: 'fixed',
+    featured: true,
+    title: [
+      'Pannello staccato corretto e 54 contest ufficiali',
+      'Detached panel fixed and 54 official contests',
+      'Abgelöstes Panel korrigiert und 54 offizielle Contests',
+      'Panneau détaché corrigé et 54 concours officiels',
+      'Panel separado corregido y 54 concursos oficiales',
+      'Painel destacado corrigido e 54 concursos oficiais',
+    ],
+    text: [
+      'Corretto un errore («Cannot access … before initialization») che impediva di aprire «Attività di banda» in una finestra staccata: l’interfaccia di quella finestra non partiva (segnalato da Luc, #100). A radio spenta non compaiono più i falsi messaggi EU VHF con nominativi inventati (per esempio «UD3DJF/P D05ULI/P R GI67»). I contest ufficiali, scritti dai regolamenti ufficiali con punteggio, moltiplicatori e prove, sono ora 54: oltre ai precedenti, CQ WW WPX CW e SSB, CQ WW 160 m, IARU HF, All Asian CW e SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m e 1.8 MHz, HA-DX, Holyland DX, IPA e ARRL Field Day. Gli altri restano nella scheda «Beta contest»: controllali prima di una gara. Da verificare con gare vere: nomi Cabrillo e date non confermate.',
+      'Fixed an error (“Cannot access … before initialization”) that stopped “Band activity” from opening in a detached window: the interface of that window did not start (reported by Luc, #100). With the radio off, false EU VHF messages with made-up callsigns (for example “UD3DJF/P D05ULI/P R GI67”) no longer appear. The official contests, written from the official rules with scoring, multipliers and tests, are now 54: besides the earlier ones, CQ WW WPX CW and SSB, CQ WW 160 m, IARU HF, All Asian CW and SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m and 1.8 MHz, HA-DX, Holyland DX, IPA and ARRL Field Day. The others stay in the “Beta contests” set: check them before a contest. To be verified with real contests: Cabrillo names and dates not yet confirmed.',
+      'Ein Fehler („Cannot access … before initialization“) ist behoben, der das Öffnen von „Bandaktivität“ in einem abgelösten Fenster verhinderte: Die Oberfläche dieses Fensters startete nicht (gemeldet von Luc, #100). Bei ausgeschaltetem Funkgerät erscheinen keine falschen EU-VHF-Nachrichten mit erfundenen Rufzeichen mehr (zum Beispiel „UD3DJF/P D05ULI/P R GI67“). Die offiziellen Contests, nach den offiziellen Regeln mit Wertung, Multiplikatoren und Tests geschrieben, sind jetzt 54: zusätzlich zu den früheren CQ WW WPX CW und SSB, CQ WW 160 m, IARU HF, All Asian CW und SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m und 1,8 MHz, HA-DX, Holyland DX, IPA und ARRL Field Day. Die übrigen bleiben bei den „Beta-Contests“: Prüfe sie vor einem Contest. Mit echten Contests zu prüfen: Cabrillo-Namen und noch nicht bestätigte Daten.',
+      'Une erreur (« Cannot access … before initialization ») qui empêchait d’ouvrir « Activité de bande » dans une fenêtre détachée est corrigée : l’interface de cette fenêtre ne démarrait pas (signalé par Luc, #100). Avec la radio éteinte, les faux messages EU VHF aux indicatifs inventés (par exemple « UD3DJF/P D05ULI/P R GI67 ») n’apparaissent plus. Les concours officiels, écrits d’après les règlements officiels avec points, multiplicateurs et tests, sont maintenant 54 : en plus des précédents, CQ WW WPX CW et SSB, CQ WW 160 m, IARU HF, All Asian CW et SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m et 1,8 MHz, HA-DX, Holyland DX, IPA et ARRL Field Day. Les autres restent dans « Concours bêta » : vérifie-les avant un concours. À vérifier avec de vrais concours : noms Cabrillo et dates pas encore confirmées.',
+      'Se ha corregido un error («Cannot access … before initialization») que impedía abrir «Actividad de banda» en una ventana separada: la interfaz de esa ventana no arrancaba (aviso de Luc, #100). Con la radio apagada ya no aparecen los falsos mensajes EU VHF con indicativos inventados (por ejemplo «UD3DJF/P D05ULI/P R GI67»). Los concursos oficiales, escritos según los reglamentos oficiales con puntuación, multiplicadores y pruebas, son ya 54: además de los anteriores, CQ WW WPX CW y SSB, CQ WW 160 m, IARU HF, All Asian CW y SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m y 1,8 MHz, HA-DX, Holyland DX, IPA y ARRL Field Day. Los demás siguen en «Concursos beta»: compruébalos antes de un concurso. Por verificar con concursos reales: nombres Cabrillo y fechas aún sin confirmar.',
+      'Corrigiu-se um erro («Cannot access … before initialization») que impedia abrir «Atividade de banda» numa janela destacada: a interface dessa janela não arrancava (aviso do Luc, #100). Com o rádio desligado já não aparecem as falsas mensagens EU VHF com indicativos inventados (por exemplo «UD3DJF/P D05ULI/P R GI67»). Os concursos oficiais, escritos pelos regulamentos oficiais com pontuação, multiplicadores e testes, são agora 54: além dos anteriores, CQ WW WPX CW e SSB, CQ WW 160 m, IARU HF, All Asian CW e SSB, Russian DX, Stew Perry, OK-OM DX, Japan International DX, IOTA, Scandinavian Activity, UK/EI DX, ARI International DX, UBA Spring, RSGB 80 m e 1,8 MHz, HA-DX, Holyland DX, IPA e ARRL Field Day. Os outros ficam em «Concursos beta»: verifica-os antes de um concurso. Por verificar com concursos reais: nomes Cabrillo e datas ainda não confirmadas.',
+    ],
+  },
+  {
     version: '0.11.342',
     released: '2026-11-24T11:52:41Z',
     kind: 'new',
@@ -842,27 +864,6 @@ export const NOVITA: readonly Novita[] = [
       'Les contrôles (menus déroulants, boutons, champs) ont la même forme dans les barres de la Station, de SSTV, WEFAX, Satellites et des pages de texte. Les barres de titre des cadres de Satellites et WEFAX ont le dégradé de la Station. En SSTV les flèches sont plus élégantes, et la visionneuse n’a plus de fond flou et reste ouverte quand on supprime une photo. La carte DX et la propagation ne clignotent plus pendant le zoom.',
       'Los controles (menús desplegables, botones, campos) tienen la misma forma en las barras de la Estación, de SSTV, WEFAX, Satélites y de las páginas de texto. Las barras de título de los recuadros de Satélites y WEFAX tienen el degradado de la Estación. En SSTV las flechas son más elegantes, y el visor ya no tiene el fondo desenfocado y se queda abierto al borrar una foto. El mapa DX y la propagación ya no parpadean al hacer zoom.',
       'Os controlos (menus de seleção, botões, campos) têm a mesma forma nas barras da Estação, de SSTV, WEFAX, Satélites e das páginas de texto. As barras de título dos painéis de Satélites e WEFAX têm o gradiente da Estação. No SSTV as setas são mais elegantes, e o visor já não tem o fundo desfocado e fica aberto ao apagar uma foto. O mapa DX e a propagação já não piscam no zoom.',
-    ],
-  },
-  {
-    version: '0.11.330',
-    released: '2026-11-22T08:53:03Z',
-    kind: 'fixed',
-    title: [
-      'WEFAX: parte anche senza tono d’inizio',
-      'WEFAX: starts even without a start tone',
-      'WEFAX: startet auch ohne Starton',
-      'WEFAX : démarre même sans tonalité de début',
-      'WEFAX: arranca incluso sin tono de inicio',
-      'WEFAX: arranca mesmo sem tom de início',
-    ],
-    text: [
-      'Le stazioni come DDK3, che mandano solo bianco, due barre di fasatura e subito la cartina, ora vengono ricevute (prima l’attesa non finiva e la cartina andava persa). Il suggerimento dell’AFC spiega che il valore mostrato è la correzione in corso. Nella Guida e nel suggerimento della calibrazione della scheda audio dell’SSTV ci sono ora le fonti di riferimento.',
-      'Stations like DDK3, which send only white, two phasing bars and then the chart straight away, are now received (before, the wait never ended and the chart was lost). The AFC tooltip explains that the value shown is the correction currently applied. The Guide and the tooltip for the SSTV sound-card calibration now list the reference sources.',
-      'Stationen wie DDK3, die nur Weiß, zwei Phasenbalken und sofort die Karte senden, werden jetzt empfangen (zuvor endete das Warten nie und die Karte ging verloren). Der AFC-Hinweis erklärt, dass der angezeigte Wert die laufende Korrektur ist. In der Anleitung und im Hinweis zur Kalibrierung der Soundkarte bei SSTV stehen jetzt die Referenzquellen.',
-      'Les stations comme DDK3, qui n’envoient que du blanc, deux barres de phasage puis tout de suite la carte, sont désormais reçues (avant, l’attente ne finissait pas et la carte était perdue). L’info-bulle de l’AFC explique que la valeur affichée est la correction en cours. Dans le Guide et l’info-bulle de l’étalonnage de la carte son de SSTV figurent maintenant les sources de référence.',
-      'Las estaciones como DDK3, que mandan solo blanco, dos barras de fasado y enseguida el mapa, ahora se reciben (antes la espera no terminaba y el mapa se perdía). La ayuda del AFC explica que el valor mostrado es la corrección en curso. En la Guía y en la ayuda de la calibración de la tarjeta de sonido de SSTV ahora figuran las fuentes de referencia.',
-      'As estações como a DDK3, que enviam só branco, duas barras de fasagem e logo a carta, agora são recebidas (antes a espera não acabava e a carta perdia-se). A dica do AFC explica que o valor mostrado é a correção em curso. No Guia e na dica da calibração da placa de som do SSTV constam agora as fontes de referência.',
     ],
   },
 ];
