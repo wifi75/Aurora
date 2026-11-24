@@ -2,7 +2,8 @@
 ;
 ; bands: solo 160 m.
 ; points (sezione VI): marittimo mobile 5 (viene prima, senza paese); stesso paese 2; stesso continente 5; altro continente 10.
-; mult, una volta sola in tutto il contest (una banda sola): stato USA o provincia canadese dello scambio ricevuto per i K e VE
+; mult: li da' punteggio.rhai (stato o provincia dello scambio per K e VE, paese DXCC o entita' WAE come IT9 per gli altri); la riga mult qui sotto vale solo se lo script manca o fallisce.
+; Regola dei moltiplicatori, una volta sola in tutto il contest (una banda sola): stato USA o provincia canadese dello scambio ricevuto per i K e VE
 ;   (48 + DC e 14 province), paese DXCC/WAE per tutti gli altri. K e VE non sono paesi moltiplicatori. Alaska (KL) e Hawaii (KH6)
 ;   non sono negli stati: contano come paesi. Le zone non sono moltiplicatori.
 bands=160

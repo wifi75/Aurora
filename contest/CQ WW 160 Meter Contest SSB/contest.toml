@@ -1,0 +1,153 @@
+# CQ WW 160-Meter Contest SSB - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.cq160.com/rules.htm (regolamento 2026) e https://www.cq160.com/cabrillo.htm.
+
+[contest]
+id = "cq-160-ssb"
+nome = "CQ WW 160-Meter Contest SSB"
+organizzatore = "CQ Magazine"
+sito = "https://www.cq160.com"
+regolamento_url = "https://www.cq160.com/rules.htm"
+cabrillo_contest = "CQ-160-SSB"
+note = "Solo SSB, solo 160 metri, 48 ore dalle 22:00 UTC del venerdi'. Scambio: RS + stato (W), provincia (VE) o zona CQ (DX). Moltiplicatori: stati USA e DC, province canadesi, paesi DXCC e WAE."
+
+[edizione]
+# Ultimo fine settimana di febbraio, da venerdi' 22:00 UTC a domenica 22:00 UTC (48 ore). Il regolamento 2026 da' solo
+# "2200Z February 27 to 2200Z March 1": il 2026 scavalca il mese, quindi la regola «ennesimo fine settimana pieno» non descrive
+# bene questo contest (il 2026 ha 3 fine settimana pieni in febbraio e il contest e' il quarto weekend, il 2027 ne ha 4). La riga
+# sotto serve solo a far calcolare qualcosa; per gli anni 2026 e 2027 valgono le date scritte in [[edizione.date]].
+mese = 2
+fine_settimana_pieno = 3
+giorno_inizio = "venerdi"
+ora_inizio = "22:00"
+durata_ore = 48
+ore_massime = 30                  # single op: al massimo 30 ore su 48; multi-operatore 40 (regolamento)
+pausa_minima_min = 30             # pause di almeno 30 minuti in ogni categoria
+invio_log_giorni = 5              # 5 giorni dopo la fine (2026: entro le 22:00 UTC del 6 marzo)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-27T22:00:00Z"
+fine = "2026-03-01T22:00:00Z"
+fonte = "https://www.cq160.com/rules.htm (letto il 2026-11-24): «SSB: 2200Z February 27 to 2200Z March 1»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-26T22:00:00Z"
+fine = "2027-02-28T22:00:00Z"
+fonte = "calcolata: ultimo venerdi' di febbraio, 22:00 UTC (il regolamento letto non da' il 2027)"
+confermata = false
+
+[bande]
+ammesse = ["160 m"]               # 1810-2000 kHz in Regione 1 ITU, 1800-2000 kHz nelle Regioni 2 e 3
+
+[modi]
+ammessi = ["ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "dxcc:K,VE"              # stazioni W e VE
+elenco = "dati/stati.dom"
+nota = "Stato USA (48 + DC) o provincia canadese; VO1 (NF) e VO2 (LB) sono separate per tradizione. Il regolamento non dice le sigle: quelle dell'elenco sono le abituali."
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "not_dxcc:K,VE"          # stazioni DX (anche KH6 e KL7)
+nota = "Proposta dal database dei paesi; vale quella mandata dal corrispondente. Le zone sono solo un'indicazione e non sono moltiplicatori."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "my_dxcc:K,VE"
+elenco = "dati/stati.dom"
+nota = "Per W e VE: il proprio stato o la propria provincia; si scrive in «Numero da mandare» della scheda del contest, senza incremento."
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "not_my_dxcc:K,VE"
+nota = "Per i DX: la propria zona CQ (IO91wm = 15); si scrive in «La mia zona CQ» (Numero da mandare), senza incremento."
+
+[doppi]
+per = "banda"                     # il regolamento non definisce i doppi: contest a una banda sola, una volta per stazione
+nota = "Il regolamento letto non parla di doppi; Aurora non conta due volte la stessa stazione."
+
+[categorie]
+operatore = ["SO", "SOA", "MULTI-OP"]   # Single Op (A, B, C), Single Op Assisted (D, E), Multi-Operatore (F)
+potenza = ["QRP", "LOW", "HIGH"]  # 5 W, 100 W, 1500 W (o il limite nazionale)
+altre = ["Checklog"]
+
+[categorie.soa]
+potenza = ["LOW", "HIGH"]         # con aiuto per trovare i QSO e un ricevitore remoto entro 100 km; il QRP puo' usare l'aiuto senza cambiare categoria
+
+[categorie.multi-op]
+potenza = ["HIGH"]                # un segnale alla volta, 40 ore, niente ricevitori remoti
+
+[cabrillo]
+contest = "CQ-160-SSB"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-ASSISTED", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY", "LOCATION"]
+facoltativi = ["CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_band = ["160M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["SSB"]
+category_transmitter = ["ONE"]
+invio = "solo caricamento web: https://www.cq160.com/logcheck (LOCATION: stato, provincia o sezione ARRL per USA e Canada, DX per gli altri; la colonna del trasmettitore non e' usata)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati e province", en = "States and provinces" }
+ordine = 1
+moltiplicatore = "stato"
+dominio = "dati/stati.dom"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE", en = "DXCC/WAE countries" }
+ordine = 2
+moltiplicatore = "dxcc"
+escludi = ["K", "VE"]
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["ora"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

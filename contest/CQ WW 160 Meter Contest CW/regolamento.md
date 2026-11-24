@@ -2,7 +2,7 @@
 
 - **Fonte:** «CQ WW 160-Meter Contest Rules» edizione 2026, <https://www.cq160.com/rules.htm> (nessuna data di revisione sulla pagina). Formato log: <https://www.cq160.com/cabrillo.htm>.
 - **Data di lettura:** 2026-11-24. Edizione di riferimento: 2026 (CW 23-25 gennaio); date 2027 calcolate.
-- Le regole cambiano ogni anno: ricontrollare a ogni edizione. La fonia (27 febbraio - 1 marzo 2026) e' un contest separato e non ha cartella.
+- Le regole cambiano ogni anno: ricontrollare a ogni edizione. La fonia (27 febbraio - 1 marzo 2026) e' un contest separato, con la cartella `CQ WW 160 Meter Contest SSB`.
 
 ## Date
 - 48 ore, dalle 22:00 UTC del venerdi' alle 22:00 UTC della domenica. CW 2026: **23-25 gennaio** (lette). 2027: 29-31 gennaio, calcolate (ultimo fine settimana pieno di gennaio): da confermare.
@@ -21,7 +21,7 @@
 
 ## Moltiplicatori (una volta sola)
 - Stati USA: 48 contigui piu' DC (1). Canada, 14: VO1, VO2 (separati per tradizione), NB, NS, PEI (VY2), VE2, VE3, VE4, VE5, VE6, VE7, VE8 (NT), VY1 (YT), VY0 (NU).
-- DX: paesi DXCC, compresa la lista WAE (1A0, 3A, 4U1I, 4U1V, 9A, 9H, C3, CT, CU, DL, EA, EI, G, GM, HA, I, OH, OK, OM, OZ, SM, SP...). K e VE non sono fra i paesi.
+- DX: paesi DXCC, compresa la lista WAE (1A0, 3A, 4U1I, 4U1V, 9A, 9H, C3, CT, CU, DL, EA, EI, G, GM, GM/s, HA, I, IT (Sicilia, esclusi IG9/IH9), OH, OK, OM, OZ, SM, SP...): i paesi WAE valgono a parte dal paese DXCC (IT9 non e' I). K e VE non sono fra i paesi.
 
 ## Formula
 - Punti dei QSO x somma dei moltiplicatori (stati + province + paesi).
@@ -41,7 +41,7 @@
 - QSO sbagliati tolti con una penalita' di due QSO equivalenti. Squalifica per violazioni delle regole, comportamento antisportivo o troppi contatti non verificati.
 
 ## Cosa fa Aurora e cosa no
-- Punti per paese e continente, 5 punti ai /MM, moltiplicatori stato/provincia dallo scambio e paese DXCC/WAE, scambio per W/VE e DX, Cabrillo con `CONTEST: CQ-160-CW`.
+- Punti per paese e continente, 5 punti ai /MM, moltiplicatori stato/provincia dallo scambio e paese DXCC/WAE (`punteggio.rhai`: IT9, GM/s, 4U1V... contano a parte dal paese genitore), scambio per W/VE e DX, Cabrillo con `CONTEST: CQ-160-CW`.
 - Non fa: penalita' sui QSO sbagliati, conteggio delle 30 ore e delle pause, i limiti della categoria Assisted.
 
 ## Differenze rispetto al vecchio `.contest` («CQ WW 160 Meter contest», CW e SSB insieme)
@@ -52,4 +52,4 @@
 ## Punti da verificare
 - Date 2027 calcolate, non ancora sul sito.
 - La pagina non dice le sigle di stati e province, ne' il trattamento di Alaska e Hawaii (qui paesi, non stati: i soli stati elencati sono i 48 contigui e DC).
-- L'elenco completo dei paesi WAE e' nella sezione V del regolamento, che non ho letto per intero: si usa il database dei paesi di Aurora.
+- L'elenco WAE del regolamento non e' stato confrontato voce per voce con il database dei paesi di Aurora: vale quello che il database porta come entita' WAE.

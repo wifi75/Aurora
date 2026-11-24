@@ -4,7 +4,7 @@
 [contest]
 id = "cq-160-cw"
 nome = "CQ WW 160-Meter Contest CW"
-alias = ["CQ WW 160 Meter contest"]   # nome interno del vecchio file (CW e SSB insieme): la cartella CW lo sostituisce; la fonia e' un contest a parte (fine febbraio) e non ha cartella
+alias = ["CQ WW 160 Meter contest"]   # nome interno del vecchio file (CW e SSB insieme): la cartella CW lo sostituisce; la fonia e' un contest a parte (fine febbraio) con la sua cartella SSB
 organizzatore = "CQ Magazine"
 sito = "https://www.cq160.com"
 regolamento_url = "https://www.cq160.com/rules.htm"

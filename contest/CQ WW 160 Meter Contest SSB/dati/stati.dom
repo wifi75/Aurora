@@ -1,0 +1,75 @@
+; Stati USA (48 contigui e DC) e province canadesi del CQ WW 160-Meter Contest (https://www.cq160.com/rules.htm, letto il 2026-11-24).
+; Alaska (AK) e Hawaii (HI) non ci sono: contano come paesi DXCC (KL e KH6), non come stati.
+; Canada: VO1 (NF) e VO2 (LB) separate per tradizione; PEI = VY2 (PE); VE8 = NT, VY1 = YT, VY0 = NU.
+; Il regolamento non scrive le sigle: sono quelle abituali dei log (le stesse dell'elenco ARRL).
+; Formato .dom (docs/contest-file.md): sezione per prefisso del nominativo, righe «ricevuto = dominio».
+CQ WW 160-Meter Contest - stati e province
+
+K:
+AL = AL
+AZ = AZ
+AR = AR
+CA = CA
+CO = CO
+CT = CT
+DC = DC
+DE = DE
+FL = FL
+GA = GA
+ID = ID
+IL = IL
+IN = IN
+IA = IA
+KS = KS
+KY = KY
+LA = LA
+ME = ME
+MD = MD
+MA = MA
+MI = MI
+MN = MN
+MS = MS
+MO = MO
+MT = MT
+NE = NE
+NV = NV
+NH = NH
+NJ = NJ
+NM = NM
+NY = NY
+NC = NC
+ND = ND
+OH = OH
+OK = OK
+OR = OR
+PA = PA
+RI = RI
+SC = SC
+SD = SD
+TN = TN
+TX = TX
+UT = UT
+VT = VT
+VA = VA
+WA = WA
+WV = WV
+WI = WI
+WY = WY
+
+VE:
+AB = AB
+BC = BC
+LB = LB
+MB = MB
+NB = NB
+NF = NF
+NS = NS
+NT = NT
+NU = NU
+ON = ON
+PE = PE
+QC = QC
+SK = SK
+YT = YT
+; vecchia sigla ancora in uso nei log
+NWT = NT

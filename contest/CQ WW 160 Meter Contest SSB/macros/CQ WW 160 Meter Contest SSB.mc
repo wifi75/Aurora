@@ -1,0 +1,78 @@
+[Macros]
+nItems=13
+
+Name0=F2
+Label0=QRZ?
+Text0=<TX>QRZ QRZ  de <MYCALL> k <RXANDCLEAR>
+
+Name1=F4
+Label1=AGAIN NR
+Text1=<TX>  AGN NR AGN NR <CALL> de <MYCALL> K <RXANDCLEAR>
+
+Name2=F5
+Label2=CFM QSO
+Text2=<TX> CFM TU <CALL> de <MYCALL> 73 QRZ?<SAVEQSO><RXANDCLEAR><AUTOCQ><ACQDELAY:seconds> <CR><LF><CR><LF>
+
+
+Name3=F6
+Label3=Prev Nr
+Text3=<TX>  <PREVNRS>  <PREVNRS> <PREVNRS> <PREVNRS><RXANDCLEAR>
+
+
+Name4=F7
+Label4=CallMyCall
+Text4=<TX> <CALL> <CALL> de <MYCALL> <MYCALL> <RXANDCLEAR>
+
+
+Name5=F8
+Label5=MY NR AG
+Text5=<TX> <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  de <MYCALL> <RXANDCLEAR>
+
+Name6=F9
+Label6=QSO B4
+Text6=<TX>  <CALL> de  <MYCALL> QSO B4  ON  <QSOBEFORETIME> <RXANDCLEAR>
+
+Name7=F10
+Label7=AGAIN
+Text7=<TX>AGN AGN k..<RXANDCLEAR>
+
+
+Name8=F11
+Label8=73 *EE
+Text8=<TX>TNX 73  *EE<RXANDCLEAR>
+
+
+Name9=F12
+Label9=*EE
+Text9=<TX> *EE<RXANDCLEAR>
+
+
+Name10=AutoCqText
+Label10=AutoCQ
+Text10=<TX>CQ TEST de <MYCALL> <MYCALL> <MYCALL><RXANDCLEAR>
+
+
+Name11=F3
+Label11=H/M
+Text11=<TX><FIXSTARTTIME> <CALL> <RSTS> <NRS>  <NRS>  <NRS> <CALL><RXANDCLEAR>
+
+
+Name12=F1
+Label12=AutoCQ
+Text12=<AUTOCQ><ACQDELAY:seconds>
+
+
+
+BkColor0=2377947
+BkColor1=255
+BkColor2=65535
+BkColor3=4227327
+BkColor4=8454143
+BkColor5=4210816
+BkColor6=8421376
+BkColor7=65535
+BkColor8=255
+BkColor9=1554920
+BkColor10=255
+BkColor11=8421376
+BkColor12=5748297
