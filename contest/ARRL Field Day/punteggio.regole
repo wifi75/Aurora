@@ -1,0 +1,9 @@
+; ARRL Field Day - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2026 (revisione 4/2026) letto il 2026-11-24 su https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf.
+;
+; bands: HF senza WARC e 60 m, 6 m, 2 m, 70 cm e 23 cm (regola 2: tutte le bande sopra i 50 MHz).
+; points: fonia 1 punto, CW 2, digitale (non CW) 2 (7.1). Il resto del punteggio (moltiplicatore di potenza 5/2/1 e bonus) non si calcola dal log:
+;   punteggio finale = punti dei QSO x moltiplicatore di potenza + bonus (7.2, 7.3), sul riepilogo da mandare all'ARRL.
+; Niente moltiplicatori: il punteggio mostrato e' la somma dei punti dei QSO.
+bands=160,80,40,20,15,10,6,2,70cm,23cm
+points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2

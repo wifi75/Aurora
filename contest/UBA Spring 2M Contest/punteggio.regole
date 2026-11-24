@@ -1,0 +1,10 @@
+; UBA Spring 2M Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento UBA Spring Contest 2026 (https://www.uba.be/en/hf/contest-rules/spring-contest-dst).
+; Quali QSO sono ammessi lo dice punteggio.rhai (sostituisce bands e valid).
+;
+; bands: 2 m.
+; points (punto 3): 3 punti per ogni QSO valido.
+; mult (punto 5, una volta sola: la banda e' una): le sezioni UBA dello scambio dei belgi (XXX dei non soci e UBA delle stazioni nazionali compresi)
+;   per tutti; solo per i belgi anche ogni paese DXCC tranne ON.
+bands=2
+points=any=3
+mult=exch/if:dxcc:ON; dxcc/except:ON/if:my_dxcc:ON

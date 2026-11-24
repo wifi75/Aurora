@@ -1,0 +1,10 @@
+; ARI International DX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento ufficiale 2026.
+; I moltiplicatori li da' punteggio.rhai (province dallo scambio, paesi DXCC piu' entita' WAE); la riga mult qui sotto vale solo se lo script manca o fallisce.
+; Lo script dice anche quali QSO sono ammessi (bande e stazioni italiane fra loro).
+;
+; bands: 80, 40, 20, 15, 10 m (niente WARC).
+; points (punto 8): con una stazione italiana (I, IS, IT9) 10; con il proprio paese 0 (vale solo per i moltiplicatori); stesso continente 1; altro continente 3.
+; mult (punto 7, per banda): le province italiane e i paesi DXCC/WAE (I, IS e IT9 non sono moltiplicatori di paese).
+bands=80,40,20,15,10
+points=dxcc:I,IT9,IS=10; same_dxcc=0; same_cont=1; any=3
+mult=exch/band/if:dxcc:I,IT9,IS; dxcc/band/except:I,IT9,IS

@@ -1,0 +1,218 @@
+# IPA Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento IPARC (https://dl0ipa.darc.de/Contest.htm).
+# Ogni modo si classifica a parte: [prova] e' il log CW di una stazione italiana, [[altra_stazione]] il log SSB della stessa stazione.
+# Nominativi di fantasia. Tutti i QSO sono della domenica 2027-11-07 (l'edizione 2027 va da sabato 6 novembre alle 06:00 a domenica 7 alle 18:00 UTC, da confermare).
+# Moltiplicatori: valore@modo (paesi DXCC e stati USA con una stazione IPARC, per banda; il controllo non mostra la banda).
+# Punteggio = somma, banda per banda, dei punti x moltiplicatori della banda.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-11-07"
+
+[[qso]]
+n = 1
+banda = 80
+modo = "CW"
+freq_khz = 3520
+ora_utc = "0601"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["DL@CW"], motivo = "stazione IPARC: 5 punti; paese DL con una stazione IPARC, nuovo su 80 m" }
+
+[[qso]]
+n = 2
+banda = 80
+modo = "CW"
+freq_khz = 3521
+ora_utc = "0605"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002 IPA CT"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["CT@CW"], motivo = "stazione IPARC degli USA: 5 punti; per gli USA conta lo stato (CT), non il paese" }
+
+[[qso]]
+n = 3
+banda = 80
+modo = "CW"
+freq_khz = 3522
+ora_utc = "0610"
+nominativo = "W2ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003 IPA NY"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["NY@CW"], motivo = "stazione IPARC degli USA: 5 punti; stato NY nuovo su 80 m" }
+
+[[qso]]
+n = 4
+banda = 80
+modo = "CW"
+freq_khz = 3523
+ora_utc = "0615"
+nominativo = "F5ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stazione che non e' IPARC: 1 punto e nessun moltiplicatore" }
+
+[[qso]]
+n = 5
+banda = 80
+modo = "CW"
+freq_khz = 3524
+ora_utc = "0620"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "005 IPA"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 1" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "CW"
+freq_khz = 7010
+ora_utc = "0625"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "006 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["DL@CW"], motivo = "altra banda: 5 punti; il paese DL vale di nuovo (moltiplicatori per banda)" }
+
+[[qso]]
+n = 7
+banda = 40
+modo = "CW"
+freq_khz = 7011
+ora_utc = "0630"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "007 IPA CT"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["CT@CW"], motivo = "stazione IPARC: 5 punti; stato CT nuovo su 40 m" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "CW"
+freq_khz = 7012
+ora_utc = "0635"
+nominativo = "W3ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "008 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "stazione IPARC degli USA senza stato nello scambio: 5 punti, nessun moltiplicatore (manca lo stato)" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "CW"
+freq_khz = 10120
+ora_utc = "0640"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "009 IPA"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "CW"
+freq_khz = 14010
+ora_utc = "0645"
+nominativo = "ON4ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "010 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["ON@CW"], motivo = "stazione IPARC: 5 punti; paese ON nuovo su 20 m" }
+
+# Totali (a mano): ammessi 1-4, 6-8 e 10 = 8; doppi 1 (n. 5); non ammessi 1 (n. 9)
+#   punti: 80 m 5+5+5+1 = 16, 40 m 5+5+5 = 15, 20 m 5 = 5; in tutto 36
+#   moltiplicatori: 80 m DL, CT, NY = 3; 40 m DL, CT = 2; 20 m ON = 1; in tutto 6
+#   punteggio = 16 x 3 + 15 x 2 + 5 x 1 = 83
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 1
+punti = 36
+moltiplicatori = 6
+punteggio = 83
+
+[[altra_stazione]]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0701"
+nominativo = "EA1ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["EA@SSB"], motivo = "stazione IPARC: 5 punti; paese EA nuovo su 20 m" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14260
+ora_utc = "0705"
+nominativo = "OH2ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stazione che non e' IPARC: 1 punto" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14270
+ora_utc = "0710"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003 IPA MA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["MA@SSB"], motivo = "stazione IPARC degli USA: 5 punti; stato MA nuovo su 20 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0715"
+nominativo = "EA1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004 IPA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["EA@SSB"], motivo = "altra banda: 5 punti; il paese EA vale di nuovo su 15 m" }
+
+# Totali (a mano): 4 QSO; punti: 20 m 5+1+5 = 11, 15 m 5; in tutto 16; moltiplicatori: 20 m EA, MA = 2, 15 m EA = 1; in tutto 3
+#   punteggio = 11 x 2 + 5 x 1 = 27
+[altra_stazione.atteso]
+qso_ammessi = 4
+doppi = 0
+non_ammessi = 0
+punti = 16
+moltiplicatori = 3
+punteggio = 27

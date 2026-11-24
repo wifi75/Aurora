@@ -1,0 +1,216 @@
+# HA-DX Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://ha-dx.com/en/contest-rules).
+# Due punti di vista: [prova] e' una stazione italiana (europea, manda il progressivo), [[altra_stazione]] una stazione ungherese (manda la contea).
+# Nominativi di fantasia. Tutti i QSO sono della domenica 2027-01-17, prima delle 12:00 UTC (fine dell'edizione 2027, da confermare).
+# Moltiplicatori: valore@modo (paesi DXCC/WAE e contee, una volta per banda e per tutti i modi; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-01-17"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0001"
+nominativo = "HA5ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "BP"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["BP@CW"], motivo = "stazione ungherese: 10 punti; contea BP nuova su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "0005"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "014"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@CW"], motivo = "stesso continente: 2 punti; paese DL nuovo su 20 m" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0010"
+nominativo = "W1AW"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "021"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@SSB"], motivo = "altro continente: 5 punti; paese K nuovo su 20 m" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14260
+ora_utc = "0015"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "033"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "categoria MIX: un QSO in CW e uno in SSB con la stessa stazione sulla stessa banda; il paese DL conta una volta sola per banda, CW e SSB insieme" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "0020"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "040"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 2" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "CW"
+freq_khz = 7025
+ora_utc = "0025"
+nominativo = "HA5ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "BP"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["BP@CW"], motivo = "altra banda: 10 punti e la contea BP vale di nuovo (moltiplicatori per banda)" }
+
+[[qso]]
+n = 7
+banda = 40
+modo = "CW"
+freq_khz = 7026
+ora_utc = "0030"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "052"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["JA@CW"], motivo = "altro continente: 5 punti; paese JA nuovo su 40 m" }
+
+[[qso]]
+n = 8
+banda = 10
+modo = "CW"
+freq_khz = 28030
+ora_utc = "0035"
+nominativo = "W1AW/MM"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "061"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "/MM: sempre 2 punti e nessun moltiplicatore" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "CW"
+freq_khz = 10120
+ora_utc = "0040"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "070"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 80
+modo = "CW"
+freq_khz = 3525
+ora_utc = "0045"
+nominativo = "IT9ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "080"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["IT9@CW"], motivo = "stesso continente: 2 punti; la Sicilia e' un paese dell'elenco WAE" }
+
+[[qso]]
+n = 11
+banda = 80
+modo = "CW"
+freq_khz = 3526
+ora_utc = "0050"
+nominativo = "HA8XYZ"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "NG"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["NG@CW"], motivo = "stazione ungherese: 10 punti; contea NG nuova su 80 m" }
+
+# Totali (a mano): ammessi 1-8, 10 e 11 = 9 (il 5 e' doppio); doppi 1; non ammessi 1 (n. 9)
+#   punti: 10+2+5+2+0+10+5+2+2+10 = 48
+#   moltiplicatori: BP@20, DL@20, K@20, BP@40, JA@40, IT9@80, NG@80 = 7
+#   punteggio = 48 x 7 = 336
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 48
+moltiplicatori = 7
+punteggio = 336
+
+[[altra_stazione]]
+nominativo_proprio = "HA5XYZ"
+locatore_proprio = "JN97ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 40
+modo = "CW"
+freq_khz = 7025
+ora_utc = "0101"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "NG"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@CW"], motivo = "stesso continente: 2 punti; paese DL nuovo su 40 m" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 40
+modo = "CW"
+freq_khz = 7026
+ora_utc = "0105"
+nominativo = "HA8XYZ"
+rst_inviato = "599"
+scambio_inviato = "NG"
+rst_ricevuto = "599"
+scambio_ricevuto = "HB"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["HB@CW"], motivo = "due stazioni ungheresi: 10 punti; contea HB nuova su 40 m" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0110"
+nominativo = "W1AW"
+rst_inviato = "59"
+scambio_inviato = "NG"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@SSB"], motivo = "altro continente: 5 punti; paese K nuovo su 20 m" }
+
+# Totali (a mano): 3 QSO, punti 2+10+5 = 17, moltiplicatori DL, HB, K = 3, punteggio 17 x 3 = 51
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 0
+punti = 17
+moltiplicatori = 3
+punteggio = 51

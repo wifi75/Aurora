@@ -1,0 +1,110 @@
+# RSGB 80m Club Championship SSB - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.rsgbcc.org/hf/rules/2026/r80mcc.shtml («3.5MHz Club Championship Contests», edizione 2026; la serie si chiamava «80m Club Championship») e calendario su http://www.rsgbcc.org/cgi-bin/hfreadcal.pl?year=2026.
+
+[contest]
+id = "rsgb-80m-cc-ssb"
+nome = "RSGB 80m Club Championship SSB"
+organizzatore = "RSGB (Radio Society of Great Britain), HF Contest Committee"
+sito = "https://www.rsgbcc.org"
+regolamento_url = "https://www.rsgbcc.org/hf/rules/2026/r80mcc.shtml"
+cabrillo_contest = "RSGB-80M-CC"  # dalla pagina Cabrillo dell'RSGB (http://www.rsgbcc.org/hf/rules/Cabrillo/Cabrillo-Information.shtml#3.5CC)
+note = "Serie di sei sessioni all'anno solo in SSB, 80 m, 90 minuti, di lunedi', mercoledi' o giovedi' sera. Scambio: RS(T) + numero progressivo. 1 punto a QSO; vale se almeno una delle due stazioni e' nel Regno Unito o nelle dipendenze della Corona (UK&CD); il checklog dell'RSGB (G6XX e varianti regionali) vale 5. Nessun moltiplicatore."
+
+[edizione]
+# Sei sessioni all'anno, due mesi di febbraio-marzo alle 20:00-21:30 UTC e quattro di aprile-luglio alle 19:00-20:30 UTC, in giorni diversi della settimana (lunedi', mercoledi', giovedi'):
+# il formato non sa esprimerlo. La cartella tiene la prima sessione di ogni anno; le date vere sono scritte sotto e valgono al posto del calcolo.
+# Il calendario 2027 e' provvisorio. Tutte le sessioni sono in regolamento.md; le altre si impostano nelle modifiche personali del contest.
+mese = 2
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "20:00"
+durata_ore = 2
+invio_log_giorni = 1              # entro le 23:59:59 UTC del giorno dopo la sessione
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-02T20:00:00Z"
+fine = "2026-02-02T21:29:59Z"
+fonte = "http://www.rsgbcc.org/cgi-bin/hfreadcal.pl?year=2026 (letto il 2026-11-24): prima sessione SSB del 2026"
+confermata = true
+nota = "sei sessioni nel 2026: Mon 2 Feb 2000-2130; Thu 26 Mar 2000-2130; Wed 22 Apr 1900-2030; Mon 11 May 1900-2030; Thu 25 Jun 1900-2030; Wed 15 Jul 1900-2030 (UTC)"
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-01T20:00:00Z"
+fine = "2027-02-01T21:29:59Z"
+fonte = "http://www.rsgbcc.org/cgi-bin/hfreadcal.pl?year=2027 (letto il 2026-11-24): «the calendar is provisional»"
+confermata = false
+nota = "sei sessioni nel 2027 (provvisorie): Mon 1 Feb 2000-2130; Thu 25 Mar 2000-2130; Wed 28 Apr 1900-2030; Mon 10 May 1900-2030; Thu 24 Jun 1900-2030; Wed 14 Jul 1900-2030 (UTC)"
+
+[bande]
+ammesse = ["80 m"]
+
+[modi]
+ammessi = ["ssb"]
+
+[[modi.limite]]
+modo = "ssb"
+frequenza_minima_khz = 3600
+frequenza_massima_khz = 3775
+nota = "3600-3775 kHz; non controllato dal motore"
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+nota = "Numero progressivo da 1; se la stazione non lo manda si scrive 0."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Da 1, +1 a ogni QSO; un piccolo fuori sequenza non e' penalizzato."
+
+[doppi]
+per = "banda"                     # in SSB una stazione si lavora una volta per sessione
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP"]   # i multi-operatore sono sempre Assisted
+potenza = ["100W", "10W"]
+altre = ["ASSISTED"]   # 100W e 10W, tutte Assisted; classifiche normalizzate: punteggio / miglior UK&CD della sezione x 1000
+
+[cabrillo]
+contest = "RSGB-80M-CC"
+obbligatori = ["CALLSIGN", "CONTEST", "CREATED-BY"]
+facoltativi = ["CLAIMED-SCORE", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+invio = "Cabrillo da caricare sul robot https://www.rsgbcc.org/cgi-bin/hfenter.pl entro le 23:59:59 UTC del giorno dopo la sessione, un log alla volta scegliendo il nome del club dall'elenco; il codice del modo e' SSB (PH); il robot ricava la sezione dal dialogo, nessun CATEGORY nell'esempio; QSO: freq modo data ora proprio-nominativo RST nr nominativo RST nr"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 1
+righe = ["ora"]
+colonne = ["qso", "doppi", "punti"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 2
+mostra = ["punti", "punteggio_finale"]

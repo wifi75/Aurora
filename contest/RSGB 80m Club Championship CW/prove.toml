@@ -1,0 +1,211 @@
+# RSGB 80m Club Championship CW - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento RSGB 3.5MHz Club Championship 2026 (https://www.rsgbcc.org/hf/rules/2026/r80mcc.shtml).
+# Due punti di vista: [prova] e' una stazione italiana (vale solo con il Regno Unito), [[altra_stazione]] una stazione inglese (vale con tutti).
+# Nominativi di fantasia. Edizione 2027 (prima sessione CW, provvisoria): tutti i QSO sono del 2027-02-25 fra le 20:00 e le 21:30 UTC. Nessun moltiplicatore.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-02-25"
+
+[[qso]]
+n = 1
+banda = 80
+modo = "CW"
+freq_khz = 3530
+ora_utc = "2001"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stazione inglese: 1 punto" }
+
+[[qso]]
+n = 2
+banda = 80
+modo = "CW"
+freq_khz = 3531
+ora_utc = "2005"
+nominativo = "GM4ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stazione scozzese (GM): 1 punto" }
+
+[[qso]]
+n = 3
+banda = 80
+modo = "CW"
+freq_khz = 3532
+ora_utc = "2010"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "nessuna delle due stazioni e' UK&CD: non vale" }
+
+[[qso]]
+n = 4
+banda = 80
+modo = "CW"
+freq_khz = 3530
+ora_utc = "2015"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stesso modo nella sessione" }
+
+[[qso]]
+n = 5
+banda = 80
+modo = "CW"
+freq_khz = 3533
+ora_utc = "2020"
+nominativo = "G6XX"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "checklog dell'RSGB: 5 punti" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "CW"
+freq_khz = 7030
+ora_utc = "2025"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "40 m non e' la banda del contest" }
+
+[[qso]]
+n = 7
+banda = 80
+modo = "CW"
+freq_khz = 3534
+ora_utc = "2030"
+nominativo = "GJ4ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "Jersey (GJ) e' una dipendenza della Corona: 1 punto" }
+
+# Totali (a mano): 7 QSO; non ammessi 2 (n. 3 senza UK&CD, n. 6 su 40 m); doppi 1 (n. 4); ammessi 1, 2, 5, 7 = 4
+#   punti 1 + 1 + 5 + 1 = 8; senza moltiplicatori il punteggio e' la somma dei punti (la classifica ufficiale poi normalizza)
+[atteso]
+qso_ammessi = 4
+doppi = 1
+non_ammessi = 2
+punti = 8
+punteggio = 8
+
+[[altra_stazione]]
+nominativo_proprio = "G4XYZ"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 80
+modo = "CW"
+freq_khz = 3530
+ora_utc = "2101"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "inglese con inglese: 1 punto" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 80
+modo = "CW"
+freq_khz = 3531
+ora_utc = "2105"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "una stazione UK&CD vale con tutti: 1 punto" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 80
+modo = "CW"
+freq_khz = 3532
+ora_utc = "2110"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "1 punto" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 80
+modo = "CW"
+freq_khz = 3533
+ora_utc = "2115"
+nominativo = "G6XX"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "checklog dell'RSGB: 5 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 80
+modo = "CW"
+freq_khz = 3531
+ora_utc = "2120"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione del QSO 2" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 80
+modo = "CW"
+freq_khz = 3534
+ora_utc = "2125"
+nominativo = "GW3ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "gallese (GW): 1 punto" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 40
+modo = "CW"
+freq_khz = 7030
+ora_utc = "2128"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "40 m non e' la banda del contest" }
+
+# Totali (a mano): 7 QSO; non ammessi 1 (n. 7 su 40 m); doppi 1 (n. 5); ammessi 1, 2, 3, 4, 6 = 5; punti 1 + 1 + 1 + 5 + 1 = 9
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 1
+non_ammessi = 1
+punti = 9
+punteggio = 9

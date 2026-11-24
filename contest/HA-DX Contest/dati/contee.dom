@@ -1,0 +1,26 @@
+; HA-DX Contest - le 20 contee ungheresi (sigle dell'appendice del regolamento, https://ha-dx.com/en/contest-rules, letto il 2026-11-24).
+; BN Bacs-Kiskun, BA Baranya, BE Bekes, BO Borsod-Abauj-Zemplen, CS Csongrad, FE Fejer, GY Gyor-Moson-Sopron, HB Hajdu-Bihar, HE Heves,
+; SZ Jasz-Nagykun-Szolnok, KO Komarom-Esztergom, NG Nograd, PE Pest, SO Somogy, SA Szabolcs-Szatmar-Bereg, TO Tolna, VA Vas, VE Veszprem,
+; ZA Zala, BP Budapest. Formato .dom (docs/contest-file.md).
+HA-DX Contest - contee
+
+BN = BN
+BA = BA
+BE = BE
+BO = BO
+CS = CS
+FE = FE
+GY = GY
+HB = HB
+HE = HE
+SZ = SZ
+KO = KO
+NG = NG
+PE = PE
+SO = SO
+SA = SA
+TO = TO
+VA = VA
+VE = VE
+ZA = ZA
+BP = BP

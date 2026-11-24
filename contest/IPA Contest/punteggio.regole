@@ -1,0 +1,10 @@
+; IPA Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento IPARC (PDF in inglese, edizione 2025-2026) letto il 2026-11-24 su https://dl0ipa.darc.de/Contest.htm.
+;
+; bands: 80, 40, 20, 15, 10 m (nei segmenti IARU Regione 1: non controllati).
+; points: 1 punto per QSO, 5 per una stazione IPARC (quella che manda IPA): lo da' punteggio.rhai; qui il ripiego di 1 punto.
+; band_score: per ogni banda somma dei punti x moltiplicatori della banda; il punteggio e' la somma delle bande.
+; mult: paesi DXCC e stati USA con una stazione IPARC, per banda: lo da' punteggio.rhai.
+bands=80,40,20,15,10
+points=any=1
+band_score=1

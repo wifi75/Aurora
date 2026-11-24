@@ -1,0 +1,7 @@
+; RSGB 80m Club Championship CW - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento RSGB 3.5MHz Club Championship 2026 (https://www.rsgbcc.org/hf/rules/2026/r80mcc.shtml).
+; Quali QSO sono ammessi lo dice punteggio.rhai (sostituisce bands e valid).
+;
+; bands: 80 m.
+; points (punto 6): 1 punto per QSO; il checklog dell'RSGB (G6XX o una variante regionale) vale 5 punti. Nessun moltiplicatore.
+bands=80
+points=call:G6XX,GM6XX,GW6XX,GI6XX,GD6XX,GU6XX,GJ6XX=5; any=1

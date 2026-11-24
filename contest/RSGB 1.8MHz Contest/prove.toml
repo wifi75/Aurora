@@ -1,0 +1,225 @@
+# RSGB 1.8MHz Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento RSGB 1.8MHz Contests 2026 (https://www.rsgbcc.org/hf/rules/2026/r160m.shtml).
+# Due punti di vista: [prova] e' una stazione italiana (non UK&CD), [[altra_stazione]] una stazione inglese (UK&CD, manda anche il distretto).
+# Nominativi di fantasia. Edizione 2027 (13 febbraio, provvisoria): tutti i QSO sono del sabato 2027-02-13 fra le 20:00 e le 23:00 UTC.
+# Il bonus di 5 punti e' dato dal motore come «moltiplicatore» con add:5: i QSO attesi nominano il distretto o il paese che porta il bonus; non c'e' un totale di moltiplicatori.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-02-13"
+
+[[qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "2001"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 LS"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["LS@CW"], motivo = "2 punti + 5 di bonus per il distretto LS nuovo" }
+
+[[qso]]
+n = 2
+banda = 160
+modo = "CW"
+freq_khz = 1831
+ora_utc = "2005"
+nominativo = "GM4ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "004 EH"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["EH@CW"], motivo = "2 punti + 5 per il distretto EH (Scozia)" }
+
+[[qso]]
+n = 3
+banda = 160
+modo = "CW"
+freq_khz = 1832
+ora_utc = "2010"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["DL@CW"], motivo = "2 punti + 5 per il paese DXCC DL fuori dal UK&CD" }
+
+[[qso]]
+n = 4
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "2015"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "006 LS"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stesso modo" }
+
+[[qso]]
+n = 5
+banda = 160
+modo = "SSB"
+freq_khz = 1860
+ora_utc = "2020"
+nominativo = "G3ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "007 LS"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "in febbraio la stessa stazione vale anche in SSB: 2 punti, il distretto LS e' gia' preso" }
+
+[[qso]]
+n = 6
+banda = 160
+modo = "SSB"
+freq_khz = 1861
+ora_utc = "2025"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["K@SSB"], motivo = "2 punti + 5 per il paese K" }
+
+[[qso]]
+n = 7
+banda = 80
+modo = "CW"
+freq_khz = 3530
+ora_utc = "2030"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "009 LS"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "80 m non e' la banda del contest" }
+
+[[qso]]
+n = 8
+banda = 160
+modo = "CW"
+freq_khz = 1833
+ora_utc = "2035"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["I@CW"], motivo = "anche un paese DXCC dell'Italia (proprio paese, fuori dal UK&CD) da' il bonus: le stazioni estere si lavorano fra loro per punti e bonus" }
+
+# Totali (a mano): 8 QSO; non ammessi 1 (n. 7 su 80 m); doppi 1 (n. 4); ammessi 1, 2, 3, 5, 6, 8 = 6
+#   punti 7 + 7 + 7 + 2 + 7 + 7 = 37 (QSO 2 x 6 = 12 + bonus 5 x 5 = 25); senza moltiplicatori il punteggio e' la somma
+[atteso]
+qso_ammessi = 6
+doppi = 1
+non_ammessi = 1
+punti = 37
+punteggio = 37
+
+[[altra_stazione]]
+nominativo_proprio = "G4XYZ"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "2101"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "001 RG"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 LS"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["LS@CW"], motivo = "2 punti + 5 per il distretto LS" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 160
+modo = "CW"
+freq_khz = 1831
+ora_utc = "2105"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002 RG"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["DL@CW"], motivo = "2 punti + 5 per il paese DL" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 160
+modo = "CW"
+freq_khz = 1832
+ora_utc = "2110"
+nominativo = "EI3ABC"
+rst_inviato = "599"
+scambio_inviato = "003 RG"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["EI@CW"], motivo = "l'Irlanda (EI) non e' UK&CD: 2 punti + 5 per il paese" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 160
+modo = "CW"
+freq_khz = 1833
+ora_utc = "2115"
+nominativo = "GW3ABC"
+rst_inviato = "599"
+scambio_inviato = "004 RG"
+rst_ricevuto = "599"
+scambio_ricevuto = "003 CF"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["CF@CW"], motivo = "gallese: 2 punti + 5 per il distretto CF" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "2120"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "005 RG"
+rst_ricevuto = "599"
+scambio_ricevuto = "004 LS"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stesso modo del QSO 1" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 160
+modo = "SSB"
+freq_khz = 1860
+ora_utc = "2125"
+nominativo = "G3ABC"
+rst_inviato = "59"
+scambio_inviato = "006 RG"
+rst_ricevuto = "59"
+scambio_ricevuto = "005 LS"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "altro modo: 2 punti, il distretto LS e' gia' preso" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 160
+modo = "SSB"
+freq_khz = 1861
+ora_utc = "2130"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "007 RG"
+rst_ricevuto = "59"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 7, moltiplicatori = ["K@SSB"], motivo = "2 punti + 5 per il paese K" }
+
+# Totali (a mano): 7 QSO; doppi 1 (n. 5); ammessi 6; punti 7 + 7 + 7 + 7 + 2 + 7 = 37
+[altra_stazione.atteso]
+qso_ammessi = 6
+doppi = 1
+non_ammessi = 0
+punti = 37
+punteggio = 37

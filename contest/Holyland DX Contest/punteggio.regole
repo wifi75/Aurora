@@ -1,0 +1,11 @@
+; Holyland DX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento «WWHC 2027» letto il 2026-11-24 su https://tools.iarc.org/wwhc/.
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: fuori da Israele con una stazione 4X/4Z 8, altro continente 4, stesso continente 2, stesso paese 1; /MM 4;
+;   stazione 4X/4Z: con il DX (altro continente) 8, stesso continente (Asia) 2, con un'altra 4X/4Z 1.
+; mult: Aree israeliane per banda (dall'elenco dati/aree.dom) e paesi DXCC per banda, CW e SSB insieme. Una stazione 4X/4Z conta le Aree una volta
+;   sola in tutto il contest (le Aree "irrespective to the operating mode", non "per band", nel regolamento per le 4X/4Z).
+bands=80,40,20,15,10
+points=call:MM=4; my_dxcc:4X&dxcc:4X=1; dxcc:4X=8; my_dxcc:4X&other_cont=8; same_dxcc=1; same_cont=2; other_cont=4
+mult=exch/band/if:dxcc:4X&not_my_dxcc:4X; exch/if:dxcc:4X&my_dxcc:4X; dxcc/band

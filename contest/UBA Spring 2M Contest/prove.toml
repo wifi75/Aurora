@@ -1,0 +1,149 @@
+# UBA Spring 2M Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento UBA Spring Contest 2026 (https://www.uba.be/en/hf/contest-rules/spring-contest-dst).
+# Due punti di vista: [prova] e' una stazione italiana (estera: manda RST + numero, vale solo con ON), [[altra_stazione]] una stazione belga (manda RST + numero + sezione, vale con tutti).
+# Nominativi di fantasia. Edizione 2027 (7 marzo, calcolata): tutti i QSO sono della domenica 2027-03-07, fra le 07:00 e le 11:00 UTC.
+# Moltiplicatori: valore@modo (una volta sola: la banda e' una; il doppio vale anche passando da fonia a CW, da verificare).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-03-07"
+
+[[qso]]
+n = 1
+banda = 2
+modo = "SSB"
+freq_khz = 144300
+ora_utc = "0701"
+nominativo = "ON4ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 ACC"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["ACC@SSB"], motivo = "belga: valido, 3 punti; sezione ACC nuova" }
+
+[[qso]]
+n = 2
+banda = 2
+modo = "CW"
+freq_khz = 144050
+ora_utc = "0705"
+nominativo = "ON4ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002 ACC"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione del QSO 1 (il regolamento non lo dice: una stazione una volta sola)" }
+
+[[qso]]
+n = 3
+banda = 2
+modo = "SSB"
+freq_khz = 144310
+ora_utc = "0710"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "una stazione estera vale solo con i belgi" }
+
+[[qso]]
+n = 4
+banda = 2
+modo = "CW"
+freq_khz = 144060
+ora_utc = "0715"
+nominativo = "OT5ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004 XXX"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["XXX@CW"], motivo = "belga non socio UBA: XXX e' un moltiplicatore" }
+
+[[qso]]
+n = 5
+banda = 6
+modo = "SSB"
+freq_khz = 50150
+ora_utc = "0720"
+nominativo = "ON4ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "005 ACC"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "6 m non e' la banda di questa parte" }
+
+# Totali (a mano): 5 QSO; non ammessi 2 (n. 3 fra due estere, n. 5 su 6 m); doppi 1 (n. 2); ammessi 1 e 4 = 2
+#   punti 2 x 3 = 6; moltiplicatori ACC XXX = 2; punteggio = 6 x 2 = 12
+[atteso]
+qso_ammessi = 2
+doppi = 1
+non_ammessi = 2
+punti = 6
+moltiplicatori = 2
+punteggio = 12
+
+[[altra_stazione]]
+nominativo_proprio = "ON4XYZ"
+locatore_proprio = "JO20ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 2
+modo = "SSB"
+freq_khz = 144300
+ora_utc = "0801"
+nominativo = "ON5ABC"
+rst_inviato = "59"
+scambio_inviato = "001 DST"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 ACC"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["ACC@SSB"], motivo = "belga con belga: 3 punti; sezione ACC nuova" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 2
+modo = "SSB"
+freq_khz = 144310
+ora_utc = "0805"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "002 DST"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "un belga vale anche con le stazioni estere: 3 punti e moltiplicatore DL" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 2
+modo = "CW"
+freq_khz = 144060
+ora_utc = "0810"
+nominativo = "PA3ABC"
+rst_inviato = "599"
+scambio_inviato = "003 DST"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["PA@CW"], motivo = "altro paese: 3 punti e moltiplicatore PA" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 2
+modo = "SSB"
+freq_khz = 144320
+ora_utc = "0815"
+nominativo = "ON6ABC"
+rst_inviato = "59"
+scambio_inviato = "004 DST"
+rst_ricevuto = "59"
+scambio_ricevuto = "003 XXX"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["XXX@SSB"], motivo = "belga non socio: XXX e' un moltiplicatore" }
+
+# Totali (a mano): 4 QSO validi, punti 4 x 3 = 12; moltiplicatori ACC, DL, PA, XXX = 4; punteggio = 12 x 4 = 48
+[altra_stazione.atteso]
+qso_ammessi = 4
+doppi = 0
+non_ammessi = 0
+punti = 12
+moltiplicatori = 4
+punteggio = 48

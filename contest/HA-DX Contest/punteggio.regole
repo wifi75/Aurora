@@ -1,0 +1,9 @@
+; HA-DX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2026 letto il 2026-11-24 su https://ha-dx.com/en/contest-rules.
+;
+; bands: 160, 80, 40, 20, 15, 10 m (le bande WARC non sono nominate).
+; points: stazione ungherese (HA) 10; /MM e /AM sempre 2 (e non sono moltiplicatori); stesso continente 2; altro continente 5.
+; mult: i moltiplicatori li da' punteggio.rhai (paesi DXCC e WAE esclusa HA, contee HA, per banda, CW e SSB insieme).
+bands=160,80,40,20,15,10
+points=call:MM,AM=2; dxcc:HA=10; same_cont=2; other_cont=5
+mult=dxcc/band/except:HA; exch/band/if:dxcc:HA

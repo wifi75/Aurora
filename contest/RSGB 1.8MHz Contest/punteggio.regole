@@ -1,0 +1,9 @@
+; RSGB 1.8MHz Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento RSGB 1.8MHz Contests 2026 (https://www.rsgbcc.org/hf/rules/2026/r160m.shtml).
+;
+; bands: 160 m. Il regolamento non dice che una delle due stazioni debba essere UK&CD: anche le stazioni estere si lavorano fra loro per punti e bonus.
+; points (punto 6): 2 punti per QSO (in febbraio una stazione vale in CW e in SSB).
+; mult: nessun moltiplicatore, ma 5 punti in piu' (add:5) per il primo contatto con ogni distretto UK&CD e con ogni paese DXCC fuori dal UK&CD, in qualunque modo.
+;   UK&CD = G, GM, GW, GI, GD, GU, GJ (Inghilterra, Scozia, Galles, Irlanda del Nord, Isola di Man, Guernsey, Jersey).
+bands=160
+points=any=2
+mult=exch/add:5/if:dxcc:G,GM,GW,GI,GD,GU,GJ; dxcc/add:5/except:G,GM,GW,GI,GD,GU,GJ

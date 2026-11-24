@@ -1,0 +1,141 @@
+# IPA Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 sul sito dell'IPARC, https://dl0ipa.darc.de/Contest.htm: PDF «IPARC-Contest Rules» in inglese (file «IPARC-Contest _engl_ allgemein_25.pdf») e pagina con la data dell'edizione 2026 (7-8 novembre).
+
+[contest]
+id = "ipa"
+nome = "IPA Contest"
+alias = []                        # il vecchio file («IPA Contest», CW e SSB insieme) ha gia' lo stesso nome: la cartella lo sostituisce
+organizzatore = "IPARC (International Police Association Radio Club)"
+sito = "https://dl0ipa.darc.de/"
+regolamento_url = "https://dl0ipa.darc.de/Contest.htm"
+cabrillo_contest = ""             # il regolamento non scrive il Cabrillo (log .txt o .cbr, ogni log e' accettato): da verificare
+note = "IPARC-Contest, primo fine settimana pieno di novembre: CW il sabato 06:00-18:00 UTC, SSB la domenica 06:00-18:00 UTC, 80-10 m nei segmenti IARU Regione 1. Scambio: RS(T) + numero progressivo (da 001 per ogni modo); i soci IPARC aggiungono IPA, quelli degli USA anche lo stato. Punti: 1 per QSO, 5 per una stazione IPARC. Moltiplicatori per banda: paesi DXCC e stati USA con una stazione IPARC. Ogni modo si classifica a parte."
+
+[edizione]
+# Primo fine settimana pieno di novembre, dal sabato 06:00 UTC alla domenica 18:00 UTC (36 ore): il CW e' solo il sabato, la SSB solo la domenica
+# (Aurora non distingue i due giorni: vedi regolamento.md).
+mese = 11
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "06:00"
+durata_ore = 36
+invio_log_giorni = 22             # il log va mandato entro il 30 novembre
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-11-07T06:00:00Z"
+fine = "2026-11-08T17:59:59Z"
+fonte = "https://dl0ipa.darc.de/Contest.htm: «IPARC-Contest 2026: 07./08. November»; orari dal PDF del regolamento (CW sabato 06:00-18:00, SSB domenica 06:00-18:00 UTC)"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-11-06T06:00:00Z"
+fine = "2027-11-07T17:59:59Z"
+fonte = "calcolata dalla regola del regolamento (primo fine settimana pieno di novembre): la pagina dell'IPARC non pubblica ancora le date del 2027"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]
+# Segmenti ammessi (kHz): fuori da questi nessun QSO vale (piano di banda IARU Regione 1). Letti ma non ancora usati dal motore.
+[[modi.limite]]
+modo = "cw"
+nota = "80 m 3510-3560; 40 m 7000-7025; 20 m 14000-14060; 15 m 21000-21070; 10 m 28000-28070"
+
+[[modi.limite]]
+modo = "ssb"
+nota = "80 m 3700-3800; 40 m 7060-7100 e 7130-7200; 20 m 14125-14300; 15 m 21155-21300; 10 m 28320-28600"
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "ipa"
+etichetta_it = "IPA (solo soci IPARC) e, per gli USA, lo stato"
+etichetta_en = "IPA (IPARC members only) and, for the USA, the state"
+tipo = "testo"
+quando = "any"
+nota = "Si scrive dopo il numero: «IPA», e per i soci IPARC degli USA anche la sigla dello stato (IPA CT)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 001, da ripartire a ogni modo (CW e SSB sono due gare)
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Il mio stato (solo soci IPARC degli USA)"
+etichetta_en = "My state (US IPARC members only)"
+tipo = "testo"
+quando = "my_dxcc:K"
+nota = "Si scrive in «La mia sezione / stato / club» della scheda; le macro «socio IPARC» mandano <NRS> IPA <MYSECT>, quelle normali solo <NRS>."
+
+[doppi]
+per = "banda+modo"                 # con ogni stazione una sola volta per banda e per modo
+
+[categorie]
+operatore = ["A-CW (club e stazioni speciali)", "A-SSB (club e stazioni speciali)", "B-CW (singolo, nominativo personale)", "B-SSB (singolo, nominativo personale)", "C-CW (SWL)", "C-SSB (SWL)"]
+modo = ["CW", "SSB"]
+altre = ["un solo nominativo per modo"]
+
+[cabrillo]
+contest = ""
+obbligatori = ["CALLSIGN", "CATEGORY-OPERATOR", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CONTEST", "CATEGORY-MODE", "CATEGORY-BAND", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+invio = "log .txt o .cbr per e-mail al responsabile del contest entro il 30 novembre (ogni log e' accettato, meglio evitare .adi); la classe di partecipazione deve risultare dal log; nome Cabrillo e valori delle intestazioni da verificare"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC con una stazione IPARC", en = "DXCC countries with an IPARC station" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["K"]
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati USA con una stazione IPARC", en = "US states with an IPARC station" }
+ordine = 2
+moltiplicatore = "stato"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "scambio", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

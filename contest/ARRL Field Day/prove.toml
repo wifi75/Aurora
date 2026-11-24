@@ -1,0 +1,129 @@
+# ARRL Field Day - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (PDF https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf).
+# Stazione italiana: manda la classe (qui 1D) e DX al posto della sezione. Nominativi di fantasia.
+# Tutti i QSO sono della domenica 2027-06-27, prima delle 21:00 UTC (fine dell'edizione 2027: sabato 26 giugno 18:00 - domenica 27 giugno 20:59, da confermare).
+# Il Field Day non ha moltiplicatori di paese: il punteggio mostrato e' la somma dei punti dei QSO (il moltiplicatore di potenza e i bonus restano fuori).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-06-27"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "0001"
+nominativo = "W1AW"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "3A CT"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "CW: 2 punti" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0005"
+nominativo = "K1ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "1D EMA"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "fonia: 1 punto" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "FT8"
+freq_khz = 14074
+ora_utc = "0010"
+nominativo = "W2ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "2A NNJ"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "digitale (non CW): 2 punti" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14031
+ora_utc = "0015"
+nominativo = "W1AW"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "3A CT"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 1" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14251
+ora_utc = "0020"
+nominativo = "W1AW"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "3A CT"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stessa stazione in un altro modo (fonia): non e' un doppio, 1 punto" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "CW"
+freq_khz = 7030
+ora_utc = "0025"
+nominativo = "VE3ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "1D ONS"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "CW: 2 punti (sezione canadese ONS)" }
+
+[[qso]]
+n = 7
+banda = 6
+modo = "SSB"
+freq_khz = 50150
+ora_utc = "0030"
+nominativo = "W5ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "2A STX"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "i 50 MHz sono una banda del Field Day: fonia 1 punto" }
+
+[[qso]]
+n = 8
+banda = 30
+modo = "CW"
+freq_khz = 10120
+ora_utc = "0035"
+nominativo = "W1AW"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "3A CT"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: non ammessa nel Field Day" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "PSK31"
+freq_khz = 14070
+ora_utc = "0040"
+nominativo = "K4ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "1B SFL"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "digitale (non CW): 2 punti" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "FT8"
+freq_khz = 14075
+ora_utc = "0045"
+nominativo = "W2ABC"
+scambio_inviato = "1D DX"
+scambio_ricevuto = "2A NNJ"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 3" }
+
+# Totali (a mano): ammessi 1-3, 5-7 e 9 = 7; doppi 2 (n. 4 e 10); non ammessi 1 (n. 8)
+#   punti: 2+1+2+0+1+2+1+2+0 = 11; nessun moltiplicatore: punteggio mostrato = 11
+[atteso]
+qso_ammessi = 7
+doppi = 2
+non_ammessi = 1
+punti = 11
+moltiplicatori = 0
+punteggio = 11

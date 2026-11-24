@@ -1,0 +1,141 @@
+# Holyland DX Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 sul sito del contest https://tools.iarc.org/wwhc/ («WWHC 2027», pagina delle regole: il testo e' dentro la pagina, che e' un'applicazione web) e sulla pagina https://www.iarc.org/holyland/.
+
+[contest]
+id = "holyland-dx"
+nome = "Holyland DX Contest"
+alias = ["Holyland-DX Contest"]   # nome interno del vecchio file (CW e SSB insieme): la cartella lo sostituisce
+organizzatore = "IARC (Israel Amateur Radio Club)"
+sito = "https://tools.iarc.org/wwhc/"
+regolamento_url = "https://tools.iarc.org/wwhc/"
+cabrillo_contest = "HOLYLAND"     # regolamento, pagina dei log: «The contest-name must be HOLYLAND»
+note = "CW e SSB nello stesso fine settimana di aprile (venerdi' 21:00 UTC - sabato 20:59, 24 ore), da 80 a 10 metri, tutti lavorano tutti. Scambio: RS(T) + numero progressivo; le stazioni 4X/4Z mandano RS(T) + Area (quadrato 10x10 km + distretto, F15RH). Punti: 4X/4Z 8, altro continente 4, stesso continente 2, stesso paese 1. Moltiplicatori: Aree e paesi DXCC per banda."
+
+[edizione]
+# Terzo fine settimana pieno di aprile, da venerdi' 21:00 UTC a sabato 20:59 UTC (24 ore).
+mese = 4
+fine_settimana_pieno = 3
+giorno_inizio = "venerdi"
+ora_inizio = "21:00"
+durata_ore = 24
+invio_log_giorni = 7              # il log Cabrillo va mandato entro 7 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-17T21:00:00Z"
+fine = "2026-04-18T20:59:59Z"
+fonte = "regola del sito (terzo fine settimana pieno di aprile, da venerdi' 21:00 UTC) e bollettino «DX Info for April 15, 2026» (summersidearc.com): 2100Z 17 aprile - 2059Z 18 aprile"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-16T21:00:00Z"
+fine = "2027-04-17T20:59:59Z"
+fonte = "https://tools.iarc.org/wwhc/ («WWHC 2027»: Starts Friday, April 16th, 2100 UTC; Ends Saturday, April 17th, 2100 UTC)"
+confermata = true
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]           # nelle categorie MIX si usano tutti e due; vietati QSO in CW dentro i segmenti SSB e viceversa
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:4X"
+nota = "Le stazioni fuori da Israele mandano un numero progressivo da 001."
+
+[[scambio.ricevuto]]
+nome = "area"
+etichetta_it = "Area (solo stazioni 4X/4Z)"
+etichetta_en = "Area (4X/4Z stations only)"
+tipo = "testo"
+quando = "dxcc:4X"
+elenco = "dati/aree.dom"
+nota = "Quadrato di 10x10 km + sigla del distretto, cinque caratteri: F15RH, E14TA, H08HF."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:4X"
+progressivo = true                # da 001, una sola sequenza per tutte le bande e i modi
+
+[[scambio.inviato]]
+nome = "area"
+etichetta_it = "La mia Area (solo stazioni 4X/4Z)"
+etichetta_en = "My Area (4X/4Z stations only)"
+tipo = "testo"
+quando = "my_dxcc:4X"
+elenco = "dati/aree.dom"
+nota = "Si scrive in «La mia sezione / stato / club» della scheda; le macro della stazione 4X/4Z mandano <MYSECT>."
+
+[doppi]
+per = "banda+modo"                 # stessa stazione, stesso modo e stessa banda = doppio (zero punti, senza penalita')
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP", "SWL", "CHECKLOG"]
+potenza = ["HIGH", "LOW", "QRP"]            # LOW sotto 100 W, QRP sotto 10 W
+modo = ["CW", "SSB", "MIX"]
+sovrapposizioni = ["PORTABLE", "M5", "M10", "YN"]     # portatili 4X/4Z in 1, 5 o 10 Aree; YN: sotto i 20 anni o al massimo 3 anni dalla prima licenza
+altre = ["SOSB (una banda)", "MOST (multi-operatore, un trasmettitore)"]
+
+[cabrillo]
+contest = "HOLYLAND"
+obbligatori = ["START-OF-LOG", "CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-MODE", "CATEGORY-POWER"]
+facoltativi = ["CATEGORY-BAND", "CATEGORY-OVERLAY", "CREATED-BY", "EMAIL", "NAME", "ADDRESS", "OPERATORS", "CLUB", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "SWL", "CHECKLOG"]
+category_band = ["ALL", "80", "40", "20", "15", "10"]
+category_mode = ["MIX", "CW", "SSB"]
+category_power = ["HIGH", "LOW", "QRP"]
+invio = "caricamento su https://tools.iarc.org/wwhc/#/submitlog entro 7 giorni dalla fine, solo Cabrillo 3.0; file «nominativo.log» o «nominativo.cbr»; l'ora dei QSO in UTC; tutti i numeri mandati e ricevuti nel log"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree israeliane per banda", en = "Israeli Areas by band" }
+ordine = 2
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+dominio = "dati/aree.dom"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "scambio", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

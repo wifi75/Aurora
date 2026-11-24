@@ -1,0 +1,145 @@
+# UBA Spring 80M SSB Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.uba.be/en/hf/contest-rules/spring-contest-dst («Spring Contest 2026», 43a edizione, UBA sezione DST; e' la pagina piu' recente: non ha ancora le date 2027).
+# Parte del contest: HF 80 m Phone. Le altre parti della pagina (VHF 6 m, 80 m nell'altro modo) hanno una cartella a parte o non sono state fatte.
+
+[contest]
+id = "uba-spring-80m-ssb"
+nome = "UBA Spring 80M SSB Contest"
+alias = ["UBA Spring 80M SSB Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "UBA (Union Royale Belge des Amateurs-Emetteurs), sezione DST (Diest)"
+sito = "https://www.uba.be"
+regolamento_url = "https://www.uba.be/en/hf/contest-rules/spring-contest-dst"
+cabrillo_contest = ""             # la pagina non scrive la riga CONTEST: del Cabrillo (il caricamento e' su https://springcontest.on4dst.be/): da verificare
+note = "Solo fonia (SSB), solo 80 m, quattro ore (07:00-11:00 UTC) di una domenica di marzo. Scambio: RS + numero progressivo; i belgi (ON) aggiungono la sezione UBA. 3 punti a QSO; le stazioni estere valgono solo con ON. Moltiplicatori: sezioni UBA (XXX e UBA compresi) e, per i belgi, i paesi DXCC (ON escluso)."
+
+[edizione]
+# Domenica HF 80 m Phone, 07:00-11:00 UTC (quattro ore). L'ordine delle parti cambia da un anno all'altro (nel 2025 l'80 m CW era la prima domenica di marzo):
+# il formato calcola l'ennesimo fine settimana pieno di marzo, qui la domenica del 4o; le date vere sono scritte sotto anno per anno e valgono al posto del calcolo.
+mese = 3
+fine_settimana_pieno = 4
+giorno_inizio = "domenica"
+ora_inizio = "07:00"
+durata_ore = 4
+invio_log_giorni = 14             # entro 2 settimane da ogni parte, solo caricamento web
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-03-22T07:00:00Z"
+fine = "2026-03-22T10:59:59Z"
+fonte = "https://www.uba.be/en/hf/contest-rules/spring-contest-dst (letto il 2026-11-24): «HF 80 m Phone: 22 March 2026 (07.00 -11.00 hour UTC)»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-03-28T07:00:00Z"
+fine = "2027-03-28T10:59:59Z"
+fonte = "calcolata: stessa successione del 2026 (2 m, 80 m CW, 6 m, 80 m fonia nelle domeniche di marzo); la pagina letta ha solo le date 2026"
+confermata = false
+
+[bande]
+ammesse = ["80 m"]
+
+[modi]
+ammessi = ["ssb"]
+
+[[modi.limite]]
+modo = "ssb"
+frequenza_minima_khz = 3600
+frequenza_massima_khz = 3775
+nota = "segmenti IARU richiesti dal regolamento (punto 15): SSB 3600-3650 e 3700-3775 kHz (segmenti IARU); non controllati dal motore"
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "sezione"
+etichetta_it = "Sezione UBA"
+etichetta_en = "UBA section"
+tipo = "testo"
+quando = "dxcc:ON"
+elenco = "dati/sezioni.dom"
+nota = "Tre lettere (DST, OSB, LGE...); XXX per i belgi non soci UBA; UBA per ON4UB, ON4UBA, ON4DIG e ON4XYL. Le stazioni estere non mandano la sezione."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Da 001, +1 a ogni QSO."
+
+[[scambio.inviato]]
+nome = "sezione"
+etichetta_it = "Sezione UBA"
+etichetta_en = "UBA section"
+tipo = "testo"
+quando = "my_dxcc:ON"
+elenco = "dati/sezioni.dom"
+nota = "Solo per i belgi: la propria sezione di tre lettere (XXX se non soci UBA); si scrive in «La mia sezione / stato / club» della scheda del contest e le macro la mandano con <MYSECT>, dopo il numero progressivo."
+
+[doppi]
+per = "banda"                     # il regolamento non ha una regola dei doppi: una stazione una volta sola
+
+[categorie]
+operatore = ["ON", "ESTERE", "SWL-ON", "SWL-ESTERE"]   # classifiche individuali: stazioni ON (QRP a parte), estere, SWL belgi, SWL esteri
+potenza = ["QRP"]                 # indicare «QRP» nell'intestazione; massimo 10 W in fonia
+altre = ["SEZIONI-UBA"]           # classifica dei club: (A x B) / C, somma dei punteggi dei soci x numero di log, diviso per i soci della sezione
+
+[cabrillo]
+contest = ""
+obbligatori = ["CALLSIGN", "CATEGORY-OPERATOR", "CLAIMED-SCORE", "NAME", "ADDRESS"]
+facoltativi = ["CONTEST", "CATEGORY-POWER", "CATEGORY-BAND", "CATEGORY-MODE", "LOCATION", "SOAPBOX"]
+invio = "solo Cabrillo, caricamento web su https://springcontest.on4dst.be/ entro 2 settimane da ogni parte; un solo log per radioamatore e per parte (anche con il secondo nominativo); file MYCALL.CBR o MYCALL.LOG; intestazione: nominativo, nome e indirizzo completo, regione UBA (solo soci), categoria, descrizione della stazione con la potenza; un log incompleto vale come controllo; oltre il 5 % di QSO errati: squalifica"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Sezioni UBA", en = "UBA sections" }
+ordine = 1
+moltiplicatore = "sezione"
+dominio = "dati/sezioni.dom"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi (solo per i belgi)", en = "Countries (Belgian stations only)" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = false
+per_modo = false
+escludi = ["ON"]
+quando = "my_dxcc:ON"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["ora"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

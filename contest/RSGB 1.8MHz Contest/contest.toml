@@ -1,0 +1,152 @@
+# RSGB 1.8MHz Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.rsgbcc.org/hf/rules/2026/r160m.shtml («RSGB 1.8MHz Contests», edizione 2026, pagina aggiornata il 18 gennaio 2026), calendario su http://www.rsgbcc.org/cgi-bin/hfreadcal.pl?year=2026
+# e codici di distretto su http://www.rsgbcc.org/hf/information/District-Codes.shtml. Una serie col nome «160m Club Championship» non esiste: la gara a 160 m corrispondente al vecchio file e' questa.
+
+[contest]
+id = "rsgb-1-8mhz"
+nome = "RSGB 1.8MHz Contest"
+alias = ["RSGB 160 M CONTEST"]    # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "RSGB (Radio Society of Great Britain), HF Contest Committee"
+sito = "https://www.rsgbcc.org"
+regolamento_url = "https://www.rsgbcc.org/hf/rules/2026/r160m.shtml"
+cabrillo_contest = "RSGB-160"     # dall'esempio della pagina Cabrillo dell'RSGB (http://www.rsgbcc.org/hf/rules/Cabrillo/Cabrillo-Information.shtml#1.8MHz)
+note = "Due gare all'anno sui 160 metri, tre ore (20:00-23:00 UTC) di sabato: febbraio in CW e SSB, novembre solo CW. Scambio: RST + numero progressivo; le stazioni UK&CD aggiungono il codice di distretto di due lettere. 2 punti a QSO, piu' 5 punti per il primo contatto con ogni distretto UK&CD e con ogni paese DXCC fuori dal UK&CD (qualunque modo). Nessun moltiplicatore: punteggio = punti QSO + bonus."
+
+[edizione]
+# Due gare all'anno: la prima a meta' febbraio (CW e SSB), la seconda a meta' novembre (solo CW), entrambe di sabato 20:00-23:00 UTC. La cartella tiene la gara di febbraio;
+# la gara di novembre si imposta nelle modifiche personali del contest. Il calendario 2027 e' provvisorio.
+mese = 2
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "20:00"
+durata_ore = 3
+invio_log_giorni = 1              # entro le 23:59:59 UTC del giorno dopo la fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-14T20:00:00Z"
+fine = "2026-02-14T22:59:59Z"
+fonte = "https://www.rsgbcc.org/hf/rules/2026/r160m.shtml (letto il 2026-11-24): «14 February 2026, 2000-2300 UTC: CW and SSB»"
+confermata = true
+nota = "il 2026 ha due gare: 14 febbraio (CW e SSB) e 21 novembre (solo CW), entrambe 20:00-23:00 UTC"
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-13T20:00:00Z"
+fine = "2027-02-13T22:59:59Z"
+fonte = "http://www.rsgbcc.org/cgi-bin/hfreadcal.pl?year=2027 (letto il 2026-11-24): 1st 1.8MHz Contest sabato 13 febbraio, 2000-2300; il calendario e' provvisorio"
+confermata = false
+nota = "il 2027 ha due gare (provvisorie): 13 febbraio (CW e SSB) e 20 novembre (solo CW)"
+
+[bande]
+ammesse = ["160 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]           # SSB solo nella gara di febbraio
+
+[[modi.limite]]
+modo = "cw"
+frequenza_minima_khz = 1810
+frequenza_massima_khz = 1850
+nota = "CW 1810-1850 kHz (da verificare: una ricerca web scambiava i due intervalli); non controllato dal motore"
+
+[[modi.limite]]
+modo = "ssb"
+frequenza_minima_khz = 1840
+frequenza_massima_khz = 1900
+nota = "SSB 1840-1900 kHz, solo nella gara di febbraio; non controllato dal motore"
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+nota = "Numero progressivo da 1; se la stazione non lo manda si scrive 0."
+
+[[scambio.ricevuto]]
+nome = "distretto"
+etichetta_it = "Distretto"
+etichetta_en = "District code"
+tipo = "testo"
+quando = "dxcc:G,GM,GW,GI,GD,GU,GJ"
+elenco = "dati/distretti.dom"
+nota = "Solo le stazioni UK&CD: codice di due lettere (quasi sempre le prime due del codice postale; le stazioni dell'Irlanda del Nord usano AN, AR, DR, DW, FE o TY)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Da 1, +1 a ogni QSO; un piccolo fuori sequenza non e' penalizzato."
+
+[[scambio.inviato]]
+nome = "distretto"
+etichetta_it = "Distretto"
+etichetta_en = "District code"
+tipo = "testo"
+quando = "my_dxcc:G,GM,GW,GI,GD,GU,GJ"
+elenco = "dati/distretti.dom"
+nota = "Solo per le stazioni UK&CD: il proprio codice di distretto di due lettere; si scrive in «La mia sezione / stato / club» della scheda del contest e le macro lo mandano con <MYSECT>, dopo il numero progressivo."
+
+[doppi]
+per = "banda+modo"                # in febbraio la stessa stazione si lavora una volta in CW e una in SSB per i punti QSO; il bonus vale una volta sola, in qualunque modo
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP"]
+altre = ["UNASSISTED", "ASSISTED", "UK&CD", "NON-UK&CD"]   # 12 sezioni: CW, SSB o CW+SSB (SSB e CW+SSB solo in febbraio) x UK&CD o no x Unassisted o Assisted; i UK&CD sono soci RSGB
+
+[cabrillo]
+contest = "RSGB-160"
+obbligatori = ["CALLSIGN", "CONTEST", "CREATED-BY"]
+facoltativi = ["CLAIMED-SCORE", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+invio = "Cabrillo da caricare sul robot https://www.rsgbcc.org/cgi-bin/hfenter.pl entro le 23:59:59 UTC del giorno dopo la fine; il robot rifiuta i log con errori di formato; QSO: freq modo data ora proprio-nominativo RST nr [distretto] nominativo RST nr [distretto]; i valori dei CATEGORY e i codici dei modi non sono sulla pagina (da verificare)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Distretti UK&CD (bonus)", en = "UK&CD districts (bonus)" }
+ordine = 1
+moltiplicatore = "sezione"
+dominio = "dati/distretti.dom"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC fuori dal UK&CD (bonus)", en = "DXCC entities outside the UK&CD (bonus)" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = false
+per_modo = false
+escludi = ["G", "GM", "GW", "GI", "GD", "GU", "GJ"]
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["ora"]
+colonne = ["qso", "doppi", "punti"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "punteggio_finale"]

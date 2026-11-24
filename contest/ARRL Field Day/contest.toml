@@ -1,0 +1,102 @@
+# ARRL Field Day - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 sul PDF «ARRL Field Day 2026 Rules» (revisione 4/2026, nessuna modifica rispetto all'anno prima) https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf e sulla pagina https://www.arrl.org/field-day-rules; sezioni dalla lista https://www.arrl.org/files/file/Field-Day/Generic/ARRL-RAC%20Section%20List.pdf (revisione 2025).
+
+[contest]
+id = "arrl-field-day"
+nome = "ARRL Field Day"
+alias = ["ARRL Fieldday"]         # nome interno del vecchio file: la cartella lo sostituisce (il «Fieldday Contest» generico e l'«IARU Region 1 Field Day» sono altri contest e restano file)
+organizzatore = "ARRL (con RAC)"
+sito = "https://www.arrl.org/field-day"
+regolamento_url = "https://www.arrl.org/field-day-rules"
+cabrillo_contest = "ARRL-FD"      # il regolamento non lo scrive (il Cabrillo non e' richiesto): e' il nome della specifica Cabrillo, da verificare
+note = "Quarto fine settimana pieno di giugno, sabato 18:00 UTC - domenica 20:59 UTC (27 ore), tutte le bande HF tranne WARC e 60 m e le bande dai 50 MHz in su. Scambio: classe (numero di trasmettitori + lettera A-F) + sezione ARRL/RAC, oppure DX. Punti: fonia 1, CW 2, digitale 2; poi moltiplicatore di potenza (5, 2 o 1) e bonus, che Aurora non calcola. Un QSO per banda e modo (tutta la fonia e' un modo, tutto il digitale un modo)."
+
+[edizione]
+# Quarto fine settimana pieno di giugno, sabato 18:00 UTC - domenica 20:59 UTC (27 ore: 18:00 + 27 h = 21:00).
+mese = 6
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "18:00"
+durata_ore = 27
+invio_log_giorni = 30             # entro il martedi' 28 luglio 2026 (regola 8.2: «Tuesday July 28, 2026»), circa 30 giorni dopo
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-06-27T18:00:00Z"
+fine = "2026-06-28T20:59:59Z"
+fonte = "https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf, regola 3: «Field Day 2026 will be held June 27-28», dalle 1800 UTC del sabato alle 2059 UTC della domenica"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-06-26T18:00:00Z"
+fine = "2027-06-27T20:59:59Z"
+fonte = "calcolata dalla regola 3 del regolamento («ALWAYS the fourth full weekend of June»): il regolamento 2026 non scrive il 2027"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m", "6 m", "2 m", "70 cm", "23 cm"]   # HF senza WARC e 60 m, poi dai 50 MHz in su (solo le bande che Aurora conosce); il satellite e' una «banda» a parte
+
+[modi]
+ammessi = []                      # fonia, CW e digitale (non CW): nessun limite
+
+[[scambio.ricevuto]]
+nome = "classe"
+etichetta_it = "Classe (trasmettitori + lettera)"
+etichetta_en = "Class (transmitters + letter)"
+tipo = "testo"
+quando = "any"
+nota = "Numero di trasmettitori e lettera A-F: 3A, 1D, 2B."
+
+[[scambio.ricevuto]]
+nome = "sezione"
+etichetta_it = "Sezione ARRL/RAC (DX fuori da USA e Canada)"
+etichetta_en = "ARRL/RAC section (DX outside the USA and Canada)"
+tipo = "testo"
+quando = "any"
+elenco = "dati/sezioni.dom"
+
+[[scambio.inviato]]
+nome = "classe"
+etichetta_it = "La mia classe (trasmettitori + lettera)"
+etichetta_en = "My class (transmitters + letter)"
+tipo = "testo"
+quando = "any"
+nota = "Si scrive in «Numero da mandare» della scheda (senza incremento automatico): 3A, 1D... Le macro mandano <NRS>."
+
+[[scambio.inviato]]
+nome = "sezione"
+etichetta_it = "La mia sezione ARRL/RAC (DX dall'Italia)"
+etichetta_en = "My ARRL/RAC section (DX from Italy)"
+tipo = "testo"
+quando = "any"
+elenco = "dati/sezioni.dom"
+nota = "Si scrive in «La mia sezione / stato / club» della scheda; fuori da USA e Canada si manda DX. Le macro mandano <MYSECT>."
+
+[doppi]
+per = "banda+modo"                 # una stazione una volta per banda e modo (regola 6.3); tutta la fonia e' un modo e tutto il digitale un modo (6.6, 6.7)
+
+[categorie]
+operatore = ["A (club o gruppo, portatile)", "A-Battery", "B (1 o 2 persone, portatile)", "B-Battery", "C (mobile)", "D (casa, rete)", "E (casa, alimentazione d'emergenza)", "F (centro operativo d'emergenza)"]
+potenza = ["QRP (fino a 5 W)", "100 W", "oltre 100 W"]   # il moltiplicatore dipende dalla potenza massima usata
+sovrapposizioni = ["GOTA (stazione in piu' per A e F)", "VHF libera (stazione in piu' sopra i 50 MHz)"]
+altre = ["trasmettitori simultanei (1, 2, 3...)"]
+
+[cabrillo]
+contest = "ARRL-FD"
+obbligatori = ["CALLSIGN", "CONTEST", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-OPERATOR", "CATEGORY-POWER", "CATEGORY-MODE", "CATEGORY-STATION", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+invio = "il Cabrillo non e' richiesto: si manda il riepilogo sul sito https://field-day.arrl.org/fdentry.php (o per posta) entro il 28 luglio 2026 con l'elenco dei QSO per banda e modo; un Cabrillo vale come elenco ma non come iscrizione. Nome e valori delle intestazioni: da verificare"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 1
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "scambio"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punti dei QSO", en = "QSO points" }
+ordine = 2
+mostra = ["punti", "punteggio_finale"]

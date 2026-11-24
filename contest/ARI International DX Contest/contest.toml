@@ -1,0 +1,153 @@
+# ARI International DX Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.ari.it/images/stories/ContestHF/ariinternationaldxcontest-dxrules2026.pdf («A.R.I. International DX Contest 2026 - Rules for non-Italians participants»,
+# e' il regolamento piu' recente pubblicato; la pagina https://www.ari.it/contest-hf/ari-international/8320.html non lo riporta). Il contest e' a MAGGIO, non a gennaio.
+
+[contest]
+id = "ari-dx"
+nome = "ARI International DX Contest"
+alias = ["ARI International DX Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "A.R.I. (Associazione Radioamatori Italiani)"
+sito = "https://www.ari.it"
+regolamento_url = "https://www.ari.it/images/stories/ContestHF/ariinternationaldxcontest-dxrules2026.pdf"
+cabrillo_contest = "ARI-DX"
+note = "CW, SSB e RTTY (anche misto) nello stesso fine settimana di maggio, 80-10 m senza WARC, 24 ore. Le stazioni italiane mandano RST + provincia, le altre RST + numero progressivo; le italiane non si lavorano fra loro. Punti: Italia 10, stesso continente 1, altro continente 3, proprio paese 0. Moltiplicatori per banda: province italiane e paesi DXCC/WAE (I, IS e IT9 esclusi)."
+
+[edizione]
+# Primo fine settimana pieno di maggio, da sabato 12:00 UTC a domenica 11:59 UTC (24 ore). Il 2026 e' sul regolamento ufficiale, gli anni dopo sono calcolati.
+mese = 5
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 6              # entro 6 giorni dalla fine (2359Z del sabato dopo); gli SWL entro 60 ore
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-05-02T12:00:00Z"
+fine = "2026-05-03T11:59:59Z"
+fonte = "regolamento ufficiale 2026 (letto il 2026-11-24): «In year 2026 the dates will be May 02-03», 1200Z sabato - 1159Z domenica"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-05-01T12:00:00Z"
+fine = "2027-05-02T11:59:59Z"
+fonte = "calcolata: primo fine settimana pieno di maggio"
+confermata = false
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-05-06T12:00:00Z"
+fine = "2028-05-07T11:59:59Z"
+fonte = "calcolata: primo fine settimana pieno di maggio"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]   # senza le bande WARC, secondo i band plan IARU
+
+[modi]
+ammessi = ["cw", "ssb", "rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59", rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_dxcc:I,IT9,IS"
+nota = "Le stazioni non italiane mandano il numero progressivo da 001 (che non riparte a ogni banda o modo)."
+
+[[scambio.ricevuto]]
+nome = "provincia"
+etichetta_it = "Provincia"
+etichetta_en = "Province"
+tipo = "testo"
+quando = "dxcc:I,IT9,IS"
+elenco = "dati/province.dom"
+nota = "Le stazioni italiane mandano la sigla di due lettere della provincia (107 province, elenco nel regolamento)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59", rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:I,IT9,IS"
+progressivo = true
+nota = "Da 001; non riparte a ogni banda o modo (solo i multi-operatore multi-trasmettitore hanno un numero per banda)."
+
+[[scambio.inviato]]
+nome = "provincia"
+etichetta_it = "Provincia"
+etichetta_en = "Province"
+tipo = "testo"
+quando = "my_dxcc:I,IT9,IS"
+elenco = "dati/province.dom"
+nota = "Per le stazioni italiane: la propria provincia di due lettere; si scrive in «Numero da mandare» della scheda del contest con l'incremento automatico spento; le macro la mandano con <NRS>."
+
+[doppi]
+per = "banda+modo"                # la stessa stazione si lavora una volta per banda in ognuno dei modi CW, SSB, RTTY; solo il primo QSO vale per il moltiplicatore
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP", "SWL"]
+potenza = ["HIGH", "LOW"]         # LOW fino a 100 W; i multi-operatore solo HIGH
+modo = ["CW", "SSB", "RTTY", "MIXED"]
+sovrapposizioni = ["ROOKIE", "YOUTH", "ARI-IQ"]   # solo per le stazioni italiane (Rookie: licenza da meno di 3 anni; Youth: meno di 25 anni; ARI IQ: sezioni ARI col nominativo IQ)
+altre = ["MULTI-ONE", "MULTI-MULTI"]   # multi-operatore un trasmettitore (regola dei 10 minuti) o piu' trasmettitori (un segnale per banda)
+
+[cabrillo]
+contest = "ARI-DX"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-TRANSMITTER", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-STATION", "CATEGORY-OVERLAY", "LOCATION", "NAME", "ADDRESS", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP"]
+category_transmitter = ["ONE", "UNLIMITED", "SWL"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW"]
+category_mode = ["SSB", "CW", "RTTY", "MIXED"]
+category_overlay = ["ROOKIE", "YOUTH"]
+invio = "solo caricamento web su https://contest.ari.it/hf_web/index_hf.php entro 6 giorni dalla fine (2359Z); gli SWL entro 60 ore. Cabrillo 3.0 (o 2.0). LOCATION: sigla ARI della sezione solo per gli italiani, non serve ai DX."
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Province italiane per banda", en = "Italian provinces by band" }
+ordine = 1
+moltiplicatore = "sezione"
+dominio = "dati/province.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["I", "IS", "IT9"]
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]
