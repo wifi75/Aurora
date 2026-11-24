@@ -460,6 +460,11 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     [t],
   );
 
+  // gli hook della pagina a blocchi stanno PRIMA dei `return` qui sotto (finestra staccata e vista compatta): se la vista cambia sulla stessa istanza
+  // (la finestra si stringe sotto i 768 px, un tablet ruota) il numero degli hook non deve cambiare, altrimenti React lancia «Rendered fewer hooks»
+  const boardCells = useBoard((st) => st.cells);
+  const groups = useGroups();
+  const [awayBoards, setAwayBoards] = useState<Record<string, Record<string, Cell>>>(readAwayBoards);
   // sotto i 768 px (o su un tablet in orizzontale, a due colonne): il telecomando compatto, con gli stessi dati e comandi di questa pagina
   // finestra a parte: solo il pannello chiesto, a tutta finestra
   if (soloPanel) {
@@ -501,7 +506,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
 
   // la pagina a blocchi: ogni finestra ha la sua posizione e la sua misura (lib/boardLayout.ts) e, in fase di progetto (`EDIT_LAYOUT`),
   // si sposta dalla barra del titolo e si ridimensiona dall'angolo in basso a destra; poi le misure salvate restano fisse.
-  const boardCells = useBoard((st) => st.cells);
   // il pannello RX (come «Rx Frequency» di WSJT-X): chi trasmette dove sta la barretta Rx (±50 Hz), i messaggi diretti a me e le mie trasmissioni
   const rxHz = status?.rx_df ?? null;
   const rxBody = (): ReactNode => {
@@ -597,7 +601,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     </div>
   ) : null);
   // le finestre staccate sul secondo schermo non si vedono qui (la Trasmissione porta con se' anche il QSO); idem quelle nascoste dalle Impostazioni
-  const groups = useGroups();
   // il blocco `dxmap` della Stazione e' Bande aperte: staccato diventa `bands`; la Mappa DX staccata (`dxmap`) non lo toglie da qui
   const awayIds: PanelId[] = [
     ...(layout.hidden ?? []),
@@ -608,7 +611,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // Queste misure si ricordano a parte, una disposizione per ogni insieme di schede staccate: rimesse tutte a posto, torna la pagina
   // bloccata con le misure di sempre (richiesta del proprietario)
   const awayKey = [...new Set(awayIds as string[])].filter((id) => id in boardCells).sort().join(',');
-  const [awayBoards, setAwayBoards] = useState<Record<string, Record<string, Cell>>>(readAwayBoards);
   // senza misure salvate per questo insieme, le finestre vicine si allargano da sole a riempire il posto lasciato libero
   const awayCells = !awayKey
     ? visibleCells

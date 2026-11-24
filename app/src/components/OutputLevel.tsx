@@ -26,11 +26,16 @@ export function OutputLevel({ horizontal = false }: Props) {
   // quando si e' rilasciato il cursore l'ultima volta: per un attimo una risposta vecchia del motore non deve riportarlo indietro
   const settled = useRef(0);
   const [note, setNote] = useState('');
+  // finita la finestra di assestamento si rilegge il valore del motore: una lettura identica non cambia il riferimento dei dati e senza questo il
+  // cambio arrivato durante la finestra (cambio banda con memoria per banda) resterebbe scartato fino al cambio successivo
+  const [resync, setResync] = useState(0);
+  const resyncTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(resyncTimer.current), []);
 
   // il valore del motore vince quando non si sta trascinando: se cambia da solo (cambio banda con la memoria per banda) il cursore lo segue
   useEffect(() => {
     if (level.data && !dragging.current && Date.now() - settled.current > SETTLE_MS) setPct(levelPercent(level.data.attenuation_db));
-  }, [level.data]);
+  }, [level.data, resync]);
 
   if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>{t('out.short')} –</p>;
   if (pct === null) return null;
@@ -40,6 +45,8 @@ export function OutputLevel({ horizontal = false }: Props) {
     try {
       await putOutputLevel(attenuationFromPercent(value));
       settled.current = Date.now();
+      window.clearTimeout(resyncTimer.current);
+      resyncTimer.current = window.setTimeout(() => setResync((n) => n + 1), SETTLE_MS + 100);
       await client.invalidateQueries({ queryKey: ['output-level'] });
       setNote(t('out.saved'));
     } catch (error) {
