@@ -78,6 +78,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 ## Richieste da mostrare al proprietario
 
 - Proposta (non fatta): casella «Mostra gli spot del mio nominativo» anche nelle Impostazioni (Log, cluster e servizi), oltre al pulsante «I miei spot» del pannello DX Cluster (0.11.339). Chiesta dal proprietario il 2026-11-23 («dove l'hai messo nelle impostazioni?»): oggi c'e' solo il pulsante.
+- Pere EA3CUU, #92 (2026-11-24, commento delle 12:39 UTC): nella Finestra RX e in Attivita' di banda (FT8) la prima trasmissione del QSO («LZ1JZ EA3CUU JN12») compare DOPO la risposta dell'altra stazione che la segue, le successive (R-25, 73) sono in ordine: PROBLEMA di ordine delle righe Tx (`withOwnTx` in `Live.tsx`, orario `time_ms` della riga Tx in `state/station.ts`), causa non trovata; gli ho chiesto il pacchetto subito dopo un QSO cosi'. RICHIESTA (🟡): far vedere nella finestra perche' Aurora smette di trasmettere (per esempio «il corrispondente ha risposto a un'altra stazione»).
 - Proposta (non fatta): nascondere in blocco gli skimmer (DE con «-#») con un filtro del cluster, oltre agli spot del proprio nominativo.
 Funzioni nuove chieste da utenti (issue, rapporti): i giri orari non le implementano, le annotano qui; il proprietario le vuole vedere appena scrive. Formato: utente, issue, cosa chiede, idea in una riga.
 - FATTO in locale (non pubblicato): PTT dati per Hamlib (`ptt_data`), confermato con Ghidra su Hamlib 4.7.2; resta la prova di pd0jor (#96) con la radio vera.
