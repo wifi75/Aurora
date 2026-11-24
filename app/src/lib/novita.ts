@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.344',
+    released: '2026-11-24T17:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Radio rimasta in trasmissione e correzioni dalla revisione',
+      'Radio stuck in transmit and fixes from the code review',
+      'Funkgerät bleibt im Senden hängen und Korrekturen aus der Code-Prüfung',
+      'Radio restée en émission et corrections de la revue du code',
+      'Radio que se queda transmitiendo y correcciones de la revisión del código',
+      'Rádio que fica a transmitir e correções da revisão do código',
+    ],
+    text: [
+      'Se dopo una trasmissione di Aurora la radio risulta di nuovo «in trasmissione» senza che Aurora l’abbia accesa (visto con un TS-850 e la seriale USB, #92), Aurora rimanda lo spegnimento fino a tre volte e lo scrive nel registro. «Rimanda i QSO persi» verso Log4OM: non rimanda più i QSO PSK e Contestia già presenti né quelli ricevuti da altri programmi, manda anche nome, QTH e scambio, e riprova se il database è occupato. Per chi aggiorna, le copie vecchie dei contest passano alla scheda «Beta contest» o sono sostituite dalle versioni verificate; nuovo CQ WW 160 m in fonia, con i moltiplicatori WAE: i contest ufficiali sono 55. Con l’uscita audio persa la trasmissione si ferma subito, la pagina principale non va più in errore se la finestra si stringe, la sintonia a mano dell’SSTV non ridisegna righe di rumore, la sezione propria (zona CQ, sezione) arriva anche nei contest che non la usano come moltiplicatore.',
+      'If after an Aurora transmission the radio reports “transmitting” again without Aurora having keyed it (seen with a TS-850 on a USB serial port, #92), Aurora sends the PTT-off again up to three times and writes it in the log. “Resend lost QSOs” to Log4OM: it no longer resends PSK and Contestia QSOs that are already there or those received from other programs, it also sends name, QTH and exchange, and tries again if the database is busy. For those who update, the old copies of the contests move to the “Beta contests” set or are replaced by the checked versions; new CQ WW 160 m SSB, with WAE multipliers: the official contests are now 55. With a lost audio output the transmission stops at once, the main page no longer errors when the window is narrowed, SSTV manual tuning no longer redraws noise lines, and your own section (CQ zone, section) is also sent in contests that do not use it as a multiplier.',
+      'Meldet das Funkgerät nach einer Aurora-Sendung wieder „Senden“, ohne dass Aurora es getastet hat (gesehen mit einem TS-850 an einer USB-Seriell-Schnittstelle, #92), sendet Aurora das PTT-Aus bis zu dreimal erneut und schreibt es ins Protokoll. „Verlorene QSOs erneut senden“ an Log4OM: schickt PSK- und Contestia-QSOs, die schon da sind, und von anderen Programmen empfangene nicht mehr erneut, sendet auch Name, QTH und Austausch und versucht es erneut, wenn die Datenbank belegt ist. Für alle, die aktualisieren: Die alten Kopien der Contests wechseln in die Gruppe „Beta-Contests“ oder werden durch die geprüften Versionen ersetzt; neu CQ WW 160 m SSB, mit WAE-Multiplikatoren: Es gibt jetzt 55 offizielle Contests. Bei verlorenem Audioausgang stoppt die Sendung sofort, die Hauptseite meldet keinen Fehler mehr, wenn das Fenster schmaler wird, die manuelle SSTV-Abstimmung zeichnet keine Rauschzeilen mehr, und die eigene Sektion (CQ-Zone, Sektion) wird auch in Contests gesendet, die sie nicht als Multiplikator nutzen.',
+      'Si, après une émission d’Aurora, la radio indique de nouveau « émission » sans qu’Aurora l’ait activée (vu avec un TS-850 sur un port série USB, #92), Aurora renvoie l’arrêt du PTT jusqu’à trois fois et l’écrit dans le journal. « Renvoyer les QSO perdus » vers Log4OM : ne renvoie plus les QSO PSK et Contestia déjà présents ni ceux reçus d’autres programmes, envoie aussi nom, QTH et échange, et réessaie si la base est occupée. Pour ceux qui mettent à jour, les anciennes copies des concours passent dans « Concours bêta » ou sont remplacées par les versions vérifiées ; nouveau CQ WW 160 m SSB, avec multiplicateurs WAE : les concours officiels sont maintenant 55. Avec une sortie audio perdue l’émission s’arrête aussitôt, la page principale ne plante plus quand la fenêtre se rétrécit, l’accord manuel du SSTV ne redessine plus de lignes de bruit, et votre propre section (zone CQ, section) est aussi envoyée dans les concours qui ne l’utilisent pas comme multiplicateur.',
+      'Si tras una transmisión de Aurora la radio indica de nuevo «transmitiendo» sin que Aurora la haya activado (visto con un TS-850 en un puerto serie USB, #92), Aurora vuelve a mandar el apagado del PTT hasta tres veces y lo anota en el registro. «Reenviar los QSO perdidos» a Log4OM: ya no reenvía los QSO de PSK y Contestia que ya están ni los recibidos de otros programas, envía también nombre, QTH e intercambio, y reintenta si la base de datos está ocupada. Para quien actualiza, las copias antiguas de los concursos pasan a «Concursos beta» o se sustituyen por las versiones comprobadas; nuevo CQ WW 160 m en fonía, con multiplicadores WAE: los concursos oficiales son ya 55. Con la salida de audio perdida la transmisión se detiene al instante, la página principal ya no da error al estrechar la ventana, la sintonía manual de SSTV ya no redibuja líneas de ruido, y la propia sección (zona CQ, sección) se envía también en los concursos que no la usan como multiplicador.',
+      'Se depois de uma transmissão do Aurora o rádio indicar de novo «a transmitir» sem o Aurora o ter ativado (visto com um TS-850 numa porta série USB, #92), o Aurora volta a mandar o desligar do PTT até três vezes e regista-o. «Reenviar os QSO perdidos» para o Log4OM: já não reenvia os QSO de PSK e Contestia que já lá estão nem os recebidos de outros programas, envia também nome, QTH e troca, e tenta de novo se a base de dados estiver ocupada. Para quem atualiza, as cópias antigas dos concursos passam para «Concursos beta» ou são substituídas pelas versões verificadas; novo CQ WW 160 m em fonia, com multiplicadores WAE: os concursos oficiais são agora 55. Com a saída de áudio perdida a transmissão pára de imediato, a página principal já não dá erro ao estreitar a janela, a sintonia manual do SSTV já não redesenha linhas de ruído, e a própria secção (zona CQ, secção) é enviada também nos concursos que não a usam como multiplicador.',
+    ],
+  },
+  {
     version: '0.11.343',
     released: '2026-11-24T14:27:07Z',
     kind: 'fixed',
@@ -843,27 +864,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec le Doppler activé, en tournant le bouton pour accorder une station (par exemple RS-44 en SSB) Aurora prend la nouvelle fréquence comme celle choisie et l’émission la suit avec le même écart, sans ramener la radio là où elle était. Dans les paramètres des satellites il y a la case « Suivre le bouton d’accord de la radio », activée par défaut.',
       'Con el Doppler activado, al girar la rueda para sintonizar una estación (por ejemplo RS-44 en SSB) Aurora toma la nueva frecuencia como la elegida y la transmisión la sigue con el mismo desfase, sin devolver la radio a donde estaba. En los ajustes de los satélites está la casilla «Seguir la rueda de sintonía de la radio», activada de base.',
       'Com o Doppler ligado, ao rodar o botão para sintonizar uma estação (por exemplo RS-44 em SSB) a Aurora toma a nova frequência como a escolhida e a transmissão segue-a com o mesmo desvio, sem repor o rádio onde estava. Nas definições dos satélites há a caixa «Seguir o botão de sintonia do rádio», ligada por defeito.',
-    ],
-  },
-  {
-    version: '0.11.330',
-    released: '2026-11-22T08:53:03Z',
-    kind: 'changed',
-    title: [
-      'Stesso stile in tutti i modi',
-      'Same style in every mode',
-      'Gleicher Stil in allen Betriebsarten',
-      'Même style dans tous les modes',
-      'Mismo estilo en todos los modos',
-      'Mesmo estilo em todos os modos',
-    ],
-    text: [
-      'I controlli (menu a tendina, pulsanti, campi) hanno la stessa forma nelle barre della Stazione, di SSTV, WEFAX, Satelliti e delle pagine testuali. Le barre del titolo dei riquadri di Satelliti e WEFAX hanno il gradiente della Stazione. In SSTV ci sono frecce più eleganti e il visore non ha più lo sfondo sfocato e resta aperto cancellando una foto. La mappa DX e la propagazione non lampeggiano più nello zoom.',
-      'Controls (drop-down menus, buttons, fields) have the same shape in the bars of the Station, SSTV, WEFAX, Satellites and the text pages. The title bars of the Satellites and WEFAX panels use the Station gradient. In SSTV the arrows are more elegant, and the viewer no longer has a blurred background and stays open when you delete a photo. The DX map and propagation no longer flicker while zooming.',
-      'Bedienelemente (Auswahlmenüs, Schaltflächen, Felder) haben in den Leisten der Station, von SSTV, WEFAX, Satelliten und der Textseiten dieselbe Form. Die Titelleisten der Felder von Satelliten und WEFAX haben den Farbverlauf der Station. In SSTV gibt es elegantere Pfeile, und der Betrachter hat keinen unscharfen Hintergrund mehr und bleibt beim Löschen eines Fotos geöffnet. DX-Karte und Ausbreitung flackern beim Zoomen nicht mehr.',
-      'Les contrôles (menus déroulants, boutons, champs) ont la même forme dans les barres de la Station, de SSTV, WEFAX, Satellites et des pages de texte. Les barres de titre des cadres de Satellites et WEFAX ont le dégradé de la Station. En SSTV les flèches sont plus élégantes, et la visionneuse n’a plus de fond flou et reste ouverte quand on supprime une photo. La carte DX et la propagation ne clignotent plus pendant le zoom.',
-      'Los controles (menús desplegables, botones, campos) tienen la misma forma en las barras de la Estación, de SSTV, WEFAX, Satélites y de las páginas de texto. Las barras de título de los recuadros de Satélites y WEFAX tienen el degradado de la Estación. En SSTV las flechas son más elegantes, y el visor ya no tiene el fondo desenfocado y se queda abierto al borrar una foto. El mapa DX y la propagación ya no parpadean al hacer zoom.',
-      'Os controlos (menus de seleção, botões, campos) têm a mesma forma nas barras da Estação, de SSTV, WEFAX, Satélites e das páginas de texto. As barras de título dos painéis de Satélites e WEFAX têm o gradiente da Estação. No SSTV as setas são mais elegantes, e o visor já não tem o fundo desfocado e fica aberto ao apagar uma foto. O mapa DX e a propagação já não piscam no zoom.',
     ],
   },
 ];
