@@ -11,19 +11,13 @@ import {
   putAccess,
   putPairingSettings,
   revokeDevice,
-  startHotspot,
   startPairing,
-  stopHotspot,
-  type HotspotInfo,
   type PairingOffer,
 } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { Check } from './common';
 import { Cell, Cells, Group, Message, Page } from './layout';
 import { useAutosave } from './useAutosave';
-
-/** Spento finche' l'hotspot non e' provato dal proprietario. */
-const HOTSPOT_BUTTON = false;
 
 function errorText(error: unknown, t: T): string {
   return error instanceof ApiError && error.code === 'local_only' ? t('acc.pcOnly') : t('set.saveFailed');
@@ -51,9 +45,6 @@ export function AccessTab() {
   });
 
   const [offer, setOffer] = useState<PairingOffer | null>(null);
-  const [hotspot, setHotspot] = useState<HotspotInfo | null>(null);
-  const hotOn = useMutation({ mutationFn: startHotspot, onSuccess: setHotspot });
-  const hotOff = useMutation({ mutationFn: stopHotspot, onSuccess: () => setHotspot(null) });
   const show = useMutation({ mutationFn: () => startPairing(window.location.origin), onSuccess: setOffer });
 
   // con il QR in vista l'elenco si rilegge ogni 2 s: il telefono appena associato compare subito e l'attesa finisce da sola
@@ -148,34 +139,6 @@ export function AccessTab() {
                 </li>
               ))}
             </ul>
-          </div>
-        ) : null}
-        {/* la rete Wi-Fi di Aurora (hotspot) e' pronta ma resta spenta finche' il proprietario non l'ha provata con una scheda Wi-Fi vera */}
-        {offer && HOTSPOT_BUTTON ? (
-          <div className="acc-hot">
-            <p className="acc-alt-title">{t('acc.hot.title')}</p>
-            {hotspot ? (
-              <div className="acc-alt-item">
-                <img className="acc-alt-qr" alt="QR Wi-Fi" src={`data:image/svg+xml;utf8,${encodeURIComponent(hotspot.wifi_qr_svg)}`} />
-                <span className="acc-alt-text">
-                  <span>
-                    {t('acc.hot.name')}: <strong className="data">{hotspot.ssid}</strong> · {t('acc.hot.pass')}: <strong className="data">{hotspot.password}</strong>
-                  </span>
-                  <span className="muted">{t('acc.hot.steps')}</span>
-                  <button type="button" className="glass" disabled={hotOff.isPending} onClick={() => hotOff.mutate()}>
-                    {t('acc.hot.stop')}
-                  </button>
-                </span>
-              </div>
-            ) : (
-              <>
-                <p className="muted">{t('acc.hot.help')}</p>
-                <button type="button" className="glass glass--on" disabled={hotOn.isPending} onClick={() => hotOn.mutate()}>
-                  {hotOn.isPending ? t('acc.hot.working') : t('acc.hot.start')}
-                </button>
-              </>
-            )}
-            {hotOn.isError ? <Message kind="alert">{t('acc.hot.failed')}</Message> : null}
           </div>
         ) : null}
         {offer ? <NetworkChecklist waiting /> : null}

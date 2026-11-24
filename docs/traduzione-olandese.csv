@@ -987,15 +987,6 @@ tip.acc.home,Aurora announces itself on the home network with this name: it stay
 acc.noHome,"Fixed name not active (Aurora only listens on this PC, or the network does not allow the announcement). Use the IP below.","Vaste naam niet actief (Aurora luistert alleen op deze pc, of het netwerk laat de aankondiging niet toe). Gebruik het IP-adres hieronder."
 acc.pairedNow,Phone paired: you find it below in «Paired devices».,Telefoon gekoppeld: je vindt hem hieronder bij «Gekoppelde apparaten».
 acc.camera,"Scan the QR with the phone camera and open the link in Chrome or Safari: inside Messenger or WhatsApp the page often does not open. Phone and PC on the same Wi-Fi. Chrome on Android does not open the page? Turn off ⋮ › Settings › Privacy and security › «Always use secure connections» and allow «Local network» from the lock icon, or use Firefox.","Scan de QR met de camera van de telefoon en open de link in Chrome of Safari: in Messenger of WhatsApp opent de pagina vaak niet. Telefoon en pc op hetzelfde wifi. Opent Chrome op Android de pagina niet? Zet ⋮ › Instellingen › Privacy en beveiliging › «Altijd beveiligde verbindingen gebruiken» uit en sta «Lokaal netwerk» toe via het slotpictogram, of gebruik Firefox."
-acc.hot.title,The phone does not connect? Create the Aurora Wi-Fi network,Verbindt de telefoon niet? Maak het Aurora-wifinetwerk aan
-acc.hot.help,"The PC creates its own Wi-Fi network: the phone connects straight to the PC, with no router, guest network or isolation. The PC needs a Wi-Fi adapter; the phone has no internet while connected.","De pc maakt een eigen wifinetwerk: de telefoon verbindt rechtstreeks met de pc, zonder router, gastennetwerk of isolatie. De pc heeft een wifi-adapter nodig; de telefoon heeft geen internet zolang hij verbonden is."
-acc.hot.start,Create the Aurora network,Aurora-netwerk aanmaken
-acc.hot.working,Turning the network on…,Netwerk wordt ingeschakeld…
-acc.hot.stop,Turn the network off,Netwerk uitschakelen
-acc.hot.steps,1) Scan this QR with the phone: it joins the Aurora network. 2) Then scan the pairing QR above (the one with the address 192.168.137.1) or open http://192.168.137.1 in the browser.,1) Scan deze QR met de telefoon: hij verbindt met het Aurora-netwerk. 2) Scan daarna de koppel-QR hierboven (die met het adres 192.168.137.1) of open http://192.168.137.1 in de browser.
-acc.hot.name,Network,Netwerk
-acc.hot.pass,Password,Wachtwoord
-acc.hot.failed,Network not turned on. The PC needs a Wi-Fi adapter and Windows «Mobile hotspot» must not be blocked.,Netwerk niet ingeschakeld. De pc heeft een wifi-adapter nodig en de «Mobiele hotspot» van Windows mag niet geblokkeerd zijn.
 acc.alt.title,The phone does not open the page? The PC also has these addresses: try the next QR.,Opent de telefoon de pagina niet? De pc heeft ook deze adressen: probeer de volgende QR.
 acc.kind.wifi,Wi-Fi,Wifi
 acc.kind.cable,Network cable,Netwerkkabel
