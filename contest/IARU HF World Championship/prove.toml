@@ -1,0 +1,244 @@
+# IARU HF World Championship - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 1.21 (https://contests.arrl.org/ContestRules/IARU-HF-Rules.pdf).
+# Due punti di vista: [prova] e' una stazione italiana (zona ITU 28, Europa), [[altra_stazione]] una stazione degli Stati Uniti (zona 8, Nord America).
+# Nominativi di fantasia. Tutti i QSO sono del sabato 2027-07-10, dopo le 12:00 UTC (inizio dell'edizione 2027).
+# Moltiplicatori: valore@modo (contano una volta per banda, in qualunque modo; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-07-10"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1201"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["28@CW"], motivo = "stessa zona ITU (28): 1 punto; zona 28 nuova su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "1205"
+nominativo = "G3ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "27"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["27@CW"], motivo = "stesso continente, altra zona: 3 punti" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "1210"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "08"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["8@CW"], motivo = "altro continente e altra zona: 5 punti" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14028
+ora_utc = "1215"
+nominativo = "DA0HQ"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "DARC"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DARC@CW"], motivo = "stazione HQ di una societa': 1 punto, la sigla e' un moltiplicatore" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14029
+ora_utc = "1220"
+nominativo = "EA2ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "R1"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["R1@CW"], motivo = "ufficiale IARU della Regione 1: 1 punto, moltiplicatore R1" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1225"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "28"
+rst_ricevuto = "59"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stessa stazione in un altro modo non e' doppio; la zona 28 su 20 m c'e' gia' (i moltiplicatori sono per banda, non per modo)" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1230"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 1" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "CW"
+freq_khz = 7020
+ora_utc = "1235"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["28@CW"], motivo = "stessa stazione su un'altra banda: non e' doppio, zona 28 nuova su 40 m" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "CW"
+freq_khz = 10115
+ora_utc = "1240"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "28"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "1245"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "28"
+rst_ricevuto = "59"
+scambio_ricevuto = "45"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["45@SSB"], motivo = "altro continente e altra zona: 5 punti" }
+
+[[qso]]
+n = 11
+banda = 20
+modo = "SSB"
+freq_khz = 14260
+ora_utc = "1250"
+nominativo = "ZL1ABC"
+rst_inviato = "59"
+scambio_inviato = "28"
+rst_ricevuto = "59"
+scambio_ricevuto = ""
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["60@SSB"], motivo = "scambio senza zona: si usa quella del database dei paesi (60); altro continente: 5 punti" }
+
+# Totali (a mano): ammessi 1-6, 8, 10, 11 = 9; doppi 1 (n. 7); non ammessi 1 (n. 9)
+#   punti: 1+3+5+1+1+1+0+1+0+5+5 = 23
+#   moltiplicatori: 28@20 27@20 8@20 DARC@20 R1@20 28@40 45@15 60@20 = 8
+#   punteggio = 23 x 8 = 184
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 23
+moltiplicatori = 8
+moltiplicatori_cw = 6
+moltiplicatori_ssb = 2
+punteggio = 184
+
+[[altra_stazione]]
+nominativo_proprio = "K1ABC"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "1301"
+nominativo = "W2ABC"
+rst_inviato = "599"
+scambio_inviato = "08"
+rst_ricevuto = "599"
+scambio_ricevuto = "08"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["8@CW"], motivo = "stessa zona ITU (8): 1 punto" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14031
+ora_utc = "1305"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "08"
+rst_ricevuto = "599"
+scambio_ricevuto = "04"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["4@CW"], motivo = "stesso continente (Nord America), altra zona: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14032
+ora_utc = "1310"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "08"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["28@CW"], motivo = "altro continente e altra zona: 5 punti" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14033
+ora_utc = "1315"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "08"
+rst_ricevuto = "599"
+scambio_ricevuto = "ARRL"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["ARRL@CW"], motivo = "stazione HQ dell'ARRL: 1 punto, moltiplicatore ARRL" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14270
+ora_utc = "1320"
+nominativo = "KH6ABC"
+rst_inviato = "59"
+scambio_inviato = "08"
+rst_ricevuto = "59"
+scambio_ricevuto = "61"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["61@SSB"], motivo = "Hawaii e' in Oceania, zona 61: 5 punti" }
+
+# Totali (a mano): 5 QSO, punti 1+3+5+1+5 = 15, moltiplicatori 8 4 28 ARRL 61 = 5, punteggio 15 x 5 = 75
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 0
+non_ammessi = 0
+punti = 15
+moltiplicatori = 5
+punteggio = 75

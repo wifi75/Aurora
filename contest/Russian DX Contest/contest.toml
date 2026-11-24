@@ -1,0 +1,152 @@
+# Russian DX Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.rdxc.org/rules_eng (34a edizione, 2027) e, per l'edizione 2026, sul regolamento SRR https://srr.ru/wp-content/uploads/2026/02/Reglament-RDXC-2026.pdf (in russo).
+# Elenco delle regioni: https://www.rdxc.org/info.
+
+[contest]
+id = "russian-dx"
+nome = "Russian DX Contest"
+alias = []                        # il vecchio file («RUSSIAN DX Contest», CW e SSB) ha lo stesso nome (maiuscole a parte): la cartella lo sostituisce
+organizzatore = "SRR (Union of Radioamateurs of Russia)"
+sito = "https://www.rdxc.org"
+regolamento_url = "https://www.rdxc.org/rules_eng"
+cabrillo_contest = "RDXC"
+note = "CW e SSB nello stesso fine settimana di marzo, 24 ore, sei bande da 160 a 10 metri. Scambio: RS(T) + numero progressivo (i russi: la sigla della regione). Moltiplicatori per banda: paesi DXCC/WAE e regioni russe."
+
+[edizione]
+# Terzo fine settimana pieno di marzo, sabato 12:00 - domenica 11:59 UTC (24 ore).
+mese = 3
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 14             # 14 giorni dopo la fine (i candidati ai primi tre posti: entro due giorni)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-03-21T12:00:00Z"
+fine = "2026-03-22T11:59:59Z"
+fonte = "regolamento SRR 2026 (letto il 2026-11-24): 12:00 UTC 21 marzo - 11:59 UTC 22 marzo 2026"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-03-20T12:00:00Z"
+fine = "2027-03-21T11:59:59Z"
+fonte = "https://www.rdxc.org/rules_eng (letto il 2026-11-24): 1200 UTC 20 March - 1159 UTC 21 March 2027"
+confermata = true
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "regione"
+etichetta_it = "Regione russa"
+etichetta_en = "Russian region"
+tipo = "testo"
+quando = "dxcc:UA,UA9,UA2,R1FJ"
+elenco = "dati/oblast.dom"
+nota = "Le stazioni russe (anche Kaliningrad, Franz Josef Land e le stazioni russe in Antartide) mandano la sigla di due lettere della loro regione (MA, SP, NS...); l'elenco e' quello di rdxc.org/info."
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:UA,UA9,UA2,R1FJ"
+nota = "Tutte le altre stazioni mandano un numero progressivo da 001 (uno solo per tutte le bande)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "regione"
+etichetta_it = "Regione russa"
+etichetta_en = "Russian region"
+tipo = "testo"
+quando = "my_dxcc:UA,UA9,UA2,R1FJ"
+elenco = "dati/oblast.dom"
+nota = "Per chi opera dalla Russia: la propria sigla di regione si scrive in «Numero da mandare» della scheda del contest, con l'incremento automatico spento; le macro la mandano con <NRS>."
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:UA,UA9,UA2,R1FJ"
+progressivo = true                # da 001, uno solo per tutte le bande (nei multi-operatore si puo' tenere una serie per banda)
+
+[doppi]
+per = "banda+modo"                # stessa stazione, stessa banda e stesso modo: 0 punti (in Mixed una volta in CW e una in SSB su ogni banda)
+
+[categorie]
+operatore = ["SO", "SOSB", "MS", "M2", "MM", "SWL"]   # Single-Op tutte le bande, monobanda, Multi-Ops Single Transmitter / Two Transmitters / Multi Transmitters, SWL
+potenza = ["QRP", "LOW", "HIGH"]  # QRP 5 W, Low 100 W, High: limite della licenza (QRP solo tutte le bande)
+modo = ["MIXED", "CW", "SSB"]     # tutte le bande: misto, CW o SSB; monobanda e multi-operatore solo in misto
+sovrapposizioni = ["ONE RADIO", "CLASSIC", "YL", "JUNIOR", "SINGLE TX/RX"]
+altre = ["Senior (75 anni o piu', 12 ore di operativita')", "Checklog"]
+
+[categorie.ms]
+potenza = ["HIGH"]                # un solo segnale; regola dei 10 minuti per il cambio di banda
+
+[categorie.m2]
+potenza = ["HIGH"]                # due segnali su bande diverse, 8 cambi di banda per ora e per trasmettitore
+
+[categorie.mm]
+potenza = ["HIGH"]                # fino a sei segnali, uno per banda
+
+[cabrillo]
+contest = "RDXC"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY", "ADDRESS"]
+facoltativi = ["CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["MIXED", "CW", "SSB"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+invio = "solo caricamento web: http://ua9qcq.ru/submit_log.php, file nominativo.log o nominativo.cbr (indirizzo postale completo nell'intestazione; LOCATION con la regione per le stazioni russe)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Regioni russe per banda", en = "Russian regions by band" }
+ordine = 1
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+dominio = "dati/oblast.dom"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

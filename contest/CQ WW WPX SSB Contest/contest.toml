@@ -1,0 +1,133 @@
+# CQ WW WPX Contest SSB - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.cqwpx.com/rules.htm («2026 CQ World-Wide WPX Contest») e https://www.cqwpx.com/cabrillo.htm.
+
+[contest]
+id = "cq-wpx-ssb"
+nome = "CQ WW WPX SSB Contest"
+alias = ["CQ WW WPX SSB-CW CONTEST"]   # nome interno del vecchio file (SSB e CW insieme): la cartella lo sostituisce, il CW ha la sua cartella
+organizzatore = "CQ Magazine"
+sito = "https://www.cqwpx.com"
+regolamento_url = "https://www.cqwpx.com/rules.htm"
+cabrillo_contest = "CQ-WPX-SSB"
+note = "Solo fonia (SSB), sei bande da 160 a 10 metri. Scambio: RS + numero progressivo. Moltiplicatori: prefissi WPX, una volta sola in tutto il contest."
+
+[edizione]
+# Ultimo fine settimana pieno di marzo, sabato 00:00 - domenica 23:59:59 UTC (48 ore). La pagina del regolamento 2026 scrive "March 28-29, 2025"
+# (refuso: la scadenza dei log e' il 31 marzo 2026, quindi 28-29 marzo 2026). La regola «ultimo fine settimana pieno» (il quarto di marzo
+# sia nel 2026 sia nel 2027) e' ricavata da quella data: il 2027 e' calcolato.
+mese = 3
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+ore_massime = 36                  # single op: 36 ore su 48; i multi-operatore tutte le 48
+pausa_minima_min = 60             # pause di almeno 60 minuti senza QSO nel log
+invio_log_giorni = 2              # entro le 23:59 UTC del 31 marzo 2026 (2 giorni dopo la fine)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-03-28T00:00:00Z"
+fine = "2026-03-29T23:59:59Z"
+fonte = "https://www.cqwpx.com/rules.htm (letto il 2026-11-24): «SSB: March 28-29, 2025» con anno sbagliato; la scadenza dei log e' «31 March 2026»"
+confermata = true
+nota = "L'anno scritto sulla pagina (2025) e' un refuso: il 28-29 marzo 2026 e' sabato-domenica e la scadenza dei log e' il 31 marzo 2026."
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-03-27T00:00:00Z"
+fine = "2027-03-28T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di marzo (il regolamento letto non da' il 2027)"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]   # 1,8 / 3,5 / 7 / 14 / 21 / 28 MHz, niente WARC
+
+[modi]
+ammessi = ["ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Parte da 001. Multi-Two, Multi-Unlimited e Multi-Distributed hanno una sequenza per banda (motore: una sola sequenza)."
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda (i doppi si tolgono senza penalita')
+
+[categorie]
+operatore = ["SO", "MULTI-ONE", "MULTI-TWO", "MULTI-UNLIMITED", "MULTI-DISTRIBUTED"]   # Single Op (tutte le bande o una), multi-operatore solo tutte le bande
+potenza = ["QRP", "LOW", "HIGH"]  # 5 W, 100 W, 1500 W
+sovrapposizioni = ["TB-WIRES", "ROOKIE", "CLASSIC", "YOUTH"]
+altre = ["Checklog"]
+
+[categorie.multi-one]
+potenza = ["LOW", "HIGH"]         # un segnale alla volta, al massimo 10 cambi di banda per ora d'orologio
+
+[categorie.multi-two]
+potenza = ["HIGH"]                # due segnali su bande diverse, 8 cambi per trasmettitore per ora; il log dice il trasmettitore
+
+[categorie.multi-unlimited]
+potenza = ["HIGH"]                # fino a sei segnali, uno per banda
+
+[categorie.multi-distributed]
+potenza = ["HIGH"]                # come Unlimited, stesso paese DXCC e stessa zona CQ
+
+[cabrillo]
+contest = "CQ-WPX-SSB"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "CATEGORY-STATION", "LOCATION", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["SSB"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+category_overlay = ["CLASSIC", "ROOKIE", "TB-WIRES", "YOUTH"]
+invio = "solo caricamento web, Cabrillo (pagina dei log su cqwpx.com); gli USA mettono LOCATION; riga QSO: freq mo data ora call rst numero call rst numero t (t solo per Multi-Two)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefissi WPX", en = "WPX prefixes" }
+ordine = 1
+moltiplicatore = "prefisso"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 2
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 3
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

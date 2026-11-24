@@ -1,0 +1,124 @@
+# IARU HF World Championship - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://contests.arrl.org/ContestRules/IARU-HF-Rules.pdf («IARU HF World Championship Rules», versione 1.21) e su https://www.arrl.org/iaru-hf-world-championship.
+
+[contest]
+id = "iaru-hf"
+nome = "IARU HF World Championship"
+alias = []                        # il vecchio file («IARU HF World Championship», CW e SSB) ha gia' lo stesso nome: la cartella lo sostituisce
+organizzatore = "ARRL (per conto della IARU)"
+sito = "https://www.arrl.org/iaru-hf-world-championship"
+regolamento_url = "https://contests.arrl.org/ContestRules/IARU-HF-Rules.pdf"
+cabrillo_contest = "IARU-HF"
+note = "CW e SSB nello stesso fine settimana di luglio, 24 ore, sei bande da 160 a 10 metri. Scambio: RS(T) + zona ITU (le stazioni delle societa' IARU mandano la sigla). Moltiplicatori per banda: zone ITU e stazioni HQ/ufficiali IARU."
+
+[edizione]
+# Secondo fine settimana pieno di luglio, sabato 12:00 - domenica 11:59 UTC (24 ore, nessun limite di ore operabili).
+mese = 7
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 7              # sette giorni dopo la fine, caricamento web su contest-log-submission.arrl.org
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-07-11T12:00:00Z"
+fine = "2026-07-12T11:59:59Z"
+fonte = "regola del regolamento 1.21 («second full weekend in July») e pagina ARRL (11-12 luglio 2026)"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-07-10T12:00:00Z"
+fine = "2027-07-11T11:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di luglio"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona ITU o sigla"
+etichetta_en = "ITU zone or society abbreviation"
+tipo = "zona_itu"
+quando = "any"
+nota = "La zona ITU mandata dal corrispondente (un W6 manda 06); le stazioni HQ delle societa' IARU mandano la sigla (ARRL, DARC, RSGB...), l'ufficio internazionale IARU, gli ufficiali AC, R1, R2 o R3. Aurora suggerisce la zona dal database dei paesi ma vale quella ricevuta."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona ITU o sigla"
+etichetta_en = "ITU zone or society abbreviation"
+tipo = "testo"
+quando = "any"
+nota = "La propria zona ITU (IO91wm = 28): si scrive in «Numero da mandare» della scheda del contest, con l'incremento automatico spento; le macro la mandano con <NRS>. Le stazioni HQ scrivono la sigla della societa'."
+
+[doppi]
+per = "banda+modo"                # ogni stazione una volta per banda e per modo; i doppi si tolgono senza penalita'
+
+[categorie]
+operatore = ["SO", "SOU", "MS", "M2"]   # Single Operator, Single Operator Unlimited (con assistenza), Multi Single Transmitter, Multi Two Transmitter
+potenza = ["QRP", "LOW", "HIGH"]        # 5 W, 100 W, 1500 W (multi: MS solo HIGH, M2 solo LOW)
+modo = ["MIXED", "CW", "PHONE"]         # SO e SOU: misto, solo CW o solo fonia; multi-operatore solo misto
+sovrapposizioni = ["YOUTH"]             # operatore di 25 anni o meno
+altre = ["Checklog", "HQ (stazione di una societa' IARU)"]
+
+[categorie.ms]
+potenza = ["HIGH"]                # nessuna sottocategoria di potenza: sempre High; 10 minuti su una banda/modo prima di cambiare
+
+[categorie.m2]
+potenza = ["LOW"]                 # due segnali su bande diverse, 100 W al massimo, nessun limite di cambi di banda
+
+[cabrillo]
+contest = "IARU-HF"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "CATEGORY-STATION", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["MIXED", "CW", "SSB"]
+category_transmitter = ["ONE", "TWO"]
+category_station = ["HQ"]
+category_overlay = ["YOUTH"]
+invio = "solo caricamento web: https://contest-log-submission.arrl.org (OPERATORS obbligatorio per i multi-operatore; per M2 va indicato il trasmettitore di ogni QSO)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Zone ITU per banda", en = "ITU zones by band" }
+ordine = 1
+moltiplicatore = "zona_itu"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 2
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 3
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

@@ -1,0 +1,9 @@
+; CQ WW WPX SSB Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento 2026.
+;
+; bands: 160, 80, 40, 20, 15, 10 m (1,8 - 28 MHz, niente WARC).
+; points (V.B): stesso paese 1 su ogni banda; altro continente 3 su 28/21/14 MHz e 6 su 7/3,5/1,8; stesso continente (altro paese) 1 e 2;
+;   fra due stazioni del Nord America 2 e 4. L'ordine conta: lo stesso paese viene prima di tutto.
+; mult (V.C): i prefissi WPX contano una volta sola in tutto il contest, a prescindere da banda e QSO.
+bands=160,80,40,20,15,10
+points=same_dxcc=1; other_cont&band:160,80,40=6; other_cont=3; my_cont:NA&cont:NA&band:160,80,40=4; my_cont:NA&cont:NA=2; band:160,80,40=2; any=1
+mult=wpx

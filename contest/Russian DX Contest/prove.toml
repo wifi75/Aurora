@@ -1,0 +1,374 @@
+# Russian DX Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://www.rdxc.org/rules_eng, edizione 2027).
+# Tre punti di vista: [prova] e' una stazione italiana (manda il numero progressivo), [[altra_stazione]] una stazione della Russia europea (manda la sigla della regione)
+# e una della Russia asiatica. Nominativi di fantasia. Tutti i QSO sono del sabato 2027-03-20, dopo le 12:00 UTC (inizio dell'edizione 2027).
+# Moltiplicatori: valore@modo (paesi e regioni contano una volta per banda, in qualunque modo; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-03-20"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1201"
+nominativo = "UA3ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "MA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["MA@CW", "UA@CW"], motivo = "stazione russa: 10 punti; regione MA e Russia europea nuove su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1205"
+nominativo = "UA3ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "MA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = [], motivo = "stesso nominativo in un altro modo: non e' doppio, 10 punti; regione e paese gia' presi su 20 m (moltiplicatori per banda, non per modo)" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1210"
+nominativo = "UA3ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "MA"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione, stessa banda e stesso modo del QSO 1" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "1215"
+nominativo = "UA2ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "KA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["KA@CW", "UA2@CW"], motivo = "Kaliningrad: 10 punti; paese e regione a parte (doppio moltiplicatore)" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "CW"
+freq_khz = 7020
+ora_utc = "1220"
+nominativo = "RI1ANA"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "AN"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["CE9@CW", "AN@CW"], motivo = "stazione russa in Antartide: 10 punti; Antartide come paese e regione AN" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "CW"
+freq_khz = 14035
+ora_utc = "1225"
+nominativo = "RI1FJA"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "FJ"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["R1FJ@CW", "FJ@CW"], motivo = "Franz Josef Land: 10 punti; paese R1FJ e regione FJ" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "CW"
+freq_khz = 14040
+ora_utc = "1230"
+nominativo = "RA9ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "NS"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["NS@CW", "UA9@CW"], motivo = "Russia asiatica: 10 punti a tutti; regione NS e paese UA9" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "CW"
+freq_khz = 14045
+ora_utc = "1235"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@CW"], motivo = "altro paese europeo: 3 punti; il numero non e' una regione" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "CW"
+freq_khz = 14050
+ora_utc = "1240"
+nominativo = "IT9ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "044"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["IT9@CW"], motivo = "Sicilia non e' un paese DXCC a parte (e' Italia): proprio paese, 2 punti; ma e' un paese della lista WAE, quindi il moltiplicatore IT9 e' nuovo" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "CW"
+freq_khz = 14055
+ora_utc = "1245"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "045"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["I@CW"], motivo = "proprio paese: 2 punti; Italia nuova su 20 m" }
+
+[[qso]]
+n = 11
+banda = 15
+modo = "CW"
+freq_khz = 21025
+ora_utc = "1250"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "050"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@CW"], motivo = "altro continente: 5 punti" }
+
+[[qso]]
+n = 12
+banda = 20
+modo = "CW"
+freq_khz = 14060
+ora_utc = "1255"
+nominativo = "DL2ABC/MM"
+rst_inviato = "599"
+scambio_inviato = "012"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "mobile marittimo: 5 punti, non e' un moltiplicatore" }
+
+[[qso]]
+n = 13
+banda = 30
+modo = "CW"
+freq_khz = 10115
+ora_utc = "1259"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "013"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1, 2, 4-12 = 11; doppi 1 (n. 3); non ammessi 1 (n. 13)
+#   punti: 10+10+0+10+10+10+10+3+2+2+5+5 = 77
+#   moltiplicatori: MA@20 UA@20 KA@20 UA2@20 AN@40 CE9@40 FJ@20 R1FJ@20 NS@20 UA9@20 DL@20 IT9@20 I@20 K@15 = 14
+#   punteggio = 77 x 14 = 1078
+[atteso]
+qso_ammessi = 11
+doppi = 1
+non_ammessi = 1
+punti = 77
+moltiplicatori = 14
+moltiplicatori_cw = 14
+moltiplicatori_ssb = 0
+punteggio = 1078
+
+[[altra_stazione]]
+nominativo_proprio = "RA3ABC"
+locatore_proprio = "KO85ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1301"
+nominativo = "UA9ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "NS"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["NS@CW", "UA9@CW"], motivo = "Russia dell'altro continente: 5 punti" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "1305"
+nominativo = "RA1ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "SP"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["SP@CW", "UA@CW"], motivo = "Russia del proprio continente: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "1310"
+nominativo = "UA2ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "KA"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["KA@CW", "UA2@CW"], motivo = "Kaliningrad vale come Russia europea: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14028
+ora_utc = "1315"
+nominativo = "RI1ANA"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "AN"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["CE9@CW", "AN@CW"], motivo = "Antartide russa vale come Russia europea: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14029
+ora_utc = "1320"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@CW"], motivo = "altro paese del proprio continente: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "1325"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "011"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@CW"], motivo = "altro continente: 5 punti" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "CW"
+freq_khz = 14031
+ora_utc = "1330"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "MA"
+rst_ricevuto = "599"
+scambio_ricevuto = "012"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["JA@CW"], motivo = "altro continente (Asia): 5 punti" }
+
+# Totali (a mano): 7 QSO, punti 5+2+2+2+3+5+5 = 24, moltiplicatori NS UA9 SP UA KA UA2 AN CE9 DL K JA = 11, punteggio 24 x 11 = 264
+[altra_stazione.atteso]
+qso_ammessi = 7
+doppi = 0
+non_ammessi = 0
+punti = 24
+moltiplicatori = 11
+punteggio = 264
+
+[[altra_stazione]]
+nominativo_proprio = "RA9ABC"
+locatore_proprio = "NO14ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "1401"
+nominativo = "UA3ABC"
+rst_inviato = "599"
+scambio_inviato = "NS"
+rst_ricevuto = "599"
+scambio_ricevuto = "MA"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["MA@CW", "UA@CW"], motivo = "Russia europea da una stazione della Russia asiatica: altro continente, 5 punti" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "1405"
+nominativo = "UA9ABC"
+rst_inviato = "599"
+scambio_inviato = "NS"
+rst_ricevuto = "599"
+scambio_ricevuto = "OM"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["OM@CW", "UA9@CW"], motivo = "Russia asiatica, proprio continente: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "1410"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "NS"
+rst_ricevuto = "599"
+scambio_ricevuto = "012"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA@CW"], motivo = "altro paese asiatico: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14028
+ora_utc = "1415"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "NS"
+rst_ricevuto = "599"
+scambio_ricevuto = "013"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["DL@CW"], motivo = "altro continente: 5 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14029
+ora_utc = "1420"
+nominativo = "RI1FJA"
+rst_inviato = "599"
+scambio_inviato = "NS"
+rst_ricevuto = "599"
+scambio_ricevuto = "FJ"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["FJ@CW", "R1FJ@CW"], motivo = "Franz Josef Land vale come Russia europea: 5 punti da una stazione asiatica" }
+
+# Totali (a mano): 5 QSO, punti 5+2+3+5+5 = 20, moltiplicatori MA UA OM UA9 JA DL FJ R1FJ = 8, punteggio 20 x 8 = 160
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 0
+non_ammessi = 0
+punti = 20
+moltiplicatori = 8
+punteggio = 160

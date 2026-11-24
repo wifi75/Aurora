@@ -1,0 +1,123 @@
+# All Asian DX Contest SSB - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.jarl.org/English/4_Library/A-4-3_Contests/AA_rule_en.htm (pagina «The 66th ALL ASIAN DX CONTEST -- 2025», la piu' recente leggibile: il testo 2026 non e' pubblicato)
+# e su https://jarl.org/English/4_Library/A-4-3_Contests/AADX_Cabrillo.htm (formato Cabrillo).
+
+[contest]
+id = "all-asian-ssb"
+nome = "All Asian DX Contest SSB"
+alias = []
+organizzatore = "JARL (Japan Amateur Radio League)"
+sito = "https://www.jarl.org/English/4_Library/A-4-3_Contests"
+regolamento_url = "https://www.jarl.org/English/4_Library/A-4-3_Contests/AA_rule_en.htm"
+cabrillo_contest = "AADX-SSB"
+note = "Solo fonia (SSB), sei bande da 160 a 10 metri, 48 ore. Scambio: RS(T) + eta' dell'operatore. Gli asiatici lavorano tutti (non il proprio paese) e contano i paesi DXCC; gli altri lavorano solo l'Asia e contano i prefissi WPX asiatici."
+
+[edizione]
+# Primo sabato di settembre, da 00:00 UTC al 24:00 UTC del giorno dopo (48 ore). Il formato conta l'ennesimo fine settimana pieno del mese.
+mese = 9
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+invio_log_giorni = 10             # i log devono arrivare entro 10 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-09-05T00:00:00Z"
+fine = "2026-09-06T23:59:59Z"
+fonte = "regola «primo sabato di settembre» applicata al 2026; elenchi di terzi indicano 5-6 settembre (non letto sulla pagina JARL 2026)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-09-04T00:00:00Z"
+fine = "2027-09-05T23:59:59Z"
+fonte = "calcolata: primo sabato di settembre"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "eta"
+etichetta_it = "Eta'"
+etichetta_en = "Age"
+tipo = "testo"
+quando = "any"
+nota = "Due cifre: l'eta' dell'operatore (nei multi-operatore la media delle eta' all'inizio del contest); chi non la manda passa 01. Non entra nel punteggio."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "eta"
+etichetta_it = "Eta'"
+etichetta_en = "Age"
+tipo = "testo"
+quando = "any"
+nota = "La propria eta' (due cifre; 01 se non la si manda): si scrive in «Numero da mandare» della scheda del contest, con l'incremento automatico spento; le macro la mandano con <NRS>."
+
+[doppi]
+per = "banda"                     # una volta per banda; i doppi non danno punti
+
+[categorie]
+operatore = ["SOAB", "SOSB", "SOAB24", "MS", "MM"]   # Single Op tutte le bande, monobanda (SO160...SO10), tutte le bande 24 ore, Multi-Op Single TX, Multi-Op Multi TX
+potenza = ["LOW", "HIGH"]         # LP fino a 100 W
+altre = ["Checklog", "SOJR (solo JA, operatore fino a 19 anni)", "SOSV (solo JA, operatore da 70 anni)"]
+
+[cabrillo]
+contest = "AADX-SSB"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-MODE", "OPERATORS", "LOCATION", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-ONE", "MULTI-MULTI", "CHECKLOG"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW"]
+category_mode = ["SSB"]
+invio = "caricamento web https://contest.jarl.org/upload-aa (consigliato) o posta elettronica (fonia aaph@jarl.org); OPERATORS per i multi-operatore, eta' in SOAPBOX per i JA junior e senior"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda (stazioni asiatiche)", en = "DXCC countries by band (Asian stations)" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+quando = "my_cont:AS"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefissi WPX asiatici per banda (stazioni non asiatiche)", en = "Asian WPX prefixes by band (non-Asian stations)" }
+ordine = 2
+moltiplicatore = "prefisso"
+per_banda = true
+per_modo = false
+quando = "my_cont:EU,AF,NA,SA,OC"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

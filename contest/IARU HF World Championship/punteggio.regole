@@ -1,0 +1,9 @@
+; IARU HF World Championship - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Punti e moltiplicatori li da' punteggio.rhai (la zona viene dallo scambio ricevuto; le sigle HQ e degli ufficiali sono moltiplicatori a parte).
+;
+; bands: 160, 80, 40, 20, 15, 10 m (regolamento, «Bands and Modes»).
+; points (ripiego se lo script manca o fallisce): 1 punto per QSO.
+; mult (ripiego): zone ITU del database dei paesi, per banda.
+bands=160,80,40,20,15,10
+points=any=1
+mult=itu/band

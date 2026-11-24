@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Sette contest CW (e fonia dello stesso weekend) in formato cartella dai regolamenti ufficiali letti il 2026-11-24, fra i «Contest ufficiali»: CQ WW WPX CW e SSB, CQ WW 160 m CW, IARU HF World Championship, All Asian DX CW e SSB, Russian DX (con le 91 regioni). Da verificare: date 2027 e quelle All Asian calcolate, nomi Cabrillo (AADX-CW, AADX-SSB, IARU-HF), sigle di stati e province del 160 m, trattamento di IT9, /MM nel WPX, penalita' NIL e regola dei 10 minuti non coperte dal motore. Macro dell'Alessandro Volta: il «-15» fisso dopo il numero precedente diventa `<MYSECT>`.
 
 ## 0.11.342 - 2026-11-24
 - Altri due contest RTTY in formato cartella dai regolamenti ufficiali (2026-11-24), fra i «Contest ufficiali»: Mexican RTTY International (FMRE, 28a edizione 7-8 febbraio 2026) e YB DX RTTY (Indonesia, 14 marzo 2026). Non creati perche' non piu' organizzati o senza regolamento recente: DL-DX RTTY (ultima traccia 2003), IGRY WW RTTY (nessuna fonte), Aegean RTTY (sospeso dopo nove edizioni), SCC RTTY Championship (regolamento del 2017); restano fra i «Beta contest». Da verificare: nomi Cabrillo `XE-RTTY` e `YB-DX-RTTY`, doppio per banda del Mexican, prefisso `YB1AR/2` letto dal motore come YB1 (nel regolamento e' YB2).

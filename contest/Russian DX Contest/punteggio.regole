@@ -1,0 +1,9 @@
+; Russian DX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Punti e moltiplicatori li da' punteggio.rhai (russi: Russia europea e asiatica, Kaliningrad, Franz Josef Land e Antartide russa; /MM; paesi WAE; regioni dallo scambio).
+;
+; bands: 160, 80, 40, 20, 15, 10 m, senza WARC (regolamento, punto 2).
+; points (ripiego se lo script manca o fallisce): stesso paese 2, stesso continente 3, altro continente 5 (senza i 10 punti per la Russia).
+; mult (ripiego): paesi DXCC per banda piu' regioni russe per banda.
+bands=160,80,40,20,15,10
+points=same_dxcc=2; same_cont=3; any=5
+mult=dxcc/band; exch/band/if:dxcc:UA,UA9,UA2,R1FJ

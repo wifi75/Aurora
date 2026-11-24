@@ -1,0 +1,255 @@
+# All Asian DX Contest CW - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento JARL 2025 (https://www.jarl.org/English/4_Library/A-4-3_Contests/AA_rule_en.htm).
+# Due punti di vista: [prova] e' una stazione italiana (non asiatica, lavora solo l'Asia), [[altra_stazione]] una stazione giapponese (asiatica, lavora tutti tranne il proprio paese).
+# Nominativi di fantasia. Tutti i QSO sono del 2027-06-19 (primo giorno dell'edizione 2027), eta' nello scambio.
+# Moltiplicatori: valore@modo (una volta per banda; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-06-19"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0001"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "35"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA1@CW"], motivo = "non asiatico con asiatico su 20 m: 1 punto; prefisso JA1 nuovo su 20 m" }
+
+[[qso]]
+n = 2
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "0006"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "35"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA1@CW"], motivo = "stessa stazione su un'altra banda: non e' doppio; 160 m vale 3 punti e il prefisso JA1 e' nuovo su 160 m" }
+
+[[qso]]
+n = 3
+banda = 80
+modo = "CW"
+freq_khz = 3520
+ora_utc = "0011"
+nominativo = "UA9ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "47"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["UA9@CW"], motivo = "Russia asiatica e' Asia: 80 m vale 2 punti, prefisso UA9 nuovo" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0016"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "50"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "i non asiatici lavorano solo l'Asia: la Germania non vale" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0021"
+nominativo = "TA1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "40"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "la Turchia europea (TA1) e' in Europa: non vale" }
+
+[[qso]]
+n = 6
+banda = 30
+modo = "CW"
+freq_khz = 10115
+ora_utc = "0026"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "35"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0031"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "35"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+[[qso]]
+n = 8
+banda = 10
+modo = "CW"
+freq_khz = 28025
+ora_utc = "0036"
+nominativo = "BY1ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "28"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["BY1@CW"], motivo = "Cina su 10 m: 2 punti, prefisso BY1 nuovo" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0041"
+nominativo = "JA2ABC"
+rst_inviato = "599"
+scambio_inviato = "45"
+rst_ricevuto = "599"
+scambio_ricevuto = "61"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA2@CW"], motivo = "altra stazione giapponese su 20 m: 1 punto, prefisso JA2 nuovo" }
+
+# Totali (a mano): ammessi 1, 2, 3, 8, 9 = 5; doppi 1 (n. 7); non ammessi 3 (n. 4, 5, 6)
+#   punti: 1+3+2+0+2+1 = 9
+#   moltiplicatori: JA1@20 JA1@160 UA9@80 BY1@10 JA2@20 = 5
+#   punteggio = 9 x 5 = 45
+[atteso]
+qso_ammessi = 5
+doppi = 1
+non_ammessi = 3
+punti = 9
+moltiplicatori = 5
+punteggio = 45
+
+[[altra_stazione]]
+nominativo_proprio = "JA1ABC"
+locatore_proprio = "PM95vq"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "0101"
+nominativo = "UA9ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "47"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["UA9@CW"], motivo = "asiatico con asiatico su 160 m: 3 punti; paese UA9 nuovo su 160 m" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0106"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "50"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@CW"], motivo = "asiatico con non asiatico su 20 m: 3 punti; Germania nuova" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 160
+modo = "CW"
+freq_khz = 1830
+ora_utc = "0111"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "40"
+atteso = { ammesso = true, doppio = false, punti = 9, moltiplicatori = ["K@CW"], motivo = "asiatico con non asiatico su 160 m: 9 punti; Stati Uniti nuovi su 160 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 10
+modo = "CW"
+freq_khz = 28025
+ora_utc = "0116"
+nominativo = "JA2ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "61"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "stesso paese DXCC (Giappone): ne' punti ne' moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 80
+modo = "CW"
+freq_khz = 3520
+ora_utc = "0121"
+nominativo = "HL1ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "30"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["HL@CW"], motivo = "Corea su 80 m: asiatico con asiatico 2 punti" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0126"
+nominativo = "VK3ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "25"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["VK@CW"], motivo = "Australia su 20 m: asiatico con non asiatico 3 punti" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 10
+modo = "CW"
+freq_khz = 28025
+ora_utc = "0131"
+nominativo = "W6ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "52"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["K@CW"], motivo = "Stati Uniti su 10 m: 6 punti; paese K nuovo su 10 m (i moltiplicatori sono per banda)" }
+
+[[altra_stazione.qso]]
+n = 8
+banda = 15
+modo = "CW"
+freq_khz = 21025
+ora_utc = "0136"
+nominativo = "TA1ABC"
+rst_inviato = "599"
+scambio_inviato = "19"
+rst_ricevuto = "599"
+scambio_ricevuto = "40"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["TA@CW"], motivo = "per un asiatico la Turchia europea (TA1) e' una stazione non asiatica: 3 punti; il paese DXCC e' la Turchia (TA)" }
+
+# Totali (a mano): 7 QSO ammessi, 1 non ammesso (n. 4); punti 3+3+9+2+3+6+3 = 29; moltiplicatori UA9@160 DL@20 K@160 HL@80 VK@20 K@10 TA@15 = 7; punteggio 29 x 7 = 203
+[altra_stazione.atteso]
+qso_ammessi = 7
+doppi = 0
+non_ammessi = 1
+punti = 29
+moltiplicatori = 7
+punteggio = 203

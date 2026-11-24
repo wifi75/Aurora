@@ -1,0 +1,10 @@
+; CQ WW 160-Meter Contest CW - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento 2026.
+;
+; bands: solo 160 m.
+; points (sezione VI): marittimo mobile 5 (viene prima, senza paese); stesso paese 2; stesso continente 5; altro continente 10.
+; mult, una volta sola in tutto il contest (una banda sola): stato USA o provincia canadese dello scambio ricevuto per i K e VE
+;   (48 + DC e 14 province), paese DXCC/WAE per tutti gli altri. K e VE non sono paesi moltiplicatori. Alaska (KL) e Hawaii (KH6)
+;   non sono negli stati: contano come paesi. Le zone non sono moltiplicatori.
+bands=160
+points=call:MM=5; same_dxcc=2; same_cont=5; any=10
+mult=exch/if:dxcc:K,VE; dxcc/except:K,VE

@@ -1,0 +1,12 @@
+; All Asian DX Contest SSB - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Chi e' ammesso (gli asiatici tutti tranne il proprio paese, gli altri solo l'Asia) sta in punteggio.rhai.
+;
+; bands: 160, 80, 40, 20, 15, 10 m (regolamento, «Bands»). Con lo script ammesso() la stessa lista e' ripetuta li', perche' lo script sostituisce bands=.
+; points (la prima regola vera vince):
+;   asiatico con asiatico: 160 m 3, 80 e 10 m 2, altre bande 1;
+;   asiatico con non asiatico: 160 m 9, 80 e 10 m 6, altre bande 3;
+;   non asiatico con asiatico: 160 m 3, 80 e 10 m 2, altre bande 1.
+; mult, per banda: gli asiatici i paesi DXCC lavorati, gli altri i prefissi WPX (asiatici, perche' lavorano solo l'Asia).
+bands=160,80,40,20,15,10
+points=my_cont:AS&cont:AS&band:160=3; my_cont:AS&band:160=9; my_cont:AS&cont:AS&band:80,10=2; my_cont:AS&band:80,10=6; my_cont:AS&cont:AS=1; my_cont:AS=3; band:160=3; band:80,10=2; any=1
+mult=dxcc/band/if:my_cont:AS; wpx/band/if:my_cont:EU,AF,NA,SA,OC
