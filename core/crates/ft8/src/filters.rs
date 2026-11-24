@@ -808,12 +808,13 @@ fn chkfalse8(c: &MessageCheck, text: &str, my_call: &str, book: Option<&CallBook
     if text.matches("<...>").count() >= 2 {
         return true;
     }
-    // Aurora, non in JTDX: un messaggio dei contest tipo RTTY Roundup (i3 = 3) arrivato qui (e' dubbio: debole, DT fuori misura) si tiene solo se uno dei due
-    // nominativi e' conosciuto; con l'elenco vuoto o assente JTDX lascia passare tutto e a radio spenta arrivavano falsi «DXCC nuovo»
-    if c.i3 == 3 {
+    // Aurora, non in JTDX: un messaggio dei contest tipo RTTY Roundup (i3 = 3) o EU VHF (i3 = 2, nominativi con /P) arrivato qui (e' dubbio: debole, DT
+    // fuori misura) si tiene solo se uno dei due nominativi e' conosciuto; con l'elenco vuoto o assente JTDX lascia passare tutto e a radio spenta
+    // arrivavano falsi «DXCC nuovo» (e «UD3DJF/P D05ULI/P R GI67»). Per i3 = 2 solo con un elenco di nominativi: senza, i veri messaggi /P restano
+    if c.i3 == 2 || c.i3 == 3 {
         let (a, b) = if words[0] == "TU;" { (words.get(1), words.get(2)) } else { (words.first(), words.get(1)) };
         let known = book.is_some_and(|k| [a, b].iter().flatten().any(|w| k.contains(bare(w))));
-        if !known {
+        if !known && (c.i3 == 3 || book.is_some()) {
             return true;
         }
     }
@@ -1062,6 +1063,20 @@ mod tests {
         assert!(reject_message(&c, "", None));
         let ok = check("CQ K1ABC FN42", 1, 0, 1);
         assert!(!reject_message(&ok, "", None));
+    }
+
+    #[test]
+    fn un_falso_eu_vhf_a_radio_spenta_si_scarta_ma_con_un_nominativo_conosciuto_resta() {
+        // visto a radio spenta (20 m, -23 dB, 3338 Hz): messaggio EU VHF (i3 = 2, nominativi con /P) senza nessun nominativo conosciuto
+        let other = CallBook::new(["K1ABC".to_string()]);
+        assert!(reject_message(&check("UD3DJF/P D05ULI/P R GI67", 2, 0, 0), "", Some(&other)));
+        // senza un elenco di nominativi il messaggio /P resta (come il test dei messaggi veri i3 = 2)
+        assert!(!reject_message(&check("UD3DJF/P D05ULI/P R GI67", 2, 0, 0), "", None));
+        let book = CallBook::new(["UD3DJF".to_string()]);
+        assert!(!reject_message(&check("UD3DJF/P D05ULI/P R GI67", 2, 0, 0), "", Some(&book)));
+        // un messaggio sicuro (qualita' alta, SNR buono) non e' toccato
+        let strong = MessageCheck { text: "UD3DJF/P D05ULI/P R GI67", i3: 2, n3: 0, ap_type: 0, qual: 0.8, snr: -5.0, dt_s: 0.2 };
+        assert!(!reject_message(&strong, "", Some(&other)));
     }
 
     #[test]

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- FT8, falsi messaggi a radio spenta: il filtro che scarta i messaggi dubbi (deboli, DT fuori misura) senza nessun nominativo conosciuto, gia' attivo per i contest tipo RTTY Roundup (`i3 = 3`), vale ora anche per i messaggi EU VHF (`i3 = 2`, nominativi con /P) quando l'elenco dei nominativi conosciuti c'e': non compare piu' «UD3DJF/P D05ULI/P R GI67» a -23 dB senza radio accesa. Prova in `filters.rs`.
 - Sette contest CW (e fonia dello stesso weekend) in formato cartella dai regolamenti ufficiali letti il 2026-11-24, fra i «Contest ufficiali»: CQ WW WPX CW e SSB, CQ WW 160 m CW, IARU HF World Championship, All Asian DX CW e SSB, Russian DX (con le 91 regioni). Da verificare: date 2027 e quelle All Asian calcolate, nomi Cabrillo (AADX-CW, AADX-SSB, IARU-HF), sigle di stati e province del 160 m, trattamento di IT9, /MM nel WPX, penalita' NIL e regola dei 10 minuti non coperte dal motore. Macro dell'Alessandro Volta: il «-15» fisso dopo il numero precedente diventa `<MYSECT>`.
 
 ## 0.11.342 - 2026-11-24
