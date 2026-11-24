@@ -856,6 +856,12 @@ impl AudioSink for SwitchableSink {
         Some(Arc::clone(&self.gain))
     }
 
+    /// Il dispositivo vero si e' perso? Senza questo lo scheduler (che parla con questo strato) non vedeva mai l'uscita persa: il PTT restava acceso fino
+    /// a fine onda piu' coda e l'errore diceva «oltre la durata prevista» invece di «uscita audio persa» (TCI senza SDR, scheda USB staccata).
+    fn has_failed(&self) -> bool {
+        lock(&self.shared).current.has_failed()
+    }
+
     fn append(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
         lock(&self.shared).current.append(samples)
     }
@@ -899,6 +905,34 @@ mod tests {
     fn fake(rate: u32) -> FakeSink3 {
         let (playing, started) = (Arc::new(AtomicBool::new(false)), Arc::new(Mutex::new(Vec::new())));
         (Box::new(FakeSink { rate, playing: Arc::clone(&playing), started: Arc::clone(&started) }), playing, started)
+    }
+
+    /// Un'uscita che dice di essersi persa.
+    struct AlwaysLostSink;
+
+    impl AudioSink for AlwaysLostSink {
+        fn sample_rate(&self) -> u32 {
+            48_000
+        }
+        fn start(&mut self, _samples: Vec<f32>) -> Result<(), TxError> {
+            Ok(())
+        }
+        fn is_playing(&self) -> bool {
+            false
+        }
+        fn stop(&mut self) {}
+        fn has_failed(&self) -> bool {
+            true
+        }
+    }
+
+    #[test]
+    fn a_lost_output_is_seen_through_the_switchable_sink() {
+        let (sink, _switch) = SwitchableSink::new(Box::new(AlwaysLostSink), Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        assert!(sink.has_failed(), "lo scheduler deve vedere l'uscita persa, non il valore di base");
+        let (ok, _, _) = fake(48_000);
+        let (sink, _switch) = SwitchableSink::new(ok, Arc::new(AtomicU32::new(1.0f32.to_bits())));
+        assert!(!sink.has_failed());
     }
 
     #[test]
