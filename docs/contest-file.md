@@ -48,6 +48,7 @@ sconosciute si ignorano; quelle mancanti prendono il valore di base. I booleani 
 | `m_sNotes` | note (modi, bande) | colonna Note |
 | `m_dtStart`, `m_dtEnd` | inizio e fine UTC, `aaaammgghhmmss` (vuoto = nessun limite) | finestra dei doppi e del log del contest; le date valgono ogni anno (si portano nell'anno corrente). Con la finestra non impostata o non in corso il log della vista SSB mostra i QSO dopo l'attivazione. Il dialogo controlla le date (fine dopo l'inizio) e per CQ WW DX, CQ WW WPX e Japan International DX propone quelle dell'anno in corso |
 | `m_iWorkTime` | ore di lavoro ammesse | solo promemoria |
+| `m_bBeta` | contest importato e non ancora verificato sul regolamento ufficiale | l'elenco lo mette nella scheda «Beta contest» (gialla); i contest in cartella e quelli creati dall'utente sono «ufficiali» |
 | `m_sNrs` | numero da mandare | con l'incremento: primo numero (001 se vuoto); senza: scambio fisso di `<NRS>` |
 | `n_bAutoIncNrs` | incremento automatico del numero | `<QSONR>`/`<NRS>` avanzano a ogni QSO salvato |
 | `m_iValidContacts` | tipo di contatti validi | conservato |
@@ -247,3 +248,7 @@ cargo run -p contest --example converti_contest -- <origine> desktop/src-tauri/c
 
 La prova `converte_tutti_i_file_di_origine` (con `AURORA_CST_DIR=<origine>`) converte tutti i file e controlla che non restino
 nominativi, percorsi assoluti o moduli esterni; `predefiniti_del_repository_puliti` controlla i file distribuiti.
+
+## Scambio inviato con valori propri (`<NRS>` e `<MYSECT>`)
+
+I dati propri di un contest (zona CQ, sezione, provincia, club) si scrivono nella scheda del contest, mai nelle macro: solo il valore fisso senza progressivo va in «Numero da mandare» (`<NRS>`, incremento spento, campo «La mia zona CQ» nei contest che chiedono la zona); numero progressivo piu' valore proprio: il numero e' `numero` con `progressivo = true`, il valore proprio un campo inviato `testo`, scritto in «La mia sezione / stato / club», e la macro manda `<NRS> <MYSECT>`.
