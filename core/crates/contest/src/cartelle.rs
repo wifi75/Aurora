@@ -798,11 +798,22 @@ impl ElencoContest {
         self.scansione().cartelle.iter().find(|c| normalizza(&c.id) == id).cloned()
     }
 
+    /// Il `.contest` con lo stesso identificativo nella cartella dei predefiniti (quello distribuito con Aurora), se c'e'.
+    fn predefinito_di(&self, c: &ContestTesto) -> Option<ContestTesto> {
+        let da = self.predefiniti.lock().ok().and_then(|g| g.clone())?;
+        let b = std::fs::read(da.join(format!("{}.{}", c.id, crate::elenco::ESTENSIONE))).ok()?;
+        Some(ContestTesto::da_testo(&c.id, &testo_da_byte(&b)))
+    }
+
     /// Il `.contest` e' la copia non modificata di quello distribuito con Aurora (cartella dei predefiniti)?
+    ///
+    /// Il segno `beta` e il numero da mandare non contano: le versioni nuove li cambiano nei file distribuiti (il segno Beta, i valori fissi
+    /// dell'altro operatore tolti dallo scambio) e le copie fatte prima non devono per questo diventare «personalizzate», altrimenti la cartella
+    /// verificata non le sostituirebbe piu'.
     fn e_predefinito_intatto(&self, c: &ContestTesto) -> bool {
-        let Some(da) = self.predefiniti.lock().ok().and_then(|g| g.clone()) else { return false };
-        let Ok(b) = std::fs::read(da.join(format!("{}.{}", c.id, crate::elenco::ESTENSIONE))) else { return false };
-        ContestTesto::da_testo(&c.id, &testo_da_byte(&b)) == *c
+        let Some(distribuito) = self.predefinito_di(c) else { return false };
+        let senza_segni = |x: &ContestTesto| ContestTesto { beta: false, nrs: String::new(), ..x.clone() };
+        senza_segni(&distribuito) == senza_segni(c)
     }
 
     /// La cartella che sostituisce questo `.contest` (stesso nome di contest, senza badare alle maiuscole). La regola:
@@ -952,7 +963,16 @@ impl ElencoContest {
     /// Tutti i contest, in ordine di nome: i `.contest` non sostituiti e le cartelle.
     pub fn voci(&self) -> Vec<Voce> {
         let ora = ora_ms();
-        let mut out: Vec<Voce> = self.elenco_file().into_iter().filter(|c| self.sostituito_da(c).is_none()).map(|contest| Voce { contest, cartella: None, sovrascritta: None }).collect();
+        // un `.contest` copiato prima del segno Beta lo riceve da quello distribuito: lo era anche allora (non e' verificato sul regolamento)
+        let mut out: Vec<Voce> = self
+            .elenco_file()
+            .into_iter()
+            .filter(|c| self.sostituito_da(c).is_none())
+            .map(|mut contest| {
+                contest.beta = contest.beta || self.predefinito_di(&contest).is_some_and(|d| d.beta);
+                Voce { contest, cartella: None, sovrascritta: None }
+            })
+            .collect();
         // un `.contest` personalizzato vale piu' della cartella inclusa con lo stesso nome (non di quella dell'utente)
         let personalizzati: Vec<String> = out.iter().map(|v| normalizza(&v.contest.name)).collect();
         let visibili = self.scansione().cartelle.iter().filter(|f| f.origine == Origine::Utente || !personalizzati.contains(&normalizza(&f.meta.nome))).cloned().collect::<Vec<_>>();
@@ -1211,6 +1231,36 @@ mod tests {
         for brutto in ["../dati/a.dom", "/dati/a.dom", "dati/../a.dom", "C:\\dati\\a.dom", "macros/a.dom", "dati/a.txt", "dati/b.dom"] {
             assert!(rimando_dom_ok(brutto, &dom).is_err(), "{brutto}");
         }
+    }
+
+    #[test]
+    fn una_copia_vecchia_resta_intatta_con_il_segno_beta_e_lo_scambio_nuovi_dei_predefiniti() {
+        let base = cartella_di_prova("segno_beta");
+        let inclusa = base.join("incluse");
+        let dati = base.join("dati");
+        let predef = base.join("predefiniti");
+        prova_valida(&inclusa.join("Contest di prova"));
+        // la copia dell'utente e' quella di una versione vecchia (niente segno Beta, con lo scambio fisso di allora)
+        let vecchia = ContestTesto { id: "Vecchio".into(), name: "Contest di prova".into(), nrs: "14".into(), ..ContestTesto::default() };
+        scrivi(&dati, "Vecchio.contest", &vecchia.in_testo());
+        let senza_cartella = ContestTesto { id: "Solo vecchio".into(), name: "Solo vecchio".into(), nrs: "JO21".into(), ..ContestTesto::default() };
+        scrivi(&dati, "Solo vecchio.contest", &senza_cartella.in_testo());
+        // quelli distribuiti oggi: segno Beta e scambio fisso tolto
+        scrivi(&predef, "Vecchio.contest", &ContestTesto { beta: true, nrs: String::new(), ..vecchia.clone() }.in_testo());
+        scrivi(&predef, "Solo vecchio.contest", &ContestTesto { beta: true, nrs: String::new(), ..senza_cartella.clone() }.in_testo());
+        let e = ElencoContest::new(&dati);
+        e.imposta_cartelle_incluse(Some(inclusa));
+        assert_eq!(e.copia_predefiniti(&predef), 0, "i file dell'utente non si toccano");
+        let v = e.voci();
+        // la cartella verificata sostituisce la copia vecchia (non e' «personalizzata»)
+        assert_eq!(v.iter().filter(|x| x.contest.name == "Contest di prova").map(|x| x.origine()).collect::<Vec<_>>(), vec!["cartella"]);
+        // la copia senza cartella resta, ed e' Beta anche se il suo file e' di prima del segno
+        let solo = v.iter().find(|x| x.contest.name == "Solo vecchio").map(|x| (x.origine(), x.contest.beta));
+        assert_eq!(solo, Some(("file", true)));
+        // una copia che l'utente ha cambiato davvero resta sua
+        scrivi(&dati, "Vecchio.contest", &ContestTesto { notes: "mio".into(), ..vecchia.clone() }.in_testo());
+        let v = e.voci();
+        assert!(v.iter().any(|x| x.contest.name == "Contest di prova" && x.origine() == "file" && x.contest.notes == "mio"));
     }
 
     #[test]
