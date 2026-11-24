@@ -1,0 +1,11 @@
+; Japan International DX Contest CW - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento JIDX 2026-10.
+; Chi e' ammesso, i punti e i moltiplicatori stanno in punteggio.rhai (JA-DX con i /MM, prefetture e zone dallo scambio): lo script
+; sostituisce bands, valid, points e mult. Le righe qui sotto valgono solo se lo script manca o fallisce, e sono la stessa regola senza i /MM.
+;
+; bands: 160, 80, 40, 20, 15, 10 m (niente WARC).
+; points: solo JA-DX; 1,8 MHz 4, 3,5 e 28 MHz 2, 7/14/21 MHz 1. JD1 (JD/m, JD/o) sta dalla parte del Giappone.
+; mult (per banda): i DX le prefetture dello scambio; i JA i paesi DXCC e le zone CQ.
+bands=160,80,40,20,15,10
+points=dxcc:JA,JD/m,JD/o&not_my_dxcc:JA,JD/m,JD/o=1; my_dxcc:JA,JD/m,JD/o&not_dxcc:JA,JD/m,JD/o=1
+points_band=160:4,80:2,10:2
+mult=exch/band/if:dxcc:JA,JD/m,JD/o&not_my_dxcc:JA,JD/m,JD/o; dxcc/band/if:my_dxcc:JA,JD/m,JD/o&not_dxcc:JA,JD/m,JD/o; cq/band/if:my_dxcc:JA,JD/m,JD/o&not_dxcc:JA,JD/m,JD/o

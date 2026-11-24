@@ -1,0 +1,296 @@
+# Japan International DX Contest SSB - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://jidx.org/jidxrule-e.html, regolamento 2026-10).
+# Due punti di vista: [prova] e' una stazione italiana (DX: manda la zona CQ 15, conta le prefetture), [[altra_stazione]] una stazione giapponese (JA: manda la prefettura 10, conta paesi DXCC e zone CQ).
+# Nominativi di fantasia. Edizione 2027 (13-14 novembre). Moltiplicatori: valore@modo (per banda; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-11-13"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0701"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["10@SSB"], motivo = "JA-DX su 20 m: 1 punto; prefettura 10 nuova su 20 m" }
+
+[[qso]]
+n = 2
+banda = 160
+modo = "SSB"
+freq_khz = 1850
+ora_utc = "0705"
+nominativo = "JA3ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "25"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["25@SSB"], motivo = "160 m: 4 punti; prefettura 25 nuova" }
+
+[[qso]]
+n = 3
+banda = 80
+modo = "SSB"
+freq_khz = 3600
+ora_utc = "0710"
+nominativo = "JA7ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "04"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["04@SSB"], motivo = "80 m: 2 punti; prefettura 04 nuova" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0715"
+nominativo = "JA1DEF"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "altra stazione, stessa prefettura 10 su 20 m: 1 punto, nessun moltiplicatore nuovo" }
+
+[[qso]]
+n = 5
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0720"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["10@SSB"], motivo = "stessa stazione di un'altra banda: non e' doppio; la prefettura 10 e' nuova su 15 m (moltiplicatori per banda)" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0725"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione sulla stessa banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0730"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "14"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "DX-DX: nessun punto e nessun moltiplicatore" }
+
+[[qso]]
+n = 8
+banda = 10
+modo = "SSB"
+freq_khz = 28500
+ora_utc = "0735"
+nominativo = "JD1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "48"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["48@SSB"], motivo = "28 MHz: 2 punti; JD1 e' la prefettura 48 (Ogasawara), nuova su 10 m" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "SSB"
+freq_khz = 10120
+ora_utc = "0740"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: non ammessa" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0745"
+nominativo = "G3ABC/MM"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "14"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "DX-/MM: nessun punto" }
+
+# Totali (a mano): ammessi 1,2,3,4,5,8 = 6; doppi 1 (n. 6); non ammessi 3 (n. 7, 9, 10)
+#   punti: 1+4+2+1+1+2 = 11
+#   moltiplicatori: 10@20, 25@160, 04@80, 10@15, 48@10 = 5
+#   punteggio = 11 x 5 = 55
+[atteso]
+qso_ammessi = 6
+doppi = 1
+non_ammessi = 3
+punti = 11
+moltiplicatori = 5
+punteggio = 55
+
+[[altra_stazione]]
+nominativo_proprio = "JA1ZZZ"
+locatore_proprio = "PM95tq"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0801"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "05"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["5@SSB", "K@SSB"], motivo = "JA-DX su 20 m: 1 punto; zona 5 e paese K nuovi su 20 m" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 160
+modo = "SSB"
+freq_khz = 1850
+ora_utc = "0805"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "14"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["14@SSB", "DL@SSB"], motivo = "160 m: 4 punti; zona 14 e Germania nuove" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0810"
+nominativo = "I2ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["15@SSB", "I@SSB"], motivo = "zona 15 e Italia nuove su 20 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0815"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "05"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["5@SSB", "K@SSB"], motivo = "stessa stazione su un'altra banda: zona 5 e paese K nuovi su 15 m" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0820"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "05"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione sulla stessa banda" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0825"
+nominativo = "JH1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "10"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "JA-JA: nessun punto e nessun moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0830"
+nominativo = "G3ABC/MM"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "14"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["14@SSB"], motivo = "un /MM vale per punti e zona, non per il paese: zona 14 nuova su 20 m (su 160 m c'era solo DL1ABC)" }
+
+[[altra_stazione.qso]]
+n = 8
+banda = 10
+modo = "SSB"
+freq_khz = 28500
+ora_utc = "0835"
+nominativo = "IT9ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["15@SSB", "I@SSB"], motivo = "28 MHz: 2 punti; per i JA conta il paese DXCC (IT9 e' I, non WAE): zona 15 e Italia nuove su 10 m" }
+
+[[altra_stazione.qso]]
+n = 9
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0840"
+nominativo = "JD1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "48"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "JD1 sta dalla parte del Giappone: JA-JD1 non vale (regolamento silenzioso: da verificare)" }
+
+[[altra_stazione.qso]]
+n = 10
+banda = 30
+modo = "SSB"
+freq_khz = 10120
+ora_utc = "0845"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "10"
+rst_ricevuto = "59"
+scambio_ricevuto = "05"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: non ammessa" }
+
+# Totali (a mano): ammessi 1,2,3,4,7,8 = 6; doppi 1 (n. 5); non ammessi 3 (n. 6, 9, 10)
+#   punti: 1+4+1+1+1+2 = 10
+#   moltiplicatori: n.1 zona 5 e K (2), n.2 zona 14 e DL (2), n.3 zona 15 e I (2), n.4 zona 5 e K su 15 m (2), n.7 zona 14 su 20 m (1), n.8 zona 15 e I su 10 m (2) = 11
+#   punteggio = 10 x 11 = 110
+[altra_stazione.atteso]
+qso_ammessi = 6
+doppi = 1
+non_ammessi = 3
+punti = 10
+moltiplicatori = 11
+punteggio = 110

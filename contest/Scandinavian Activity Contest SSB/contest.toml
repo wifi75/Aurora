@@ -1,0 +1,126 @@
+# Scandinavian Activity Contest SSB - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.sactest.net/blog/scandinavian-activity-contest-2026-rules/ («Scandinavian Activity Contest 2026 Rules») e, per le date 2027, sulla pagina https://www.sactest.net/.
+
+[contest]
+id = "sac-ssb"
+nome = "Scandinavian Activity Contest SSB"
+alias = []
+organizzatore = "NRAU (Nordic Radio Amateur Union)"
+sito = "https://www.sactest.net/"
+regolamento_url = "https://www.sactest.net/blog/scandinavian-activity-contest-2026-rules/"
+cabrillo_contest = "SAC-SSB"
+note = "Solo SSB, 80-10 m, 24 ore (ottobre). Scambio: RS(T) + numero progressivo da 001. Vale solo fra una stazione scandinava e una non scandinava. Moltiplicatori per banda: paesi DXCC (scandinavi) o prefisso con cifra dei paesi scandinavi (non scandinavi)."
+
+[edizione]
+# Secondo fine settimana pieno di ottobre, sabato 12:00 - domenica 11:59 UTC (24 ore, nessun limite di ore operabili).
+mese = 10
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 5              # entro 5 giorni dalla fine, alle 23:59 UTC; dopo e' un check log
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-10-10T12:00:00Z"
+fine = "2026-10-11T11:59:59Z"
+fonte = "https://www.sactest.net/blog/scandinavian-activity-contest-2026-rules/: «SSB: 10-11 October 2026», 12:00 UTC sabato - 11:59 UTC domenica"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-10-09T12:00:00Z"
+fine = "2027-10-10T11:59:59Z"
+fonte = "https://www.sactest.net/ (letto il 2026-11-24): nota «SAC 2027», CW 18-19 settembre e SSB 9-10 ottobre"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-10-14T12:00:00Z"
+fine = "2028-10-15T11:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di ottobre"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 001, poi 1000, 1001... dopo il 999; i multi-operatore possono avere una sequenza per banda
+
+[doppi]
+per = "banda"                     # la stessa stazione una volta per banda; QSO fra bande o modi diversi non ammessi
+
+[categorie]
+operatore = ["SO", "MULTI-ONE", "MULTI-MULTI"]   # MULTI-MULTI solo scandinavi
+potenza = ["HIGH", "LOW", "QRP"]                 # 1500 W, 100 W, 5 W
+modo = ["SSB"]
+sovrapposizioni = ["ROOKIE", "CLASSIC", "TB-WIRES", "WIRE-ONLY"]   # solo Single Operator All Band
+altre = ["Single Band (solo scandinavi)", "Low Band 80/40 m (solo non scandinavi)", "EXPLORER", "Checklog"]
+
+[cabrillo]
+contest = "SAC-SSB"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-BAND", "CATEGORY-OVERLAY", "CATEGORY-STATION", "CATEGORY-MODE", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+invio = "solo caricamento sul robot https://www.sactest.net/robot/ entro 5 giorni dalla fine (23:59 UTC); frequenza esatta di ogni QSO per entrare fra i primi tre; il modello Cabrillo 3.0 e' nel menu Rules del sito (valori delle CATEGORY-* da verificare)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+quando = "my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0"
+titolo = { it = "Paesi DXCC per banda (stazione scandinava)", en = "DXCC countries by band (Scandinavian station)" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+quando = "not_my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0"
+titolo = { it = "Prefisso e cifra dei paesi scandinavi per banda (stazione non scandinava)", en = "Prefix and number of Scandinavian countries by band (non-Scandinavian station)" }
+ordine = 2
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

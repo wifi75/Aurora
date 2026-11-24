@@ -1,0 +1,284 @@
+# Scandinavian Activity Contest SSB - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://www.sactest.net/blog/scandinavian-activity-contest-2026-rules/).
+# Tre punti di vista: [prova] e' una stazione italiana (europea, non scandinava), [[altra_stazione]] una stazione degli Stati Uniti (non europea) e una svedese (scandinava).
+# Nominativi di fantasia. Tutti i QSO sono del sabato 2027-10-09, dopo le 12:00 UTC (inizio dell'edizione 2027).
+# Moltiplicatori: valore@modo (contano una volta per banda; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-10-09"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14201
+ora_utc = "1201"
+nominativo = "SM5ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["SM5@SSB"], motivo = "europeo non scandinavo con la Svezia: 1 punto; area SM5 nuova su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "1205"
+nominativo = "SK5XYZ"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "SK5 e' la stessa area SM5 (SM, SA-SM, 7S, 8S contano insieme): 1 punto, nessun moltiplicatore nuovo" }
+
+[[qso]]
+n = 3
+banda = 40
+modo = "SSB"
+freq_khz = 7153
+ora_utc = "1210"
+nominativo = "LA1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["LA1@SSB"], motivo = "Norvegia: 1 punto anche su 40 m per un europeo; LA1 nuovo su 40 m" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "1215"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "due stazioni non scandinave non valgono" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14205
+ora_utc = "1220"
+nominativo = "SM5ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+[[qso]]
+n = 6
+banda = 15
+modo = "SSB"
+freq_khz = 21306
+ora_utc = "1225"
+nominativo = "OZ150A"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OZ1@SSB"], motivo = "con due cifre conta la prima (OZ1): 1 punto, OZ1 nuovo su 15 m" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14207
+ora_utc = "1230"
+nominativo = "OH0AB"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OH00@SSB"], motivo = "Aland (OH0) e' un'entita' scandinava a parte; area OH00 (Aland, cifra 0) nuova su 20 m" }
+
+# Totali (a mano): ammessi 1, 2, 3, 6, 7 = 5; doppi 1 (n. 5); non ammessi 1 (n. 4)
+#   punti: 1+1+1+1+1 = 5
+#   moltiplicatori: SM5@20, LA1@40, OZ1@15, OH00@20 = 4
+#   punteggio = 5 x 4 = 20
+[atteso]
+qso_ammessi = 5
+doppi = 1
+non_ammessi = 1
+punti = 5
+moltiplicatori = 4
+punteggio = 20
+
+[[altra_stazione]]
+nominativo_proprio = "W1ABC"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14201
+ora_utc = "1301"
+nominativo = "SM5ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["SM5@SSB"], motivo = "non europeo con la Svezia su 20 m: 1 punto" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 40
+modo = "SSB"
+freq_khz = 7152
+ora_utc = "1305"
+nominativo = "SM5ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["SM5@SSB"], motivo = "non europeo su 40 m: 3 punti; SM5 nuovo su 40 m" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 80
+modo = "SSB"
+freq_khz = 3703
+ora_utc = "1310"
+nominativo = "LA1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["LA1@SSB"], motivo = "non europeo su 80 m: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "1315"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "due stazioni non scandinave non valgono" }
+
+# Totali (a mano): 3 QSO, punti 1+3+3 = 7, moltiplicatori SM5@20 SM5@40 LA1@80 = 3, punteggio 7 x 3 = 21
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 1
+punti = 7
+moltiplicatori = 3
+punteggio = 21
+
+[[altra_stazione]]
+nominativo_proprio = "SM5ABC"
+locatore_proprio = "JO89ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14201
+ora_utc = "1401"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "scandinavo con un europeo non scandinavo: 2 punti; per gli scandinavi ogni paese DXCC e' moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "1405"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K@SSB"], motivo = "con un non europeo: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 40
+modo = "SSB"
+freq_khz = 7153
+ora_utc = "1410"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K@SSB"], motivo = "stesso paese su un'altra banda: 3 punti e moltiplicatore nuovo su 40 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "1415"
+nominativo = "LA1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "due stazioni scandinave non valgono" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 15
+modo = "SSB"
+freq_khz = 21305
+ora_utc = "1420"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA@SSB"], motivo = "non europeo: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14206
+ora_utc = "1425"
+nominativo = "G3ABC"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["G@SSB"], motivo = "europeo non scandinavo: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14207
+ora_utc = "1430"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+# Totali (a mano): ammessi 1, 2, 3, 5, 6 = 5; doppi 1 (n. 7); non ammessi 1 (n. 4)
+#   punti: 2+3+3+3+2 = 13
+#   moltiplicatori: DL@20, K@20, K@40, JA@15, G@20 = 5
+#   punteggio = 13 x 5 = 65
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 1
+non_ammessi = 1
+punti = 13
+moltiplicatori = 5
+punteggio = 65

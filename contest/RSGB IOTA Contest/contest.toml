@@ -1,0 +1,126 @@
+# RSGB IOTA Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.rsgbcc.org/hf/rules/2026/riota.shtml («RSGB IOTA Contest», edizione 2026) e sulle FAQ https://www.rsgbcc.org/hf/iotafaq.shtml.
+
+[contest]
+id = "rsgb-iota"
+nome = "RSGB IOTA Contest"
+alias = ["IOTA CONTEST"]          # nome interno del vecchio file (IOTA_CW-SSB): la cartella lo sostituisce
+organizzatore = "RSGB (Radio Society of Great Britain)"
+sito = "https://www.rsgbcc.org/hf/"
+regolamento_url = "https://www.rsgbcc.org/hf/rules/2026/riota.shtml"
+cabrillo_contest = "RSGB-IOTA"
+note = "CW e SSB nello stesso fine settimana di luglio, 24 ore, da 80 a 10 metri. Scambio: RS(T) + numero progressivo; le stazioni su un'isola IOTA aggiungono il riferimento (EU115). Moltiplicatori: riferimenti IOTA per banda e per modo."
+
+[edizione]
+# Ultimo fine settimana pieno di luglio (2026 e 2027: il quarto), sabato 12:00 - domenica 11:59 UTC (24 ore).
+mese = 7
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 5              # il log Cabrillo va caricato entro 5 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-07-25T12:00:00Z"
+fine = "2026-07-26T11:59:59Z"
+fonte = "https://www.rsgbcc.org/hf/rules/2026/riota.shtml: «Saturday 25 to Sunday 26 July 2026», 1200 UTC - 1200 UTC"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-07-24T12:00:00Z"
+fine = "2027-07-25T11:59:59Z"
+fonte = "calendario di terzi (dxzone.com, 2026-11-24): 24-25 luglio 2027; il regolamento 2026 non le scrive"
+confermata = false
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-07-29T12:00:00Z"
+fine = "2028-07-30T11:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di luglio"
+confermata = false
+nota = "da confermare: il regolamento non dice se la regola e' «l'ultimo» o «il quarto» fine settimana"
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+nota = "Se non si riceve il numero si scrive 0."
+
+[[scambio.ricevuto]]
+nome = "iota"
+etichetta_it = "Riferimento IOTA (solo stazioni su un'isola)"
+etichetta_en = "IOTA reference (island stations only)"
+tipo = "testo"
+quando = "any"
+nota = "EU115, oppure EU-115: Aurora toglie il trattino. Le stazioni World non mandano niente."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 1, una sola sequenza per CW e SSB insieme
+
+[[scambio.inviato]]
+nome = "iota"
+etichetta_it = "Il mio riferimento IOTA (solo da un'isola)"
+etichetta_en = "My IOTA reference (from an island only)"
+tipo = "testo"
+quando = "any"
+nota = "Si scrive in «La mia sezione / stato / club» della scheda (per esempio EU115); una stazione World lo lascia vuoto. Le macro mandano <NRS> <MYSECT>."
+
+[doppi]
+per = "banda+modo"                 # una stazione una volta per banda e per modo (le FAQ dicono che il moltiplicatore e' per banda e per modo; il regolamento non scrive i doppi)
+
+[categorie]
+operatore = ["SO", "SO Assisted", "Island Multi-1", "Island Multi-2"]   # Single Operator Unassisted o Assisted; i multi-operatore solo da un'isola, solo misto, solo Assisted, 24 ore
+potenza = ["QRP", "LOW", "HIGH"]         # 5 W, 100 W, 1500 W (senza indicazione: High)
+modo = ["CW", "SSB", "MIXED"]            # i multi-operatore solo MIXED
+sovrapposizioni = ["Newcomer"]           # singolo operatore licenziato da meno di 3 anni
+altre = ["Island Fixed", "Island DXpedition", "World", "12 ore o 24 ore", "Checklog"]
+
+[cabrillo]
+contest = "RSGB-IOTA"
+obbligatori = ["CALLSIGN", "CONTEST", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-OPERATOR", "CATEGORY-ASSISTED", "CATEGORY-POWER", "CATEGORY-MODE", "CATEGORY-TIME", "CATEGORY-STATION", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+invio = "caricamento sulla pagina dei log HF dell'RSGB entro 5 giorni dalla fine; i valori ammessi delle intestazioni CATEGORY-* sono sulla pagina Cabrillo dell'RSGB: da verificare"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 1
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 2
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

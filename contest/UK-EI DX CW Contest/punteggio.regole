@@ -1,0 +1,10 @@
+; UK-EI DX CW Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento versione 19 (2 maggio 2026) letto il 2026-11-24 su https://www.ukeicc.com/dx-contest-rules.php.
+; UK/EI = G, GM, GW, GI, GD, GJ, GU, EI.
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: tabelle del regolamento (UK/EI, europei e DX; 80 e 40 m il doppio di 20, 15 e 10 m); la stazione UK/EI fa il doppio dalle 01:00 alle 04:59 UTC.
+; mult: paesi DXCC per banda (UK/EI esclusi) e codici di distretto UK/EI per banda.
+bands=80,40,20,15,10
+points=my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&hour:0100-0459&cont:EU&band:80,40=8; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&hour:0100-0459&cont:EU=4; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&hour:0100-0459&band:80,40=16; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&hour:0100-0459=8; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&cont:EU&band:80,40=4; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&cont:EU=2; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI&band:80,40=8; my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI=4; my_cont:EU&dxcc:G,GM,GW,GI,GD,GJ,GU,EI&band:80,40=4; my_cont:EU&dxcc:G,GM,GW,GI,GD,GJ,GU,EI=2; my_cont:EU&cont:EU&band:80,40=2; my_cont:EU&cont:EU=1; my_cont:EU&band:80,40=4; my_cont:EU=2; dxcc:G,GM,GW,GI,GD,GJ,GU,EI&band:80,40=8; dxcc:G,GM,GW,GI,GD,GJ,GU,EI=4; cont:EU&band:80,40=4; cont:EU=2; band:80,40=2; any=1
+mult=dxcc/band/except:G,GM,GW,GI,GD,GJ,GU,EI; exch/band/if:dxcc:G,GM,GW,GI,GD,GJ,GU,EI

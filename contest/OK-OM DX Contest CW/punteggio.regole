@@ -1,0 +1,14 @@
+; OK-OM DX Contest CW - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento ufficiale 2026.
+; I moltiplicatori li da' punteggio.rhai (paesi con le entita' WAE, distretti dallo scambio); la riga mult qui sotto vale solo se lo script manca o fallisce.
+;
+; bands: 160, 80, 40, 20, 15, 10 m (niente WARC).
+; valid: i contatti con la Russia e la Bielorussia sono annullati (sezione 14, «until further notice»): UA, UA9, UA2, R1FJ e EU.
+; points (sezione 6; la prima regola vera vince):
+;   /MM: 5 punti per tutti;
+;   stazioni OK/OM: stesso paese 2, altro paese dello stesso continente 3 (OK-OM e' un altro paese: 3), altro continente 5;
+;   altre stazioni: con OK/OM 10, stesso paese 1, stesso continente 3, altro continente 5.
+; mult (per banda): distretti OK/OM e paesi.
+bands=160,80,40,20,15,10
+valid=not_dxcc:UA,UA9,UA2,R1FJ,EU
+points=call:MM=5; my_dxcc:OK,OM&same_dxcc=2; my_dxcc:OK,OM&same_cont=3; my_dxcc:OK,OM=5; dxcc:OK,OM=10; same_dxcc=1; same_cont=3; other_cont=5
+mult=exch/band/if:dxcc:OK,OM; dxcc/band

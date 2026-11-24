@@ -1,0 +1,109 @@
+# Stew Perry Topband Distance Challenge - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.kkn.net/stew/stew_rules.html (revisione 31 maggio 2025, date 2026); invio dei log su https://stew.contesting.com/tbdcsubmitlog.php.
+
+[contest]
+id = "stew-perry-tbdc"
+nome = "Stew Perry Topband Distance Challenge"
+alias = ["Stew Perry Topband Distance Challenge"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "BARC (la pagina indica BARC per i log su carta e N6TR come referente delle targhe)"
+sito = "https://www.kkn.net/stew/"
+regolamento_url = "https://www.kkn.net/stew/stew_rules.html"
+cabrillo_contest = "STEW-PERRY"
+note = "Solo CW, solo 160 metri, 24 ore dalle 15:00 UTC, quattro edizioni all'anno (la «Big Stew» di dicembre ha le targhe). Scambio: quadrato locatore a 4 caratteri (RST facoltativo). Punti: 1 + 1 ogni 500 km fra i centri dei quadrati, x2 con una stazione Low Power e x4 con una QRP; nessun moltiplicatore; il totale x1,5 se si e' Low Power e x3 se QRP."
+
+[edizione]
+# La Big Stew e' il quarto fine settimana pieno di dicembre (sabato 15:00 UTC - domenica 15:00 UTC). Le altre tre edizioni del 2026 (14 marzo,
+# 20 giugno, 17 ottobre, tutte alle 15:00 UTC per 24 ore) non hanno una regola di calendario sulla pagina: questa cartella segue la Big Stew.
+mese = 12
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "15:00"
+durata_ore = 24
+ore_massime = 14                  # ore operabili al massimo; pause di almeno 30 minuti senza QSO
+pausa_minima_min = 30
+invio_log_giorni = 14             # entro 14 giorni dal contest, solo caricamento web (cartaceo solo per dicembre e sotto i 50 QSO)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-12-26T15:00:00Z"
+fine = "2026-12-27T15:00:00Z"
+fonte = "https://www.kkn.net/stew/stew_rules.html (letto il 2026-11-24): date 2026 «March 14, June 20, October 17, and December 26»; 1500z per 24 ore"
+confermata = true
+nota = "il 2026 ha quattro edizioni (14 marzo, 20 giugno, 17 ottobre, 26 dicembre); la cartella tiene la Big Stew di dicembre, le altre si impostano nelle modifiche personali del contest"
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-12-25T15:00:00Z"
+fine = "2027-12-26T15:00:00Z"
+fonte = "calcolata: quarto sabato di dicembre (la pagina letta da' solo le date 2026)"
+confermata = false
+
+[bande]
+ammesse = ["160 m"]
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto (facoltativo)"
+etichetta_en = "Signal report (optional)"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+nota = "L'RST e' facoltativo nello scambio."
+
+[[scambio.ricevuto]]
+nome = "quadrato"
+etichetta_it = "Quadrato (4 caratteri)"
+etichetta_en = "Grid square (4 characters)"
+tipo = "testo"
+quando = "any"
+nota = "Quadrato locatore a 4 caratteri (CN85, JN65). Per stimare il moltiplicatore di potenza (x2 con una stazione Low Power, x4 con una QRP) si puo' scrivere dopo il quadrato LP o QRP nello scambio ricevuto: il programma ufficiale lo ricava dai log degli altri."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto (facoltativo)"
+etichetta_en = "Signal report (optional)"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "quadrato"
+etichetta_it = "Quadrato (4 caratteri)"
+etichetta_en = "Grid square (4 characters)"
+tipo = "testo"
+quando = "any"
+nota = "Il proprio quadrato a 4 caratteri (IO91): si scrive in «Numero da mandare» della scheda del contest, senza incremento. Aggiungere LP o QRP dopo il quadrato serve solo al calcolo di Aurora del moltiplicatore di potenza finale (x1,5 e x3): la macro lo manderebbe in aria, quindi di solito si lascia il solo quadrato."
+
+[doppi]
+per = "banda"                     # contest a una banda sola: una volta per stazione
+nota = "Il regolamento letto non definisce i doppi: Aurora non conta due volte la stessa stazione."
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP"]
+potenza = ["HIGH", "LOW", "QRP"]  # 1500 W o il limite nazionale, 100 W, 5 W
+
+[cabrillo]
+contest = "STEW-PERRY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-POWER", "CATEGORY-BAND", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_band = ["160M"]
+category_mode = ["CW"]
+invio = "caricamento web su https://stew.contesting.com/tbdcsubmitlog.php (anche incollando il testo del log); le informazioni per le targhe vanno nel SOAPBOX. Il nome del Cabrillo STEW-PERRY non e' sulla pagina del regolamento: viene dall'elenco DXZone (da verificare)."
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 1
+righe = ["ora"]
+colonne = ["qso", "doppi", "punti"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 2
+mostra = ["punti", "punteggio_finale"]

@@ -1,0 +1,7 @@
+; RSGB IOTA Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Punti e moltiplicatori li da' punteggio.rhai (il riferimento IOTA viene dallo scambio, ricevuto e inviato).
+;
+; bands: 80, 40, 20, 15, 10 m (regolamento 2026, «Bands»).
+; points (ripiego se lo script manca o fallisce): 2 punti per QSO fra World.
+bands=80,40,20,15,10
+points=any=2

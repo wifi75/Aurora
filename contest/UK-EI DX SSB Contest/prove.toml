@@ -1,0 +1,294 @@
+# UK-EI DX SSB Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento UKEICC versione 19 (https://www.ukeicc.com/dx-contest-rules.php).
+# Tre punti di vista: [prova] e' una stazione italiana (europea non UK/EI), [[altra_stazione]] una stazione degli Stati Uniti (DX) e una inglese (UK/EI, con il doppio dei punti dalle 01:00 alle 04:59 UTC).
+# Nominativi di fantasia. Tutti i QSO sono della domenica 2027-10-24, prima delle 12:00 UTC (fine dell'edizione 2027): il contest va dalle 12:00 del sabato alle 12:00 della domenica.
+# Moltiplicatori: valore@modo (paesi DXCC non UK/EI e distretti UK/EI, una volta per banda; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-10-24"
+
+[[qso]]
+n = 1
+banda = 80
+modo = "SSB"
+freq_khz = 3701
+ora_utc = "0005"
+nominativo = "G4ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 LN"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["LN@SSB"], motivo = "europeo con una stazione UK/EI su 80 m: 4 punti; distretto LN nuovo su 80 m (i QSO con UK/EI non danno paesi)" }
+
+[[qso]]
+n = 2
+banda = 80
+modo = "SSB"
+freq_khz = 3702
+ora_utc = "0010"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "europeo con un europeo su 80 m: 2 punti; paese DL nuovo su 80 m" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14203
+ora_utc = "0015"
+nominativo = "W1AW"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["K@SSB"], motivo = "europeo con un DX su 20 m: 2 punti; paese K nuovo" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "0020"
+nominativo = "GM3XYZ"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004 EH"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["EH@SSB"], motivo = "UK/EI su 20 m: 2 punti; distretto EH" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14205
+ora_utc = "0025"
+nominativo = "EI5AB"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "005 DU"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DU@SSB"], motivo = "EI su 20 m: 2 punti; distretto DU" }
+
+[[qso]]
+n = 6
+banda = 80
+modo = "SSB"
+freq_khz = 3706
+ora_utc = "0030"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 2" }
+
+[[qso]]
+n = 7
+banda = 40
+modo = "SSB"
+freq_khz = 7157
+ora_utc = "0035"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "stessa stazione su un'altra banda: 2 punti (europeo su 40 m), DL nuovo su 40 m" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "SSB"
+freq_khz = 7158
+ora_utc = "0040"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "008"
+rst_ricevuto = "59"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["JA@SSB"], motivo = "europeo con un DX su 40 m: 4 punti; JA nuovo su 40 m" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "SSB"
+freq_khz = 10124
+ora_utc = "0045"
+nominativo = "G4ABC"
+rst_inviato = "59"
+scambio_inviato = "009"
+rst_ricevuto = "59"
+scambio_ricevuto = "009 LN"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1-5, 7 e 8 = 7; doppi 1 (n. 6); non ammessi 1 (n. 9)
+#   punti: 4+2+2+2+2+0+2+4 = 18
+#   moltiplicatori: LN, DL@80, K, EH, DU, DL@40, JA = 7
+#   punteggio = 18 x 7 = 126
+[atteso]
+qso_ammessi = 7
+doppi = 1
+non_ammessi = 1
+punti = 18
+moltiplicatori = 7
+punteggio = 126
+
+[[altra_stazione]]
+nominativo_proprio = "W1ABC"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 80
+modo = "SSB"
+freq_khz = 3701
+ora_utc = "0105"
+nominativo = "G4ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 LN"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["LN@SSB"], motivo = "DX con UK/EI su 80 m: 8 punti (il doppio notturno vale solo per le stazioni UK/EI)" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "0110"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "DX con un europeo su 20 m: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14203
+ora_utc = "0115"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA@SSB"], motivo = "DX con un DX su 20 m: 1 punto" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 40
+modo = "SSB"
+freq_khz = 7154
+ora_utc = "0120"
+nominativo = "EI5AB"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "004 DU"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["DU@SSB"], motivo = "DX con UK/EI su 40 m: 8 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 80
+modo = "SSB"
+freq_khz = 3705
+ora_utc = "0125"
+nominativo = "VE3ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["VE@SSB"], motivo = "DX con un DX su 80 m: 2 punti" }
+
+# Totali (a mano): 5 QSO, punti 8+2+1+8+2 = 21, moltiplicatori LN DL JA DU VE = 5, punteggio 21 x 5 = 105
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 0
+non_ammessi = 0
+punti = 21
+moltiplicatori = 5
+punteggio = 105
+
+[[altra_stazione]]
+nominativo_proprio = "G4XYZ"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 80
+modo = "SSB"
+freq_khz = 3701
+ora_utc = "0100"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "001 AL"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["DL@SSB"], motivo = "UK/EI con un europeo su 80 m: 4, doppio dalle 01:00 = 8" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "0130"
+nominativo = "W1AW"
+rst_inviato = "59"
+scambio_inviato = "002 AL"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["K@SSB"], motivo = "UK/EI con un DX su 20 m: 4, doppio di notte = 8" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 40
+modo = "SSB"
+freq_khz = 7153
+ora_utc = "0200"
+nominativo = "G3ABC"
+rst_inviato = "59"
+scambio_inviato = "003 AL"
+rst_ricevuto = "59"
+scambio_ricevuto = "003 LN"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["LN@SSB"], motivo = "UK/EI con UK/EI su 40 m: 4, doppio di notte = 8; distretto LN" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "0459"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "004 AL"
+rst_ricevuto = "59"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 8, moltiplicatori = ["JA@SSB"], motivo = "alle 04:59 vale ancora il doppio: DX su 20 m, 4 x 2 = 8" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14205
+ora_utc = "0500"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "005 AL"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "dalle 05:00 niente doppio: europeo su 20 m = 2" }
+
+# Totali (a mano): 5 QSO, punti 8+8+8+8+2 = 34, moltiplicatori DL@80 K LN JA DL@20 = 5, punteggio 34 x 5 = 170
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 0
+non_ammessi = 0
+punti = 34
+moltiplicatori = 5
+punteggio = 170

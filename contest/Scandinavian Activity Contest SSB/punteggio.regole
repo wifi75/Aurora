@@ -1,0 +1,10 @@
+; Scandinavian Activity Contest SSB - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2026 letto il 2026-11-24 su https://www.sactest.net/blog/scandinavian-activity-contest-2026-rules/.
+; Scandinavia = SM, LA, OH, OH0 (Aland), OJ0 (Market Reef), OZ, TF, OY, OX (Groenlandia), JW, JX. Vale solo il QSO fra una stazione scandinava e una che non lo e' (punteggio.rhai).
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: scandinavo con europeo 2, con non europeo 3; non scandinavo europeo 1; non europeo 3 su 80 e 40 m, 1 su 20, 15 e 10 m.
+; mult: scandinavi, paesi DXCC per banda; non scandinavi, prefisso con cifra (area) dei paesi scandinavi per banda.
+bands=80,40,20,15,10
+points=my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0&cont:EU=2; my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0=3; my_cont:EU=1; band:80,40=3; any=1
+mult=dxcc/band/if:my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0; area:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0/band/if:not_my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0

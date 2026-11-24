@@ -1,0 +1,113 @@
+; Japan International DX Contest - numeri delle prefetture giapponesi (01-50) dello scambio dei JA, con le isole JD1 (48-50).
+; Elenco ufficiale letto il 2026-11-24 su https://jidx.org/jidxmult.lst (pagina https://jidx.org/jidxrule-e.html).
+; Formato .dom (docs/contest-file.md): righe 'ricevuto = dominio'; i numeri a una cifra (1-9) valgono come 01-09.
+JIDX - prefetture
+; 01 Hokkaido (JA8)
+01 = 01
+1 = 01
+; 02 Aomori (JA7)
+02 = 02
+2 = 02
+; 03 Iwate (JA7)
+03 = 03
+3 = 03
+; 04 Akita (JA7)
+04 = 04
+4 = 04
+; 05 Yamagata (JA7)
+05 = 05
+5 = 05
+; 06 Miyagi (JA7)
+06 = 06
+6 = 06
+; 07 Fukushima (JA7)
+07 = 07
+7 = 07
+; 08 Niigata (JA0)
+08 = 08
+8 = 08
+; 09 Nagano (JA0)
+09 = 09
+9 = 09
+; 10 Tokyo (JA1)
+10 = 10
+; 11 Kanagawa (JA1)
+11 = 11
+; 12 Chiba (JA1)
+12 = 12
+; 13 Saitama (JA1)
+13 = 13
+; 14 Ibaraki (JA1)
+14 = 14
+; 15 Tochigi (JA1)
+15 = 15
+; 16 Gumma (JA1)
+16 = 16
+; 17 Yamanashi (JA1)
+17 = 17
+; 18 Shizuoka (JA2)
+18 = 18
+; 19 Gifu (JA2)
+19 = 19
+; 20 Aichi (JA2)
+20 = 20
+; 21 Mie (JA2)
+21 = 21
+; 22 Kyoto (JA3)
+22 = 22
+; 23 Shiga (JA3)
+23 = 23
+; 24 Nara (JA3)
+24 = 24
+; 25 Osaka (JA3)
+25 = 25
+; 26 Wakayama (JA3)
+26 = 26
+; 27 Hyogo (JA3)
+27 = 27
+; 28 Toyama (JA9)
+28 = 28
+; 29 Fukui (JA9)
+29 = 29
+; 30 Ishikawa (JA9)
+30 = 30
+; 31 Okayama (JA4)
+31 = 31
+; 32 Shimane (JA4)
+32 = 32
+; 33 Yamaguchi (JA4)
+33 = 33
+; 34 Tottori (JA4)
+34 = 34
+; 35 Hiroshima (JA4)
+35 = 35
+; 36 Kagawa (JA5)
+36 = 36
+; 37 Tokushima (JA5)
+37 = 37
+; 38 Ehime (JA5)
+38 = 38
+; 39 Kochi (JA5)
+39 = 39
+; 40 Fukuoka (JA6)
+40 = 40
+; 41 Saga (JA6)
+41 = 41
+; 42 Nagasaki (JA6)
+42 = 42
+; 43 Kumamoto (JA6)
+43 = 43
+; 44 Oita (JA6)
+44 = 44
+; 45 Miyazaki (JA6)
+45 = 45
+; 46 Kagoshima (JA6)
+46 = 46
+; 47 Okinawa (JS6)
+47 = 47
+; 48 Ogasawara  (8N1OGA) (JD1)
+48 = 48
+; 49 Minamitorishima (JD1)
+49 = 49
+; 50 Okinotorishima (JD1)
+50 = 50

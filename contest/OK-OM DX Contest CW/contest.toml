@@ -1,0 +1,149 @@
+# OK-OM DX Contest CW - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://okomdx.crk.cz/index.php?page=CW-rules-english (pagina ufficiale del contest, «OK-OM DX CW Contest 2026»); il nome Cabrillo non e' sulla pagina ufficiale (vedi regolamento.md).
+
+[contest]
+id = "ok-om-dx-cw"
+nome = "OK-OM DX Contest CW"
+alias = ["OK-OM-DX-CW Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "Czech Radio Club (CRK) con il Slovak Amateur Radio Union (SZR/SARA)"
+sito = "https://okomdx.crk.cz"
+regolamento_url = "https://okomdx.crk.cz/index.php?page=CW-rules-english"
+cabrillo_contest = "OK-OM-DX"
+note = "Solo CW, 160-10 m (senza WARC), 24 ore da sabato 12:00 UTC. Scambio: RST + numero progressivo (001...) per chi non e' OK/OM, RST + distretto di tre lettere per OK e OM. Moltiplicatori per banda: distretti OK/OM e paesi DXCC/WAE. Russia e Bielorussia non ammesse."
+
+[edizione]
+# Secondo fine settimana pieno di novembre, sabato 12:00 UTC - domenica 11:59 UTC (24 ore). Il 2026 e' sulla pagina ufficiale, gli anni dopo sono calcolati.
+mese = 11
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 7              # entro 7 giorni dalla fine (22 novembre 2026 per l'edizione 2026), solo caricamento web
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-11-14T12:00:00Z"
+fine = "2026-11-15T11:59:59Z"
+fonte = "pagina ufficiale (letta il 2026-11-24): «1200 UTC 14th November - 1159 UTC 15th November 2026»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-11-13T12:00:00Z"
+fine = "2027-11-14T11:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di novembre (un elenco di terzi, DXZone, riporta 13-14 novembre 2027)"
+confermata = false
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-11-11T12:00:00Z"
+fine = "2028-11-12T11:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di novembre"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]   # 1,8-28 MHz senza le bande WARC
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_dxcc:OK,OM"
+nota = "Numero progressivo da 001 (MOST: unico o per banda; MO2T: per banda o per trasmettitore)."
+
+[[scambio.ricevuto]]
+nome = "distretto"
+etichetta_it = "Distretto (county)"
+etichetta_en = "District (county)"
+tipo = "testo"
+quando = "dxcc:OK,OM"
+elenco = "dati/distretti.dom"
+nota = "Tre lettere del distretto ceco (OK/OL) o slovacco (OM): APA, BBN, GBM, BAA, KEA..."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:OK,OM"
+progressivo = true
+nota = "Da 001; avanza a ogni QSO."
+
+[[scambio.inviato]]
+nome = "distretto"
+etichetta_it = "Distretto (county)"
+etichetta_en = "District (county)"
+tipo = "testo"
+quando = "my_dxcc:OK,OM"
+elenco = "dati/distretti.dom"
+nota = "Per le stazioni OK/OM: il proprio distretto di tre lettere; si scrive in «Numero da mandare» della scheda del contest con l'incremento automatico spento."
+
+[doppi]
+per = "banda"                     # stessa stazione, stessa banda (sezione 7); i doppi si lasciano nel log
+
+[categorie]
+operatore = ["SOAB", "SOSB", "MOST", "MO2T", "SWL"]
+potenza = ["HIGH", "LOW", "QRP"]  # oltre 100 W (fino a 1500 W), 100 W, 5 W
+altre = ["160", "80", "40", "20", "15", "10"]   # SOSB: sei categorie di banda singola, ognuna HP, LP o QRP
+
+[categorie.most]
+potenza = ["HIGH"]                # regola dei 10 minuti per banda; un secondo segnale su un'altra banda solo per un moltiplicatore nuovo
+
+[categorie.mo2t]
+potenza = ["HIGH"]                # due segnali su bande diverse, al massimo 8 cambi di banda per ora; ogni QSO porta l'identificativo del trasmettitore
+
+[cabrillo]
+contest = "OK-OM-DX"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "ADDRESS", "EMAIL", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "SOAPBOX"]
+invio = "solo caricamento web su https://okomdx.crk.cz (pagina «Send log»), in alternativa email a okomdx@crk.cz; gli SWL a okomdxc@crk.cz. Nell'intestazione: categoria, indirizzo postale completo ed email. Nome del Cabrillo da verificare (OK-OM-DX e' quello dei programmi di log)."
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Distretti OK/OM per banda", en = "OK/OM districts by band" }
+ordine = 1
+moltiplicatore = "sezione"
+dominio = "dati/distretti.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

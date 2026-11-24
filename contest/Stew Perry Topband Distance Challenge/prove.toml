@@ -1,0 +1,159 @@
+# Stew Perry Topband Distance Challenge - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://www.kkn.net/stew/stew_rules.html, rev. 2025).
+# Stesso log dei vecchi test del contest (quadrato proprio JN65, nominativi di fantasia): le distanze sono fra i centri dei quadrati (sfera di 6371 km) e valgono
+# 1 punto + 1 ogni 500 km interi: JN55 156 km = 1, IO91 1225 km = 3, FN42 6404 km = 13, KN23 976 km = 2. Nessun moltiplicatore.
+# Tre punti di vista: la stazione senza potenza dichiarata, la stessa con LP (x1,5 finale, x2 con le stazioni LP, x4 con le QRP) e con QRP (x3 finale).
+# Edizione 2026 (Big Stew del 26 dicembre, 15:00 UTC).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2026-12-26"
+
+[[qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1501"
+nominativo = "IK2XYZ"
+rst_inviato = "599"
+scambio_inviato = "JN65"
+rst_ricevuto = "599"
+scambio_ricevuto = "JN55"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "156 km: 1 punto" }
+
+[[qso]]
+n = 2
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1502"
+nominativo = "G4ABC"
+rst_inviato = "599"
+scambio_inviato = "JN65"
+rst_ricevuto = "599"
+scambio_ricevuto = "IO91"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = [], motivo = "1225 km: 1 + 2 = 3 punti" }
+
+[[qso]]
+n = 3
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1503"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "JN65"
+rst_ricevuto = "599"
+scambio_ricevuto = "FN42"
+atteso = { ammesso = true, doppio = false, punti = 13, moltiplicatori = [], motivo = "6404 km: 1 + 12 = 13 punti" }
+
+[[qso]]
+n = 4
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1504"
+nominativo = "UR5ABC"
+rst_inviato = "599"
+scambio_inviato = "JN65"
+rst_ricevuto = "599"
+scambio_ricevuto = "KN23"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "976 km: 1 + 1 = 2 punti" }
+
+[[qso]]
+n = 5
+banda = 80
+modo = "CW"
+freq_khz = 3520
+ora_utc = "1505"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "JN65"
+rst_ricevuto = "599"
+scambio_ricevuto = "JO62"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "80 m non e' la banda del contest (solo 160 m)" }
+
+# Totali (a mano): ammessi 4, non ammessi 1; punti 1+3+13+2 = 19; nessun moltiplicatore, punteggio = 19
+[atteso]
+qso_ammessi = 4
+doppi = 0
+non_ammessi = 1
+punti = 19
+punteggio = 19
+
+[[altra_stazione]]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1601"
+nominativo = "IK2XYZ"
+rst_inviato = "599"
+scambio_inviato = "JN65 LP"
+rst_ricevuto = "599"
+scambio_ricevuto = "JN55"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "156 km: 1 punto (stazione senza potenza dichiarata)" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1602"
+nominativo = "G4ABC"
+rst_inviato = "599"
+scambio_inviato = "JN65 LP"
+rst_ricevuto = "599"
+scambio_ricevuto = "IO91 LP"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = [], motivo = "3 punti x2 con una stazione LP" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1603"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "JN65 LP"
+rst_ricevuto = "599"
+scambio_ricevuto = "FN42 QRP"
+atteso = { ammesso = true, doppio = false, punti = 52, moltiplicatori = [], motivo = "13 punti x4 con una stazione QRP" }
+
+# Totali (a mano): punti 1 + 6 + 52 = 59; con la propria stazione Low Power x1,5 = 88,5, arrotondato a 89
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 0
+punti = 59
+punteggio = 89
+
+[[altra_stazione]]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 160
+modo = "CW"
+freq_khz = 1820
+ora_utc = "1701"
+nominativo = "W1AW"
+rst_inviato = "599"
+scambio_inviato = "JN65 QRP"
+rst_ricevuto = "599"
+scambio_ricevuto = "FN42"
+atteso = { ammesso = true, doppio = false, punti = 13, moltiplicatori = [], motivo = "6404 km: 13 punti" }
+
+# Totali (a mano): punti 13; con la propria stazione QRP x3 = 39
+[altra_stazione.atteso]
+qso_ammessi = 1
+doppi = 0
+non_ammessi = 0
+punti = 13
+punteggio = 39

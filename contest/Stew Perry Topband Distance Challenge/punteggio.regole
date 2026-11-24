@@ -1,0 +1,7 @@
+; Stew Perry Topband Distance Challenge - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento rev. 31 maggio 2025.
+; Punti per distanza e potenza sono in punteggio.rhai (non c'e' un moltiplicatore); le righe qui sotto valgono solo se lo script manca o fallisce.
+;
+; bands: solo 160 m, solo CW (regola 2).
+; points: un punto per QSO (senza la distanza).
+bands=160
+points=any=1

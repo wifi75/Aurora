@@ -1,0 +1,281 @@
+# OK-OM DX Contest SSB - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://okomdx.crk.cz/index.php?page=SSB-rules-english, 2026).
+# Due punti di vista: [prova] e' una stazione italiana (manda il numero progressivo), [[altra_stazione]] una stazione ceca (manda il distretto di tre lettere).
+# Nominativi di fantasia. Edizione 2027 (10-11 aprile, calcolata): tutti i QSO sono del sabato 2027-04-10, dopo le 12:00 UTC.
+# Moltiplicatori: valore@modo (distretti e paesi contano una volta per banda; il controllo non mostra la banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-04-10"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1201"
+nominativo = "OK1ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "APA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["APA@SSB", "OK@SSB"], motivo = "con una stazione OK/OM: 10 punti; distretto APA e paese OK nuovi su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1205"
+nominativo = "OM3ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "BAA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["BAA@SSB", "OM@SSB"], motivo = "OM: 10 punti; distretto BAA e paese OM nuovi (OK e OM sono due paesi)" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1210"
+nominativo = "OK2ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "GBM"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["GBM@SSB"], motivo = "OK: 10 punti; distretto GBM nuovo, il paese OK c'e' gia' su 20 m" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1215"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "044"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "stesso continente, altro paese: 3 punti; Germania nuova" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1220"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "012"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@SSB"], motivo = "altro continente: 5 punti; Stati Uniti nuovi" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1225"
+nominativo = "I2ABC"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "030"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@SSB"], motivo = "stesso paese: 1 punto; Italia nuova (conta come paese)" }
+
+[[qso]]
+n = 7
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "1230"
+nominativo = "OK1ABC"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "APA"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["APA@SSB", "OK@SSB"], motivo = "stessa stazione su un'altra banda: non e' doppio; distretto e paese nuovi su 15 m" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1235"
+nominativo = "OK1ABC"
+rst_inviato = "59"
+scambio_inviato = "008"
+rst_ricevuto = "59"
+scambio_ricevuto = "APA"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione sulla stessa banda" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1240"
+nominativo = "G3ABC/MM"
+rst_inviato = "59"
+scambio_inviato = "009"
+rst_ricevuto = "59"
+scambio_ricevuto = "031"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "marittimo mobile: 5 punti e nessun moltiplicatore" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1245"
+nominativo = "IT9ABC"
+rst_inviato = "59"
+scambio_inviato = "010"
+rst_ricevuto = "59"
+scambio_ricevuto = "050"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["IT9@SSB"], motivo = "stesso paese DXCC (Italia): 1 punto; la Sicilia e' un'entita' WAE a parte e vale come moltiplicatore" }
+
+[[qso]]
+n = 11
+banda = 30
+modo = "SSB"
+freq_khz = 10120
+ora_utc = "1250"
+nominativo = "OK1ABC"
+rst_inviato = "59"
+scambio_inviato = "011"
+rst_ricevuto = "59"
+scambio_ricevuto = "APA"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: non ammessa" }
+
+[[qso]]
+n = 12
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1255"
+nominativo = "UA3ABC"
+rst_inviato = "59"
+scambio_inviato = "012"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "Russia: contatti annullati (sezione 14)" }
+
+[[qso]]
+n = 13
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1300"
+nominativo = "EW1ABC"
+rst_inviato = "59"
+scambio_inviato = "013"
+rst_ricevuto = "59"
+scambio_ricevuto = "101"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "Bielorussia: contatti annullati (sezione 14)" }
+
+# Totali (a mano): ammessi 1-7, 9, 10 = 9; doppi 1 (n. 8); non ammessi 3 (n. 11, 12, 13)
+#   punti: 10+10+10+3+5+1+10+5+1 = 55
+#   moltiplicatori: APA OK BAA OM GBM DL K I (20 m, 8) + APA OK (15 m, 2) + IT9 (20 m, 1) = 11
+#   punteggio = 55 x 11 = 605
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 3
+punti = 55
+moltiplicatori = 11
+punteggio = 605
+
+[[altra_stazione]]
+nominativo_proprio = "OK1ZZZ"
+locatore_proprio = "JO70fc"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1401"
+nominativo = "OM3ABC"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "BAA"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["BAA@SSB", "OM@SSB"], motivo = "altro paese dello stesso continente (OK-OM sono due paesi): 3 punti; distretto BAA e paese OM nuovi" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1405"
+nominativo = "OK2ABC"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "GBM"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["GBM@SSB", "OK@SSB"], motivo = "stesso paese: 2 punti; distretto GBM e paese OK nuovi (il proprio paese conta come moltiplicatore: da verificare)" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 40
+modo = "SSB"
+freq_khz = 7100
+ora_utc = "1410"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "stesso continente: 3 punti; Germania nuova su 40 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1415"
+nominativo = "W1ABC"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["K@SSB"], motivo = "altro continente: 5 punti; Stati Uniti nuovi" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1420"
+nominativo = "G3ABC/MM"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = [], motivo = "marittimo mobile: 5 punti e nessun moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "1425"
+nominativo = "OM3ABC"
+rst_inviato = "59"
+scambio_inviato = "BBN"
+rst_ricevuto = "59"
+scambio_ricevuto = "BAA"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione sulla stessa banda" }
+
+# Totali (a mano): 5 QSO ammessi + 1 doppio; punti 3+2+3+5+5 = 18; moltiplicatori BAA OM GBM OK K (20 m) + DL (40 m) = 6; punteggio 18 x 6 = 108
+[altra_stazione.atteso]
+qso_ammessi = 5
+doppi = 1
+non_ammessi = 0
+punti = 18
+moltiplicatori = 6
+punteggio = 108

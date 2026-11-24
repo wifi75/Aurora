@@ -1,0 +1,158 @@
+# UK-EI DX CW Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.ukeicc.com/dx-contest-rules.php («UK/EI DX Contests: Rules», versione 19 del 2 maggio 2026, CW e SSB sulla stessa pagina).
+
+[contest]
+id = "ukei-dx-cw"
+nome = "UK-EI DX CW Contest"
+alias = ["UK/EI DX Contest"]   # nome interno del vecchio file (solo CW): la cartella CW lo sostituisce, la fonia ha la sua cartella
+organizzatore = "UKEICC (UK and Ireland Contest Club) con l'RSGB"
+sito = "https://www.ukeicc.com/"
+regolamento_url = "https://www.ukeicc.com/dx-contest-rules.php"
+cabrillo_contest = ""             # il regolamento non scrive la riga CONTEST: del Cabrillo (il caricamento si chiama «DX CW Contest»): da verificare
+note = "Solo CW, 80-10 m, 24 ore (aprile). Scambio: RS(T) + numero progressivo; le stazioni UK/EI aggiungono il codice di distretto. Punti diversi per UK/EI, Europa e DX, doppi su 80 e 40 m; le stazioni UK/EI fanno doppio dalle 01:00 alle 04:59 UTC. Moltiplicatori per banda: paesi DXCC (non UK/EI) e distretti UK/EI."
+
+[edizione]
+# Date: ultimo fine settimana di aprile, sabato 12:00 - domenica 11:59 UTC (24 ore). Il formato conta solo l'ennesimo fine settimana pieno del mese e qui
+# la regola non basta: le date vere (tabella 2026-2030 del regolamento) sono scritte sotto anno per anno e valgono al posto del calcolo.
+mese = 4
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 1              # il log si carica entro 24 ore dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-25T12:00:00Z"
+fine = "2026-04-26T11:59:59Z"
+fonte = "https://www.ukeicc.com/dx-contest-rules.php (versione 19, 2 maggio 2026, sezione 2): tabella delle date CW fino al 2030"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-24T12:00:00Z"
+fine = "2027-04-25T11:59:59Z"
+fonte = "https://www.ukeicc.com/dx-contest-rules.php (versione 19, 2 maggio 2026, sezione 2): tabella delle date CW fino al 2030"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-04-29T12:00:00Z"
+fine = "2028-04-30T11:59:59Z"
+fonte = "https://www.ukeicc.com/dx-contest-rules.php (versione 19, 2 maggio 2026, sezione 2): tabella delle date CW fino al 2030"
+confermata = true
+
+[[edizione.date]]
+anno = 2029
+inizio = "2029-04-28T12:00:00Z"
+fine = "2029-04-29T11:59:59Z"
+fonte = "https://www.ukeicc.com/dx-contest-rules.php (versione 19, 2 maggio 2026, sezione 2): tabella delle date CW fino al 2030"
+confermata = true
+
+[[edizione.date]]
+anno = 2030
+inizio = "2030-04-27T12:00:00Z"
+fine = "2030-04-28T11:59:59Z"
+fonte = "https://www.ukeicc.com/dx-contest-rules.php (versione 19, 2 maggio 2026, sezione 2): tabella delle date CW fino al 2030"
+confermata = true
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+nota = "Se la controparte non manda il numero si scrive 0: il QSO vale lo stesso."
+
+[[scambio.ricevuto]]
+nome = "distretto"
+etichetta_it = "Codice di distretto (solo stazioni UK/EI)"
+etichetta_en = "District code (UK/EI stations only)"
+tipo = "testo"
+quando = "dxcc:G,GM,GW,GI,GD,GJ,GU,EI"
+elenco = "dati/distretti.dom"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 1, una sola sequenza per tutte le bande
+
+[[scambio.inviato]]
+nome = "distretto"
+etichetta_it = "Il mio codice di distretto (solo UK/EI)"
+etichetta_en = "My district code (UK/EI stations only)"
+tipo = "testo"
+quando = "my_dxcc:G,GM,GW,GI,GD,GJ,GU,EI"
+nota = "Si scrive in «La mia sezione / stato / club» della scheda; le stazioni DX lo lasciano vuoto. Le macro mandano <NRS> <MYSECT>."
+
+[doppi]
+per = "banda"                     # il regolamento non scrive i doppi; una stazione una volta per banda (i moltiplicatori sono per banda)
+
+[categorie]
+operatore = ["Single-op Unassisted", "Single-op Assisted", "Multi-op"]   # Multi-op: sempre 24 ore, High, Assisted
+potenza = ["HIGH", "LOW", "QRP"]                # 1500 W (o il massimo di licenza), 100 W, 5 W
+modo = ["CW"]
+sovrapposizioni = ["Single-Element Antenna", "Rookie"]   # Rookie: licenza da tre anni o meno
+altre = ["12 ore o 24 ore", "Team (2-3 membri)"]
+
+[cabrillo]
+contest = ""
+obbligatori = ["CALLSIGN", "CATEGORY-OPERATOR", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CONTEST", "CATEGORY-ASSISTED", "CATEGORY-POWER", "CATEGORY-TIME", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+invio = "solo caricamento sul robot dei log del sito entro 24 ore dalla fine, un solo log con i QSO in ordine di numero; frequenza al kHz per i premi; nome del caricamento «DX CW Contest»; valori delle intestazioni da verificare"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda (fuori da UK/EI)", en = "DXCC countries by band (outside UK/EI)" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+escludi = ["G", "GM", "GW", "GI", "GD", "GJ", "GU", "EI"]
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Distretti UK/EI per banda", en = "UK/EI districts by band" }
+ordine = 2
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+dominio = "dati/distretti.dom"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "scambio", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

@@ -1,0 +1,157 @@
+# Japan International DX Contest CW - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://jidx.org/jidxrule-e.html (regolamento «2026-10») e https://jidx.org/jidxelog-e.html (Cabrillo); elenco delle prefetture su https://jidx.org/jidxmult.lst.
+
+[contest]
+id = "jidx-cw"
+nome = "Japan International DX Contest CW"
+alias = ["Japan International DX CW Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "JIDX Contest Committee (Giappone)"
+sito = "https://jidx.org"
+regolamento_url = "https://jidx.org/jidxrule-e.html"
+cabrillo_contest = "JIDX-CW"
+note = "Solo CW, 160-10 m (senza WARC), da sabato 07:00 a domenica 13:00 UTC. Contano solo i QSO fra un JA e un DX. Scambio: RST + prefettura (01-50) per i JA, RST + zona CQ per gli altri. Moltiplicatori per banda: le prefetture per i DX, i paesi DXCC e le zone CQ per i JA."
+
+[edizione]
+# Secondo fine settimana pieno di aprile, sabato 07:00 UTC - domenica 13:00 UTC (30 ore). Le date dal 2026 al 2028 sono nel regolamento.
+mese = 4
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "07:00"
+durata_ore = 30
+invio_log_giorni = 30             # un mese dopo la fine (13 maggio 2026 per l'edizione 2026); proroga di due settimane su richiesta
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-11T07:00:00Z"
+fine = "2026-04-12T13:00:00Z"
+fonte = "https://jidx.org/jidxrule-e.html (letto il 2026-11-24, regolamento 2026-10): elenco delle date dal 2026 al 2028"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-10T07:00:00Z"
+fine = "2027-04-11T13:00:00Z"
+fonte = "https://jidx.org/jidxrule-e.html (letto il 2026-11-24, regolamento 2026-10): elenco delle date dal 2026 al 2028"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-04-08T07:00:00Z"
+fine = "2028-04-09T13:00:00Z"
+fonte = "https://jidx.org/jidxrule-e.html (letto il 2026-11-24, regolamento 2026-10): elenco delle date dal 2026 al 2028"
+confermata = true
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]   # 1,8-28 MHz senza le bande WARC
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "prefettura"
+etichetta_it = "Prefettura"
+etichetta_en = "Prefecture"
+tipo = "testo"
+quando = "dxcc:JA,JD/m,JD/o"      # stazioni giapponesi (JD1 compreso)
+elenco = "dati/prefetture.dom"
+nota = "Numero della prefettura da 01 a 50 (JD1: 48 Ogasawara, 49 Minami-Torishima, 50 Okino-Torishima); elenco ufficiale jidxmult.lst."
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "not_dxcc:JA,JD/m,JD/o"  # tutte le altre stazioni (i /MM mandano la zona)
+nota = "Proposta dal database dei paesi; vale quella mandata dal corrispondente."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "not_my_dxcc:JA,JD/m,JD/o"
+nota = "Per i DX: la propria zona CQ (IO91wm = 15); si scrive in «La mia zona CQ» (Numero da mandare), senza incremento."
+
+[[scambio.inviato]]
+nome = "prefettura"
+etichetta_it = "Prefettura"
+etichetta_en = "Prefecture"
+tipo = "testo"
+quando = "my_dxcc:JA,JD/m,JD/o"
+elenco = "dati/prefetture.dom"
+nota = "Per i JA: il numero della propria prefettura (01-50); si scrive in «Numero da mandare» della scheda del contest, senza incremento."
+
+[doppi]
+per = "banda"                     # la stessa stazione una volta per banda (sezione 5)
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP", "MM"]   # Single Op (AB, 28...1.8 high; ABL, 28L...1.8L low), Multi Op M1 (un TX) e M2 (due TX), Maritime Mobile
+potenza = ["HIGH", "LOW"]         # oltre 100 W, 100 W o meno (il QRP e' nella categoria Low, senza «/QRP» nel nominativo)
+altre = ["M1", "M2", "MM"]
+
+[categorie.m1]
+potenza = ["HIGH"]                # la stazione che gira resta almeno 10 minuti su una banda; la stazione dei moltiplicatori puo' trasmettere su un'altra banda solo per un moltiplicatore nuovo; il log dice quale stazione ha fatto il QSO
+
+[cabrillo]
+contest = "JIDX-CW"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY", "CLAIMED-SCORE", "OPERATORS", "CREATED-BY", "NAME", "ADDRESS", "EMAIL", "SENTNR"]
+facoltativi = ["ENTITY", "SOAPBOX"]
+category = ["AB", "28", "21", "14", "7", "3.5", "1.8", "ABL", "28L", "21L", "14L", "7L", "3.5L", "1.8L", "M1", "M2", "MM"]
+invio = "caricamento web (https://jidx.org/upload/uplog.html) o email come allegato a cw@jidx.org con «JIDX» e il nominativo nell'oggetto. Il nome del Cabrillo JIDX-CW e le abbreviazioni di CATEGORY sono quelli della pagina https://jidx.org/jidxelog-e.html; SENTNR e' la propria zona CQ."
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefetture per banda", en = "Prefectures by band" }
+ordine = 1
+moltiplicatore = "sezione"
+dominio = "dati/prefetture.dom"
+per_banda = true
+per_modo = false
+quando = "not_my_dxcc:JA,JD/m,JD/o"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Zone CQ per banda", en = "CQ zones by band" }
+ordine = 2
+moltiplicatore = "zona_cq"
+per_banda = true
+per_modo = false
+quando = "my_dxcc:JA,JD/m,JD/o"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 3
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+quando = "my_dxcc:JA,JD/m,JD/o"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 4
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 5
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]
