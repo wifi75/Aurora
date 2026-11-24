@@ -15,6 +15,15 @@ describe('isSkimmer', () => {
   });
 });
 
+describe('hideSkimmers', () => {
+  it('hides only the spots sent by skimmers, and only when asked', () => {
+    const list = [{ ...spot(1, 'K1ABC', '20m', 'CW'), spotter: 'DK9IP-#' }, { ...spot(2, 'W9XYZ', '20m', 'CW'), spotter: 'IU3ABC' }];
+    const base = { bands: [], modes: [], search: '' };
+    expect(filterSpots(list, base, null).map((x) => x.id)).toEqual([1, 2]);
+    expect(filterSpots(list, { ...base, hideSkimmers: true }, null).map((x) => x.id)).toEqual([2]);
+  });
+});
+
 describe('withoutOwnSpots', () => {
   const list = [spot(4, 'IU3ABC', '40m', 'FT8'), spot(3, 'iu3abc/p', '40m', 'FT8'), spot(2, 'K1ABC', '40m', 'FT8'), spot(1, 'HK4FZ', '15m', 'FT8')];
 

@@ -40,13 +40,13 @@ const COL_TIP: Partial<Record<ClusterColumn, Key>> = { de: 'tip.ui.clusterBy', c
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false, showOwn: false };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false, showOwn: false, hideSkimmers: false };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown; showOwn?: unknown };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown; showOwn?: unknown; hideSkimmers?: unknown };
     // le versioni precedenti salvavano una sola banda e un solo modo
-    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true, showOwn: p.showOwn === true };
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true, showOwn: p.showOwn === true , hideSkimmers: p.hideSkimmers === true };
   } catch {
     return defaults;
   }
@@ -105,7 +105,7 @@ export interface ClusterContest {
 
 /** Quanti filtri sono accesi (la ricerca per nominativo si vede da se': non conta). */
 export function activeFilters(f: SpotFilters): number {
-  return (f.bands.length > 0 ? 1 : 0) + (f.modes.length > 0 ? 1 : 0) + ((f.spotters ?? []).length > 0 ? 1 : 0) + (f.newOnly === true ? 1 : 0) + (f.showOwn === true ? 1 : 0);
+  return (f.bands.length > 0 ? 1 : 0) + (f.modes.length > 0 ? 1 : 0) + ((f.spotters ?? []).length > 0 ? 1 : 0) + (f.newOnly === true ? 1 : 0) + (f.showOwn === true ? 1 : 0) + (f.hideSkimmers === true ? 1 : 0);
 }
 
 /** I quattro filtri del cluster (banda, modo, chi manda lo spot, solo nuovi): nella barra o, nella vista contest, nel pannello dell'ingranaggio. */
@@ -140,6 +140,9 @@ function FilterPickers({ filters, change }: { filters: SpotFilters; change(next:
       </button>
       <button type="button" className={`glass chip${filters.showOwn ? ' glass--on' : ''}`} aria-pressed={filters.showOwn === true} title={t('tip.cluster.showOwn')} onClick={() => change({ ...filters, showOwn: !filters.showOwn })}>
         {t('cluster.filter.showOwn')}
+      </button>
+      <button type="button" className={`glass chip${filters.hideSkimmers ? ' glass--on' : ''}`} aria-pressed={filters.hideSkimmers === true} title={t('tip.cluster.hideSkimmers')} onClick={() => change({ ...filters, hideSkimmers: !filters.hideSkimmers })}>
+        {t('cluster.filter.hideSkimmers')}
       </button>
     </>
   );
@@ -275,7 +278,7 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true, showOwn: next.showOwn === true }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true, showOwn: next.showOwn === true, hideSkimmers: next.hideSkimmers === true }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }

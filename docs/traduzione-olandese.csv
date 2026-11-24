@@ -1839,6 +1839,8 @@ cluster.filter.spotterMine,Only my continent,Alleen mijn continent
 cluster.filter.modeAll,All,Alle
 cluster.filter.newOnly,New only,Alleen nieuwe
 tip.cluster.skimmer,"Automatic skimmer (Reverse Beacon Network, callsign ending in “-#”): a receiver that decodes CW, RTTY and FT8 by itself and sends the spot to the cluster, with nobody typing it. Spotted {age} s ago.","Automatische skimmer (Reverse Beacon Network, roepletters die op «-#» eindigen): een ontvanger die CW, RTTY en FT8 zelf decodeert en de spot naar de cluster stuurt, zonder dat iemand hem intikt. Spot van {age} s geleden."
+cluster.filter.hideSkimmers,No skimmers,Zonder skimmers
+tip.cluster.hideSkimmers,Hides the spots sent by automatic skimmers (Reverse Beacon Network: the spotter call ends in “-#”). Spots from people stay.,Verbergt de spots van automatische skimmers (Reverse Beacon Network: de roepletters van de melder eindigen op «-#»). Spots van personen blijven.
 cluster.filter.showOwn,My spots,Mijn spots
 tip.cluster.showOwn,"By default the spots of your own callsign are hidden: when you transmit, dozens of skimmers (Reverse Beacon Network) decode you and each sends its own spot, and the panel would fill up with rows that have you as the DX. Switch on to see them: they show who is hearing you.","Standaard zijn de spots van je eigen roepletters verborgen: als je zendt, decoderen tientallen skimmers (Reverse Beacon Network) je en stuurt elk zijn eigen spot, en het paneel zou vollopen met regels waarin jij de DX bent. Zet aan om ze te zien: ze laten zien wie je hoort."
 tip.cluster.spot,Send a spot to the DX Cluster (DXSummit) with the current DX and the radio frequency.,Stuur een spot naar de DX Cluster (DXSummit) met de huidige DX en de zenderfrequentie.

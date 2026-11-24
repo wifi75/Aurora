@@ -123,7 +123,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const allSpots = cluster.data?.spots ?? [];
   // gli spot del proprio nominativo (gli skimmer che ti sentono) sono nascosti di base, come nel pannello del PC
   const all = saved.showOwn === true ? allSpots : withoutOwnSpots(allSpots, cluster.data?.callsign ?? cluster.data?.config.callsign);
-  const filtered = saved.bands.length > 0 || saved.modes.length > 0 ? filterSpots(all, { ...saved, search: '' }, band) : all;
+  const filtered = saved.bands.length > 0 || saved.modes.length > 0 || saved.hideSkimmers === true ? filterSpots(all, { ...saved, search: '' }, band) : all;
   const spots = (filtered.length >= 5 ? filtered : [...filtered, ...all.filter((s) => !filtered.includes(s))]).slice(0, 5);
   const log = useQuery({ queryKey: ['log4om', 3], queryFn: () => getLog4om(3), refetchInterval: 10_000, retry: false });
 

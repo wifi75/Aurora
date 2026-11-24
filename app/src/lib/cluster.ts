@@ -13,6 +13,8 @@ export interface SpotFilters {
   newOnly?: boolean;
   /** Mostra anche gli spot del proprio nominativo (nascosti di base: con tanti skimmer riempiono il pannello). */
   showOwn?: boolean;
+  /** Nasconde gli spot mandati dagli skimmer automatici (nominativo del segnalatore che finisce con `-#`). */
+  hideSkimmers?: boolean;
 }
 
 /** I modi digitali: quelli che il filtro «Digi» raccoglie tutti insieme. */
@@ -51,6 +53,7 @@ export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters,
     }
     // «PSK» comprende PSK31, PSK63 e gli altri PSK; «DIGI» tutti i modi digitali (FT8, WSPR, JS8, RTTY... e il generico DIGI)
     if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.some((m) => m === s.mode || (m === 'PSK' && s.mode?.startsWith('PSK')) || (m === 'DIGI' && isDigitalMode(s.mode))))) return false;
+    if (filters.hideSkimmers === true && isSkimmer(s.spotter)) return false;
     if (search !== '' && !s.dx_call.includes(search)) return false;
     // spot di chi sta sui continenti scelti; senza continente noto (core vecchio, nominativo strano) lo spot resta
     if (wanted.size > 0 && s.spotter_continent && !wanted.has(s.spotter_continent)) return false;
