@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.341',
-    released: '2026-11-24T08:00:00Z',
+    released: '2026-11-24T06:59:45Z',
     kind: 'fixed',
     title: [
       'Contest con la zona CQ: dove scriverla',
