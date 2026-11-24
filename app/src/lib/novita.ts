@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.341',
+    released: '2026-11-24T08:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Contest con la zona CQ: dove scriverla',
+      'Contests with the CQ zone: where to write it',
+      'Contests mit CQ-Zone: wo man sie einträgt',
+      'Concours avec la zone CQ : où l’écrire',
+      'Concursos con zona CQ: dónde escribirla',
+      'Concursos com zona CQ: onde a escrever',
+    ],
+    text: [
+      'Nei contest che chiedono la tua zona CQ nello scambio (CQ WW) la finestra del contest ora mostra il campo «La mia zona CQ» con il suggerimento di scriverla lì (per esempio 15); senza, si mandava solo il numero progressivo (599 001). Ogni contest prende i dati dalla sua scheda, non dai dati personali. Inoltre dai contest distribuiti sono stati tolti i valori fissi dell’altro operatore (zone, locator) che restavano come scambio da mandare. Segnalazione di Luc (#98).',
+      'In contests that ask for your CQ zone in the exchange (CQ WW), the contest window now shows the “My CQ zone” field with a hint to write it there (for example 15); without it only the serial number was sent (599 001). Each contest takes its data from its own sheet, not from your personal data. The fixed values of the original operator (zones, locators) that stayed as the exchange to send have also been removed from the bundled contests. Reported by Luc (#98).',
+      'Bei Contests, die deine CQ-Zone im Austausch verlangen (CQ WW), zeigt das Contest-Fenster jetzt das Feld „Meine CQ-Zone“ mit dem Hinweis, sie dort einzutragen (zum Beispiel 15); ohne sie wurde nur die laufende Nummer gesendet (599 001). Jeder Contest nimmt seine Daten aus seinem eigenen Blatt, nicht aus deinen persönlichen Daten. Außerdem wurden aus den mitgelieferten Contests die festen Werte des ursprünglichen Operators (Zonen, Locator) entfernt, die als zu sendender Austausch stehen geblieben waren. Gemeldet von Luc (#98).',
+      'Dans les concours qui demandent ta zone CQ dans l’échange (CQ WW), la fenêtre du concours affiche maintenant le champ « Ma zone CQ » avec le conseil de l’écrire là (par exemple 15) ; sans elle, seul le numéro de série était envoyé (599 001). Chaque concours prend ses données dans sa propre fiche, pas dans tes données personnelles. Les valeurs fixes de l’opérateur d’origine (zones, locator) qui restaient comme échange à envoyer ont aussi été retirées des concours fournis. Signalé par Luc (#98).',
+      'En los concursos que piden tu zona CQ en el intercambio (CQ WW), la ventana del concurso muestra ahora el campo «Mi zona CQ» con la indicación de escribirla ahí (por ejemplo 15); sin ella solo se enviaba el número de serie (599 001). Cada concurso toma sus datos de su propia ficha, no de tus datos personales. También se han quitado de los concursos incluidos los valores fijos del operador original (zonas, locator) que quedaban como intercambio a enviar. Aviso de Luc (#98).',
+      'Nos concursos que pedem a tua zona CQ na troca (CQ WW), a janela do concurso mostra agora o campo «A minha zona CQ» com a indicação de a escrever aí (por exemplo 15); sem ela só se enviava o número de série (599 001). Cada concurso vai buscar os dados à sua própria ficha, não aos teus dados pessoais. Foram também retirados dos concursos incluídos os valores fixos do operador original (zonas, locator) que ficavam como troca a enviar. Aviso do Luc (#98).',
+    ],
+  },
+  {
     version: '0.11.340',
     released: '2026-11-23T22:33:19Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur la page des satellites tu peux choisir entre trois cartes de la Terre de la NASA en 8192 x 4096 : « Terre (satellite NASA) » avec relief et fonds marins (la carte de base), « Terre (NASA, avec relief) » et « Terre (NASA, couleurs seulement) ». La nuit, la face de jour reste visible sous un voile sombre, avec les lumières des villes par-dessus. En changeant de page la carte simple n’apparaît plus un instant, et à la molette l’image n’est plus pixellisée. Les satellites ont une icône unique, l’ISS sa silhouette, l’étoile de la station est plus petite et le zoom automatique s’arrête à 3x. Dans le thème sombre le texte est blanc partout.',
       'En la página de los satélites puedes elegir entre tres mapas de la Tierra de la NASA a 8192 x 4096: «Tierra (satélite NASA)» con relieve y fondos marinos (la de base), «Tierra (NASA, con relieve)» y «Tierra (NASA, solo colores)». De noche el lado de día sigue visible bajo un velo oscuro, con las luces de las ciudades encima. Al cambiar de página ya no aparece un instante el mapa simple, y con la rueda la imagen ya no se ve pixelada. Los satélites tienen un icono único, la ISS su silueta, la estrella de la estación es más pequeña y el zoom automático se detiene en 3x. En el tema oscuro el texto es blanco en todas partes.',
       'Na página dos satélites podes escolher entre três mapas da Terra da NASA a 8192 x 4096: «Terra (satélite NASA)» com relevo e fundos marinhos (a de base), «Terra (NASA, com relevo)» e «Terra (NASA, só cores)». À noite o lado do dia continua visível sob um véu escuro, com as luzes das cidades por cima. Ao mudar de página já não aparece por um instante o mapa simples, e com a roda a imagem já não fica pixelizada. Os satélites têm um ícone único, a ISS a sua silhueta, a estrela da estação é mais pequena e o zoom automático pára nos 3x. No tema escuro o texto é branco em todo o lado.',
-    ],
-  },
-  {
-    version: '0.11.329',
-    released: '2026-11-22T07:21:16Z',
-    kind: 'fixed',
-    title: [
-      'IC-820H, PTT, orologio e controllo aggiornamenti',
-      'IC-820H, PTT, clock and update check',
-      'IC-820H, PTT, Uhr und Update-Prüfung',
-      'IC-820H, PTT, horloge et contrôle des mises à jour',
-      'IC-820H, PTT, reloj y comprobación de actualizaciones',
-      'IC-820H, PTT, relógio e verificação de atualizações',
-    ],
-    text: [
-      'IC-820H: la trasmissione CI-V dei satelliti si riprova da sola dopo un minuto, senza riconnettere (#83). Cambiando radio in Impostazioni il PTT non resta più bloccato su «radio cambiata» fino al riavvio. L’avviso dell’orologio non si ripete più ogni minuto. Il controllo degli aggiornamenti usa un ripiego se l’API di GitHub dà errore, così l’avviso della nuova versione compare lo stesso.',
-      'IC-820H: the CI-V satellite transmission retries by itself after a minute, without reconnecting (#83). Changing the radio in Settings no longer leaves the PTT stuck on “radio changed” until a restart. The clock warning is no longer repeated every minute. The update check uses a fallback when the GitHub API returns an error, so the new-version notice still appears.',
-      'IC-820H: Die CI-V-Sendung der Satelliten wird nach einer Minute von selbst wiederholt, ohne neu zu verbinden (#83). Beim Wechsel des Funkgeräts in den Einstellungen bleibt der PTT nicht mehr bis zum Neustart auf „Funkgerät gewechselt“ hängen. Die Uhrwarnung wird nicht mehr jede Minute wiederholt. Die Update-Prüfung nutzt eine Ersatzlösung, wenn die GitHub-API einen Fehler meldet, sodass der Hinweis auf die neue Version trotzdem erscheint.',
-      'IC-820H : l’émission CI-V des satellites se réessaie d’elle-même après une minute, sans reconnecter (#83). En changeant de radio dans les Paramètres, le PTT ne reste plus bloqué sur « radio changée » jusqu’au redémarrage. L’avertissement de l’horloge ne se répète plus chaque minute. Le contrôle des mises à jour utilise un repli si l’API de GitHub renvoie une erreur, si bien que l’avis de la nouvelle version apparaît quand même.',
-      'IC-820H: la transmisión CI-V de los satélites se reintenta sola tras un minuto, sin reconectar (#83). Al cambiar de radio en Ajustes el PTT ya no se queda bloqueado en «radio cambiada» hasta reiniciar. El aviso del reloj ya no se repite cada minuto. La comprobación de actualizaciones usa una alternativa si la API de GitHub da error, así el aviso de la nueva versión aparece igualmente.',
-      'IC-820H: a transmissão CI-V dos satélites repete-se sozinha após um minuto, sem voltar a ligar (#83). Ao mudar de rádio nas Definições o PTT já não fica bloqueado em «rádio alterado» até reiniciar. O aviso do relógio já não se repete a cada minuto. A verificação de atualizações usa uma alternativa se a API do GitHub der erro, e o aviso da nova versão aparece na mesma.',
     ],
   },
 ];

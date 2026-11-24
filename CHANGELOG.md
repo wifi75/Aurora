@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Contest che chiedono la propria zona CQ nello scambio (CQ WW; segnalazione di Luc, #98): la finestra del contest mostra il campo «La mia zona CQ» (stesso valore di «Numero da mandare») con il suggerimento di scriverla li' (per esempio 15), al posto di «si manda il numero progressivo»; nella Guida si dice che ogni contest prende i dati dalla propria scheda. Dai `.contest` distribuiti sono stati tolti i valori fissi dell'altro operatore rimasti come scambio da mandare (zona 14, 27, 50, 62, 05, 001, un locator, sigle di club), cosi' un contest non manda piu' di nascosto lo scambio di un altro. Prova `mandaZonaCq` in `contestVoci.test.ts`.
 
 ## 0.11.340 - 2026-11-24
 - Cursore «Lvl TX»: non appare piu' il simbolo di divieto trascinandolo (il browser iniziava un trascinamento nativo dell'elemento: ora selezione e trascinamento sono disattivati sul cursore) e dopo il rilascio una lettura vecchia del motore non lo riporta piu' indietro per 2,5 secondi (la scrittura e la lettura periodica ogni 2 s si incrociavano e il cursore sembrava poco reattivo).
