@@ -272,7 +272,7 @@ html[data-theme='light'] .sstv-photo { border-color: #7d8bb0; }
 .sstv-main { min-height: 28rem; flex: 1 0 auto; }
 
 /* ===== ricezione: sintonia sotto il visore (stessa colonna, stessi bordi del visore), log del QSO piccolo a destra della scheda del modo ===== */
-.sstv-rx--log { grid-template-columns: minmax(290px, 380px) minmax(0, 1fr) minmax(200px, 240px); gap: 0.9rem; }
+.sstv-rx--log { grid-template-columns: minmax(290px, 380px) minmax(0, 46rem) minmax(200px, 240px); gap: 0.9rem; }
 /* sintonia: istogramma dei livelli (blocco pieno) con tre lineette, cursore della correzione e una riga di consiglio */
 .sstv-tune { --sstv-hist-ink: #0d1424; --sstv-hist-mark: #e0343b; flex: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 400px; padding: 2px 4px 3px; border: 1px solid #2f4279; border-radius: 6px; background: var(--panel); }
 .sstv-tune-hist { display: block; width: 100%; height: 28px; border-radius: 3px; background: #e8edf6; border: 1px solid #9fb0d4; box-sizing: border-box; cursor: crosshair; }
