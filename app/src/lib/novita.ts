@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.345',
-    released: '2026-11-24T19:30:00Z',
+    released: '2026-11-24T18:19:01Z',
     kind: 'changed',
     title: [
       'Pagina SSTV riordinata e righe Tx al posto giusto',
