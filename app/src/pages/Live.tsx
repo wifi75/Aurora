@@ -263,6 +263,9 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     cluster: t('panel.cluster'),
   };
 
+  // dichiarato prima di renderPanel: la finestra di un pannello staccato (soloPanel) lo chiama prima della fine del corpo e `tagFilterOn` sarebbe ancora
+  // «non inizializzato» (Uncaught ReferenceError nel pannello Attivita' di banda staccato)
+  const tagFilterOn = filters.tags.length > 0;
   const renderPanel = (id: PanelId) => {
     switch (id) {
       case 'waterfall':
@@ -551,7 +554,6 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       renderPanel(id)
     );
   const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : id === 'cmds' ? t('panel.station') : titles[id]);
-  const tagFilterOn = filters.tags.length > 0;
   // dove stanno i messaggi nuovi, in cima o in fondo: un pulsantino nella barra del titolo di Attivita' di banda e della Finestra RX
   const orderButton = (key: 'bandBottom' | 'rxBottom') => (
     <button type="button" className={prefs[key] ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={prefs[key]} title={t('tip.list.bottom')} onPointerDown={(e) => e.stopPropagation()} onClick={() => usePrefs.getState().set({ [key]: !prefs[key] })}>
