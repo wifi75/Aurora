@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.346',
-    released: '2026-11-24T19:40:17Z',
+    released: '2026-11-24T19:55:06Z',
     kind: 'fixed',
     title: [
       'Hound registra il QSO, filtro «Senza skimmer» e motivo dello stop',
