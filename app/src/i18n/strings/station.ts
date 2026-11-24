@@ -373,6 +373,11 @@ export const stationStrings = {
     '{call} trabaja en Fox/Hound: Hound activado (Tx en {hz} Hz)',
     '{call} trabalha em Fox/Hound: Hound ligado (Tx em {hz} Hz)',
   ],
+  'tx.alert.stopped.reply_other': ["Trasmissione ferma: {call} ha risposto a un’altra stazione.", "Transmission stopped: {call} answered another station.", "Senden gestoppt: {call} hat eine andere Station beantwortet.", "Émission arrêtée : {call} a répondu à une autre station.", "Transmisión detenida: {call} respondió a otra estación.", "Transmissão parada: {call} respondeu a outra estação."],
+  'tx.alert.stopped.watchdog': ["Trasmissione ferma: il timer di sicurezza (watchdog) è scaduto.", "Transmission stopped: the safety timer (watchdog) ran out.", "Senden gestoppt: der Sicherheits-Timer (Watchdog) ist abgelaufen.", "Émission arrêtée : le minuteur de sécurité (watchdog) a expiré.", "Transmisión detenida: se agotó el temporizador de seguridad (watchdog).", "Transmissão parada: o temporizador de segurança (watchdog) expirou."],
+  'tx.alert.stopped.nothing_to_do': ["Trasmissione ferma: non c’era più nulla da trasmettere.", "Transmission stopped: there was nothing left to send.", "Senden gestoppt: es gab nichts mehr zu senden.", "Émission arrêtée : il n’y avait plus rien à émettre.", "Transmisión detenida: ya no quedaba nada que enviar.", "Transmissão parada: já não havia nada para enviar."],
+  'tx.alert.stopped.single_qso': ["Trasmissione ferma: «1 QSO» ha chiuso il collegamento con {call}.", "Transmission stopped: “1 QSO” ended the contact with {call}.", "Senden gestoppt: „1 QSO“ hat das QSO mit {call} beendet.", "Émission arrêtée : « 1 QSO » a clos le contact avec {call}.", "Transmisión detenida: «1 QSO» cerró el contacto con {call}.", "Transmissão parada: «1 QSO» terminou o contacto com {call}."],
+  'tx.alert.stopped.finished': ["Trasmissione ferma: QSO con {call} finito.", "Transmission stopped: QSO with {call} finished.", "Senden gestoppt: QSO mit {call} beendet.", "Émission arrêtée : QSO avec {call} terminé.", "Transmisión detenida: QSO con {call} terminado.", "Transmissão parada: QSO com {call} terminado."],
   'tx.alert.houndOff': [
     '{call} non lavora in Fox/Hound: Hound spento',
     '{call} is not working Fox/Hound: Hound off',

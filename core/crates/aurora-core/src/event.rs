@@ -105,6 +105,9 @@ pub enum TxAlertKind {
     /// Il PTT di una radio che non c'e' piu' (cavo tolto, profilo cambiato) non e' stato confermato spento e Aurora ha smesso di provarci: la
     /// radio va controllata a mano (`detail` = il motivo). Resta nello stato finche' non si chiude o non si conferma uno spegnimento.
     PttAbandoned,
+    /// La trasmissione automatica si e' fermata da sola (non per lo STOP dell'operatore): `detail` = `motivo|nominativo` con il motivo
+    /// `reply_other` (il DX ha risposto a un'altra stazione), `watchdog`, `nothing_to_do`, `single_qso`, `finished`. Avviso informativo, a tempo.
+    TxStopped,
 }
 
 /// Un avviso di sicurezza della trasmissione, da mostrare finche' resta nello stato.

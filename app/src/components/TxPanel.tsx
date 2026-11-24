@@ -43,6 +43,11 @@ export function jumpToQueued(call: string, me: string | undefined, t: ReturnType
 export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
   if (a.kind === 'high_swr') return t('tx.alert.highSwr', { swr: (a.value ?? 0).toFixed(1), limit: (a.limit ?? 0).toFixed(1) });
   if (a.kind === 'fox_detected') return t('tx.alert.foxDetected', { call: a.detail || '—', hz: Math.round(a.value ?? 0) });
+  if (a.kind === 'tx_stopped') {
+    const [why = '', call = ''] = (a.detail ?? '').split('|');
+    const key = (['reply_other', 'watchdog', 'nothing_to_do', 'single_qso'].includes(why) ? `tx.alert.stopped.${why}` : 'tx.alert.stopped.finished') as Parameters<typeof t>[0];
+    return t(key, { call: call || '—' });
+  }
   if (a.kind === 'hound_off') return t('tx.alert.houndOff', { call: a.detail || '—' });
   if (a.kind === 'hound_on') {
     const parts = (a.detail ?? '').split(',');

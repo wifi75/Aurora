@@ -314,6 +314,11 @@ tx.alert.hound,Hound mode on: Tx at {hz} Hz,Режим Hound включён: TX 
 tx.alert.houndSplit,"Hound mode on: Tx at {hz} Hz, Split on","Режим Hound включён: TX на {hz} Гц, Split включён"
 tx.alert.houndNoRadioSplit,"Hound needs the radio split: Settings › Radio (CAT and PTT) › Split, mode and polling › Split “Radio (real split)” or “Emulated”, otherwise below 1500 Hz the radio does not move the transmit frequency","Для Hound нужен split на радио: Настройки › Радио (CAT и PTT) › Split, режим и опрос › Split «Радио (реальный split)» или «Эмуляция», иначе ниже 1500 Гц радио не сдвигает частоту передачи"
 tx.alert.foxDetected,{call} is working Fox/Hound: Hound on (Tx at {hz} Hz),{call} работает в Fox/Hound: Hound включён (TX на {hz} Гц)
+tx.alert.stopped.reply_other,Transmission stopped: {call} answered another station.,Передача остановлена: {call} ответил другой станции.
+tx.alert.stopped.watchdog,Transmission stopped: the safety timer (watchdog) ran out.,Передача остановлена: сработал сторожевой таймер (watchdog).
+tx.alert.stopped.nothing_to_do,Transmission stopped: there was nothing left to send.,Передача остановлена: передавать больше нечего.
+tx.alert.stopped.single_qso,Transmission stopped: “1 QSO” ended the contact with {call}.,Передача остановлена: «1 QSO» завершил связь с {call}.
+tx.alert.stopped.finished,Transmission stopped: QSO with {call} finished.,Передача остановлена: QSO с {call} завершено.
 tx.alert.houndOff,{call} is not working Fox/Hound: Hound off,{call} не работает в Fox/Hound: Hound выключен
 tx.foxHoundOn,FOX · Hound on,FOX — Hound включён
 tx.foxHoundOff,FOX · turn Hound on,FOX — включить Hound

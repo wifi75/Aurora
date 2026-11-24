@@ -844,6 +844,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
+                if on {
+                    self.controls.clear_alert(aurora_core::TxAlertKind::TxStopped);
+                }
                 // l'operatore accende Abilita Tx con il messaggio 6 (CQ) scelto: il CQ lo ha chiesto lui, anche con AutoTX spento
                 // (segnalazione #86: «Enable TX» si spegneva da solo e non partiva niente)
                 if on && self.seq.ntx() == 6 {
@@ -1412,6 +1415,19 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 QEvent::Stopped(reason) => {
                     log.push(format!("trasmissione automatica ferma: {reason:?}"));
                     if !matches!(reason, StopReason::Halt) {
+                        // l'operatore deve vedere perche' Aurora ha smesso di trasmettere (segnalazione #92)
+                        let slug = match reason {
+                            StopReason::ReplyOther => "reply_other",
+                            StopReason::Watchdog => "watchdog",
+                            StopReason::NothingToDo => "nothing_to_do",
+                            StopReason::SingleQso => "single_qso",
+                            _ => "finished",
+                        };
+                        let call = self.seq.dx().unwrap_or_default().to_string();
+                        self.controls.raise_alert(
+                            aurora_core::TxAlert { kind: aurora_core::TxAlertKind::TxStopped, detail: format!("{slug}|{call}"), value: None, limit: None },
+                            Some(std::time::Duration::from_secs(120)),
+                        );
                         if self.let_started_tx_finish(reason) {
                             // l'ultimo messaggio del DX e' stato decodificato dopo l'inizio del periodo e la nostra trasmissione era gia' partita: si
                             // lascia finire (nessun'altra partira': Abilita Tx e' spento). Fermarla subito faceva scattare il PTT e lo spegneva
@@ -2510,6 +2526,21 @@ mod tests {
             all.extend(q);
         }
         assert!(all.iter().any(|q| q.call == "KH1/KH7Z"), "{all:?}");
+    }
+
+    /// Issue #92: quando Aurora smette da sola di trasmettere perche' il DX ha risposto a un'altra stazione, l'avviso lo dice; Abilita Tx lo toglie.
+    #[test]
+    fn the_reason_for_an_automatic_stop_is_shown_as_an_alert() {
+        let (mut d, _port, controls) = driver();
+        d.handle(TxCommand::SetDx { call: Some("K1ABC".into()), grid: None, generate: true }, BASE + 1.0);
+        d.handle(TxCommand::Enable(true), BASE + 1.5);
+        d.after_slot(SLOT_MS, &[], BASE + 14.2, 14_074_000, "20m");
+        // K1ABC risponde a un'altra stazione sulla nostra frequenza di trasmissione
+        d.after_slot(SLOT_MS + 15_000, &[("W9XYZ K1ABC -10".to_string(), -10, 1500)], BASE + 29.2, 14_074_000, "20m");
+        let shown = || controls.tx_alerts().into_iter().find(|a| a.kind == aurora_core::TxAlertKind::TxStopped).map(|a| a.detail);
+        assert_eq!(shown().as_deref(), Some("reply_other|K1ABC"));
+        d.handle(TxCommand::Enable(true), BASE + 31.0);
+        assert_eq!(shown(), None, "Abilita Tx toglie l'avviso");
     }
 
     /// Wait and Pounce: armato con la trasmissione spenta, risponde al CQ del criterio (qui il segnale piu' forte), scarta chi e' gia' collegato e si disarma.
