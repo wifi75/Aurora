@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- Contest: chi aggiorna da una versione precedente alla 0.11.341 aveva le copie vecchie dei `.contest` considerate «personalizzate» (il segno `m_bBeta` e lo scambio fisso tolto cambiavano i file distribuiti), quindi le cartelle verificate non le sostituivano e comparivano due righe per lo stesso contest, tutte fra gli «ufficiali»; ora il segno Beta e il numero da mandare non contano nel confronto e la copia vecchia di un contest ancora Beta passa alla scheda Beta. Prova `una_copia_vecchia_resta_intatta_con_il_segno_beta...` in `cartelle.rs`.
+- SSTV, sintonia a mano: spostando il cursore dopo un segnale interrotto il ridisegno rendeva rumore le righe senza segnale e allungava l'immagine salvata (fino al 77 % invece del 50 %); ora ridisegna solo le righe lette davvero, come la chiusura. Prova `tuning_by_hand_does_not_redraw_the_lines_without_signal`.
 
 ## 0.11.343 - 2026-11-24
 - Undici contest in formato cartella dai regolamenti ufficiali letti il 2026-11-24, fra i «Contest ufficiali» (ora 54): ARI International DX (CW, SSB e RTTY, con le 107 province), UBA Spring 80 m CW e SSB e 2 m, RSGB 80 m Club Championship CW e SSB, RSGB 1.8 MHz, HA-DX, Holyland DX (501 aree), IPA, ARRL Field Day. Da verificare: nomi Cabrillo (UBA Spring e IPA vuoti, HA-DX e Field Day da confermare), date 2027 calcolate, bonus e moltiplicatore di potenza del Field Day non calcolabili dal log, segmenti di frequenza dell'IPA, IG9 trattata come Italia nell'ARI. Non convertiti: RSGB 80 m Data, RSGB 1.8 MHz Club Calls, UBA Spring 6 m, Fieldday Contest e IARU Region 1 Field Day (restano file).

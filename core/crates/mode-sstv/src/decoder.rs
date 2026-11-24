@@ -272,10 +272,15 @@ impl Decoder {
             (None, Some(rx)) => (rx, false),
             (None, None) => return None,
         };
-        let done = rx.next_group.min(rx.spec.groups());
+        // come `finish`: solo le righe lette davvero, fino all'ultima; le righe senza segnale (interruzioni) restano nere e il tratto che
+        // precede la chiusura non entra nell'immagine
+        let groups = rx.spec.groups();
+        let done = rx.groups.iter().rposition(Option::is_some).map_or(0, |last| last as u32 + 1).min(rx.next_group.min(groups));
         for g in 0..done {
-            let vals = decode_group(rx, g, tune);
-            rx.groups[g as usize] = Some(vals);
+            if rx.groups[g as usize].is_some() {
+                let vals = decode_group(rx, g, tune);
+                rx.groups[g as usize] = Some(vals);
+            }
         }
         for g in 0..done {
             compose(rx, g);

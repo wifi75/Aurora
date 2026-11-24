@@ -452,6 +452,27 @@ fn a_signal_that_stops_halfway_is_saved_without_the_black_tail() {
     assert!((0.4..=0.6).contains(&h), "altezza salvata {h:.2} dell'immagine: niente righe nere in coda");
 }
 
+/// La sintonia a mano ridisegna solo le righe lette davvero: dopo un segnale che finisce a meta' l'immagine non si allunga con righe di rumore.
+#[test]
+fn tuning_by_hand_does_not_redraw_the_lines_without_signal() {
+    let m1 = SstvMode::Martin1.spec();
+    let img = test_image(m1.width, m1.height);
+    let mut audio = vec![0.0f32; RATE as usize / 2];
+    let full = encode_shifted(m1.mode, &img, RATE, 0.0).expect("codifica");
+    let keep = ((mode_sstv::modes::HEADER_SECONDS + m1.image_seconds() * 0.5) * f64::from(RATE)) as usize;
+    audio.extend(&full[..keep.min(full.len())]);
+    audio.extend(vec![0.0f32; 40 * RATE as usize]);
+    add_noise(&mut audio, 0.03, 31);
+    let mut dec = Decoder::new(DecoderConfig::default());
+    let events: Vec<DecoderEvent> = audio.chunks(1024).flat_map(|c| dec.push(c)).collect();
+    let done = last_image(&events).expect("immagine");
+    let (_, redrawn, live) = dec.set_tune(1).expect("l'ultima immagine finita");
+    assert!(!live, "l'immagine e' finita");
+    let h = f64::from(redrawn.height) / f64::from(m1.height);
+    assert!((0.4..=0.6).contains(&h), "altezza ridisegnata {h:.2}: niente righe di rumore in coda");
+    assert!(redrawn.height <= done.image.height + 1, "non piu' alta di quella salvata ({} contro {})", redrawn.height, done.image.height);
+}
+
 #[test]
 fn recognition_without_vis_estimates_the_tuning_offset() {
     let spec = SstvMode::Scottie1.spec();
