@@ -434,3 +434,22 @@ fn udp_records_since_gives_each_qso_with_its_key() {
     let later = lb.udp_records_since(&station(), "29991231").unwrap();
     assert!(later.is_empty(), "nessun QSO dopo quel giorno");
 }
+
+/// I QSO ricevuti da altri programmi di log non ripartono verso nessuno, e quelli di Aurora portano anche nome, QTH, commento e scambio.
+#[test]
+fn udp_records_since_skips_the_qsos_from_other_logs_and_keeps_the_exchange() {
+    let lb = Logbook::open_in_memory().unwrap();
+    let mut mine = timed("IU3ABC", "FT8", 1_792_000_000_000);
+    mine.name = "Mario".into();
+    mine.qth = "Padova".into();
+    mine.comment = "prova".into();
+    mine.exch_sent = "599 001".into();
+    mine.exch_rcvd = "599 14".into();
+    lb.add(&mine).unwrap();
+    // un QSO arrivato da un altro programma di log (UDP): non e' di Aurora e non va rimandato
+    lb.add_received(&timed("K1ABC", "FT4", 1_792_100_000_000), 60, "N1MM").unwrap();
+    let all = lb.udp_records_since(&station(), "20000101").unwrap();
+    assert_eq!(all.iter().map(|r| r.0.as_str()).collect::<Vec<_>>(), ["IU3ABC"], "solo i QSO di Aurora");
+    let record = all[0].4.to_lowercase();
+    assert!(record.contains("<name:5>mario") && record.contains("<qth:6>padova") && record.contains("prova"), "campi del QSO: {record}");
+}

@@ -290,13 +290,19 @@ fn unix_of(date: &str, time: &str) -> Option<u64> {
     u64::try_from(secs).ok()
 }
 
+/// La famiglia ADIF di un modo: PSK31/PSK63 e `PSK` sono la stessa, FT4/Q65/FST4 e `MFSK` pure, Contestia e `CONTESTI`, i toni di Olivia e `OLIVIA`.
+/// Aurora scrive il sottomodo nel nome (`PSK31`) e manda l'ADIF come `MODE=PSK SUBMODE=PSK31`: un log che tiene il modo padre non va preso per diverso.
+fn mode_family(mode: &str) -> String {
+    crate::adif::adif_mode_fields(&mode.trim().to_uppercase()).0.to_uppercase()
+}
+
 /// Il QSO e' gia' nel log (`existing`, da [`read_all`])? Stesso nominativo, stessa banda, stesso modo e orario entro un quarto d'ora; se nel log
 /// manca l'ora basta lo stesso giorno. Meglio un QSO in meno che un doppione: nel dubbio (un campo vuoto) non lo si considera presente solo
 /// se il nominativo o la banda sono diversi.
 pub fn contains(existing: &[AdifQso], key: &QsoKey) -> bool {
     let (call, band, mode) = (key.call.trim().to_uppercase(), key.band.trim().to_lowercase(), key.mode.trim().to_uppercase());
     existing.iter().any(|q| {
-        if q.call != call || q.band != band || (!q.mode.is_empty() && !mode.is_empty() && q.mode != mode) {
+        if q.call != call || q.band != band || (!q.mode.is_empty() && !mode.is_empty() && q.mode != mode && mode_family(&q.mode) != mode_family(&mode)) {
             return false;
         }
         match unix_of(&q.date, &q.time_on) {
@@ -448,6 +454,21 @@ mod tests {
         assert!(!contains(&log, &key("IU3ABC", "20m", "FT4", 13, 0)), "altro modo");
         assert!(!contains(&log, &key("IU3ABD", "20m", "FT8", 13, 0)), "altro nominativo");
         assert!(!contains(&[], &key("IU3ABC", "20m", "FT8", 13, 0)), "log vuoto");
+    }
+
+    /// Aurora chiama `PSK31` quello che nell'ADIF e' `MODE=PSK SUBMODE=PSK31` (e `CONTESTIA` quello che e' `CONTESTI`): un log che tiene il modo padre
+    /// non e' un log che non ha il QSO, altrimenti ogni riavvio rimanderebbe tutti i QSO PSK della settimana.
+    #[test]
+    fn a_log_with_the_parent_adif_mode_still_has_the_psk_and_contestia_qsos() {
+        let log = vec![log_qso("IU3ABC", "20m", "PSK", "20261122", "130000"), log_qso("IU3ABD", "40m", "CONTESTI", "20261122", "140000"), log_qso("IU3ABE", "20m", "FT4", "20261122", "150000")];
+        let key = |call: &str, band: &str, mode: &str| QsoKey { call: call.into(), band: band.into(), mode: mode.into(), when: unix_of("20261122", "130000").unwrap() };
+        assert!(contains(&log, &key("IU3ABC", "20m", "PSK31")), "PSK31 con il modo padre PSK");
+        assert!(contains(&log, &key("IU3ABC", "20m", "PSK63")), "dello stesso QSO nel dubbio non si rimanda");
+        let at = |call: &str, band: &str, mode: &str, time: &str| QsoKey { call: call.into(), band: band.into(), mode: mode.into(), when: unix_of("20261122", time).unwrap() };
+        assert!(contains(&log, &at("IU3ABD", "40m", "CONTESTIA", "140000")), "Contestia come CONTESTI");
+        assert!(contains(&log, &at("IU3ABE", "20m", "FT4", "150000")), "FT4 invariato");
+        assert!(!contains(&log, &at("IU3ABC", "20m", "FT8", "130000")), "FT8 non e' PSK");
+        assert!(!contains(&log, &at("IU3ABE", "20m", "PSK31", "150000")), "PSK31 non e' MFSK/FT4");
     }
 
     /// Senza l'ora nel log vale lo stesso giorno; una data illeggibile non fa mai dire «c'e' gia'».

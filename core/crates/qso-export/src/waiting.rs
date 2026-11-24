@@ -193,7 +193,11 @@ impl Queue {
 pub struct Reconcile {
     open_seen: HashMap<SocketAddr, u32>,
     done: std::collections::HashSet<SocketAddr>,
+    retries: HashMap<SocketAddr, u32>,
 }
+
+/// Quante volte si riprova il confronto se il database del log era occupato (poi si rinuncia fino alla prossima riapertura del log).
+const MAX_RETRIES: u32 = 4;
 
 impl Reconcile {
     /// Un controllo (ogni 5 s). `open`: la porta di `to` e' aperta (`None` = non si sa); `busy`: ci sono QSO in coda per `to`.
@@ -204,6 +208,7 @@ impl Reconcile {
             Some(false) => {
                 self.open_seen.remove(&to);
                 self.done.remove(&to);
+                self.retries.remove(&to);
                 false
             }
             Some(true) if busy => {
@@ -220,6 +225,16 @@ impl Reconcile {
                 false
             }
             None => false,
+        }
+    }
+
+    /// Il confronto non e' riuscito (database occupato): si riprova dopo altri tre controlli, al massimo [`MAX_RETRIES`] volte.
+    pub fn retry(&mut self, to: SocketAddr) {
+        let n = self.retries.entry(to).or_insert(0);
+        *n += 1;
+        if *n <= MAX_RETRIES {
+            self.done.remove(&to);
+            self.open_seen.remove(&to);
         }
     }
 
@@ -455,5 +470,23 @@ mod tests {
             assert!(!r.step(to, Some(true), false), "la coda ha appena mandato: niente confronto");
         }
         assert!(!r.step(to, None, false));
+    }
+
+    #[test]
+    fn the_reconcile_retries_a_busy_database_a_few_times_and_then_gives_up_until_the_log_is_closed() {
+        let to: SocketAddr = "127.0.0.1:2236".parse().unwrap();
+        let mut r = Reconcile::default();
+        let mut runs = 0;
+        for _ in 0..40 {
+            if r.step(to, Some(true), false) {
+                runs += 1;
+                r.retry(to); // il database era occupato: non si e' guardato davvero
+            }
+        }
+        assert_eq!(runs, 5, "la prima volta e poi al massimo quattro tentativi");
+        // il log si richiude e si riapre: si ricomincia da capo
+        assert!(!r.step(to, Some(false), false));
+        let again = (0..4).filter(|_| r.step(to, Some(true), false)).count();
+        assert_eq!(again, 1, "dopo la riapertura il confronto si rifa'");
     }
 }

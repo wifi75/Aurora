@@ -43,8 +43,12 @@ pub struct ExportStats {
 /// Dato un elenco di (nominativo, banda, modo, istante in secondi Unix), dice per ciascuno se il log di destinazione ha gia' il QSO.
 pub type AlreadyThere = Arc<dyn Fn(&[(String, String, String, u64)]) -> Vec<bool> + Send + Sync>;
 
+/// Quanti QSO al massimo si recuperano in una volta sola (50 ms l'uno: l'esportatore non resta fermo piu' di una decina di secondi).
+const CATCH_UP_MAX: usize = 200;
+
 /// I QSO degli ultimi giorni che Aurora ha e il log di destinazione no: (nominativo, banda, modo, istante in secondi Unix, record ADIF da mandare).
-pub type CatchUp = Arc<dyn Fn() -> Vec<(String, String, String, u64, String)> + Send + Sync>;
+/// `None` = non si e' potuto guardare (il database del log e' ancora occupato): si riprova fra poco; un elenco vuoto vuol dire «niente da mandare».
+pub type CatchUp = Arc<dyn Fn() -> Option<Vec<(String, String, String, u64, String)>> + Send + Sync>;
 
 #[derive(Clone)]
 pub struct Exporter {
@@ -160,12 +164,23 @@ impl Exporter {
                         if let Some(catch_up) = &catch_up {
                             let wanted = resend.read().map(|r| r.clone()).unwrap_or_default();
                             let udp: Vec<SocketAddr> = targets.read().map(|t| t.iter().filter_map(|x| if let Target::UdpAdif(to) = x { Some(*to) } else { None }).filter(|to| wanted.contains(to)).collect()).unwrap_or_default();
-                            for to in udp {
+                            // i QSO mancanti si cercano nel log di UN programma: con piu' destinatari non si sa a quale dei due appartiene il confronto e gli altri
+                            // riceverebbero doppioni (la coda dei QSO persi non ha questo limite)
+                            for to in if udp.len() == 1 { udp } else { Vec::new() } {
                                 if !reconcile.step(to, waiting::listening(to), queue.has_for(to)) {
                                     continue;
                                 }
                                 let find = Arc::clone(catch_up);
-                                let missing = tokio::task::spawn_blocking(move || find()).await.unwrap_or_default();
+                                let Some(mut missing) = tokio::task::spawn_blocking(move || find()).await.unwrap_or(Some(Vec::new())) else {
+                                    // database occupato: non si e' guardato davvero, si riprova (poche volte)
+                                    reconcile.retry(to);
+                                    continue;
+                                };
+                                // un tetto come quello della coda: l'esportatore non resta fermo a lungo (i piu' recenti per primi)
+                                if missing.len() > CATCH_UP_MAX {
+                                    tracing::warn!("{} QSO mancano al log su {to}: se ne mandano gli ultimi {CATCH_UP_MAX}", missing.len());
+                                    missing.drain(..missing.len() - CATCH_UP_MAX);
+                                }
                                 if !missing.is_empty() {
                                     tracing::info!("{} QSO di Aurora mancano al log su {to}: si mandano", missing.len());
                                 }

@@ -2564,13 +2564,16 @@ pub async fn run(
     let catch_up: qso_export::CatchUp = {
         let (book, path, station_of) = (Arc::clone(&logbook), Arc::clone(&log4om_choice.current), Arc::clone(&log_station));
         Arc::new(move || {
-            let Some(db) = path.read().ok().and_then(|p| p.clone()) else { return Vec::new() };
-            let Ok(existing) = logbook::log4om::read_all(&db) else { return Vec::new() };
+            // database di Log4OM non noto: niente da confrontare, e' diverso dal non averlo potuto leggere (occupato: si riprova)
+            let Some(db) = path.read().ok().and_then(|p| p.clone()) else { return Some(Vec::new()) };
+            let existing = logbook::log4om::read_all(&db).ok()?;
             let from = logbook::adif::utc_date(unix_secs().saturating_sub(7 * 86_400));
-            let Ok(mine) = book.udp_records_since(&station_of(), &from) else { return Vec::new() };
-            mine.into_iter()
-                .filter(|(call, band, mode, when, _)| *when > 0 && !logbook::log4om::contains(&existing, &logbook::log4om::QsoKey { call: call.clone(), band: band.clone(), mode: mode.clone(), when: *when }))
-                .collect()
+            let mine = book.udp_records_since(&station_of(), &from).ok()?;
+            Some(
+                mine.into_iter()
+                    .filter(|(call, band, mode, when, _)| *when > 0 && !logbook::log4om::contains(&existing, &logbook::log4om::QsoKey { call: call.clone(), band: band.clone(), mode: mode.clone(), when: *when }))
+                    .collect(),
+            )
         })
     };
     let _exporter = Exporter::spawn_with_resend(

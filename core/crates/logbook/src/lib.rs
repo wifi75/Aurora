@@ -640,8 +640,9 @@ impl Logbook {
     pub fn udp_records_since(&self, station: &adif::Station, from: &str) -> Result<Vec<(String, String, String, u64, String)>, LogError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
-            "SELECT call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, date, time_on, date_off, time_off FROM qso
-             WHERE date >= ?1 ORDER BY date, time_on, id",
+            // solo i QSO fatti con Aurora (`source` vuoto): quelli ricevuti da altri programmi di log non devono ripartire verso nessuno
+            "SELECT call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, date, time_on, date_off, time_off, state, name, qth, comment, exch_sent, exch_rcvd FROM qso
+             WHERE date >= ?1 AND source = '' ORDER BY date, time_on, id",
         )?;
         let rows = stmt.query_map(params![from], |r| {
             let (date, time_on, date_off, time_off): (String, String, String, String) = (r.get(7)?, r.get(8)?, r.get(9)?, r.get(10)?);
@@ -659,6 +660,12 @@ impl Logbook {
                     time_ms: (on / 1000 % 86_400 * 1000) as u32,
                     time_on_unix_ms: on,
                     time_off_unix_ms: off,
+                    state: r.get(11)?,
+                    name: r.get(12)?,
+                    qth: r.get(13)?,
+                    comment: r.get(14)?,
+                    exch_sent: r.get(15)?,
+                    exch_rcvd: r.get(16)?,
                     ..Default::default()
                 },
                 date,
