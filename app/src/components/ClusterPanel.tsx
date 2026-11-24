@@ -1,5 +1,6 @@
 import { toast } from '../lib/toast';
 import { setPendingSpot, textModeOfSpot } from '../lib/spotMode';
+import { pageForSpot, readOpenModePage, writeOpenModePage } from '../lib/spotOptions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, memo } from 'react';
 import { createPortal } from 'react-dom';
@@ -61,10 +62,15 @@ export async function tuneSpot(spot: ClusterSpot): Promise<void> {
   // uno spot RTTY o PSK (piano di banda, poi cluster): si apre la pagina dei modi testuali, che lo sintonizza nel modo giusto. Il CW resta
   // qui: il doppio clic sugli spot CW delle DXpedition mette la radio in Split DX
   const text = textModeOfSpot(spot);
-  if (text !== null && text !== 'cw') {
+  // con «Apri la pagina del modo» acceso anche il CW apre la pagina dei modi testuali, e FT8/FT4 riportano alla pagina principale
+  const openPage = readOpenModePage();
+  if (text !== null && (text !== 'cw' || openPage)) {
     setPendingSpot(spot);
     window.location.hash = '#/testo';
     return;
+  }
+  if (openPage && pageForSpot(text, spot.mode) === 'main' && window.location.hash.startsWith('#/testo')) {
+    window.location.hash = '#/';
   }
   const hz = Math.round(spot.freq_khz * 1000);
   const before = useStation.getState().status?.dial_hz;
@@ -110,6 +116,7 @@ export function activeFilters(f: SpotFilters): number {
 
 /** I quattro filtri del cluster (banda, modo, chi manda lo spot, solo nuovi): nella barra o, nella vista contest, nel pannello dell'ingranaggio. */
 function FilterPickers({ filters, change }: { filters: SpotFilters; change(next: SpotFilters): void }) {
+  const [openPage, setOpenPage] = useState(readOpenModePage);
   const t = useT();
   return (
     <>
@@ -143,6 +150,9 @@ function FilterPickers({ filters, change }: { filters: SpotFilters; change(next:
       </button>
       <button type="button" className={`glass chip${filters.hideSkimmers ? ' glass--on' : ''}`} aria-pressed={filters.hideSkimmers === true} title={t('tip.cluster.hideSkimmers')} onClick={() => change({ ...filters, hideSkimmers: !filters.hideSkimmers })}>
         {t('cluster.filter.hideSkimmers')}
+      </button>
+      <button type="button" className={`glass chip${openPage ? ' glass--on' : ''}`} aria-pressed={openPage} title={t('tip.cluster.openPage')} onClick={() => { writeOpenModePage(!openPage); setOpenPage(!openPage); }}>
+        {t('cluster.openPage')}
       </button>
     </>
   );
