@@ -1,0 +1,120 @@
+# YB DX RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://rtty.ybdxcontest.com (pagina del regolamento corrente, edizione 2026; sito principale https://ybdxcontest.com).
+
+[contest]
+id = "yb-dx-rtty"
+nome = "YB DX RTTY Contest"
+alias = ["YB DX RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "YB DX Contest Committee (Indonesia)"
+sito = "https://ybdxcontest.com"
+regolamento_url = "https://rtty.ybdxcontest.com"
+cabrillo_contest = "YB-DX-RTTY"   # DA VERIFICARE: la pagina del regolamento non indica il valore di CONTEST:
+note = "Solo RTTY da 80 a 10 metri (senza le bande WARC), 24 ore. Scambio: RST 599 + numero progressivo. Punti 1 / 2 / 3 (paese / continente / altri continenti), 10 per una stazione YB; moltiplicatori per banda: prefissi YB (YB0-9, YC, YD, YE, YF, YG, 7A-7I, 8A-8I) e paesi DXCC."
+
+[edizione]
+# Secondo fine settimana pieno di marzo, sabato 00:00 - 23:59 UTC (24 ore).
+mese = 3
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 24
+invio_log_giorni = 7              # entro 7 giorni dalla fine; i log tardivi sono check log
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-03-14T00:00:00Z"
+fine = "2026-03-14T23:59:59Z"
+fonte = "https://rtty.ybdxcontest.com (letto il 2026-11-24): 2026 = 14 marzo"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-03-13T00:00:00Z"
+fine = "2027-03-13T23:59:59Z"
+fonte = "https://rtty.ybdxcontest.com (letto il 2026-11-24): 13 marzo 2027"
+confermata = true
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Esempio del regolamento: 599 001. Parte da 001."
+
+[doppi]
+per = "banda"                     # ogni stazione una volta per banda
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP"]
+potenza = ["ANY"]                 # potenza libera, nei limiti della licenza del paese
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "YB-DX-RTTY"            # DA VERIFICARE
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CATEGORY-TRANSMITTER", "LOCATION", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_transmitter = ["ONE"]
+invio = "solo Cabrillo, nessun log cartaceo, caricamento dal sito entro 7 giorni; riga QSO: rst numero"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefissi YB per banda", en = "YB prefixes by band" }
+ordine = 1
+moltiplicatore = "prefisso"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

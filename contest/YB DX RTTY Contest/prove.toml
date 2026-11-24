@@ -1,0 +1,162 @@
+# YB DX RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (https://rtty.ybdxcontest.com, letto il 2026-11-24).
+# Stazione italiana (Europa). Nominativi di fantasia. Moltiplicatori: valore@modo (prefissi YB e paesi, una volta per banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-03-13"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente, altro paese: 2 punti; paese DL" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "stesso paese: 1 punto" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K@RTTY"], motivo = "altro continente: 3 punti" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0015"
+nominativo = "YB1AR"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["YB1@RTTY", "YB@RTTY"], motivo = "stazione YB: 10 punti; prefisso YB1 e paese Indonesia" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0020"
+nominativo = "YC1XYZ"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["YC1@RTTY"], motivo = "YC e' un prefisso YB: 10 punti; prefisso YC1 nuovo, Indonesia gia' presa su 20 m" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0025"
+nominativo = "YB1AR"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["YB1@RTTY", "YB@RTTY"], motivo = "stessa stazione su 40 m: non e' doppio; moltiplicatori nuovi sulla banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "0030"
+nominativo = "YB1AR"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 8
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "0035"
+nominativo = "7A2ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["7A2@RTTY", "YB@RTTY"], motivo = "7A e' un prefisso YB: 10 punti; prefisso 7A2 e Indonesia su 15 m" }
+
+[[qso]]
+n = 9
+banda = 17
+modo = "RTTY"
+freq_khz = 18100
+ora_utc = "0045"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "17 m e' una banda WARC: non ammessa" }
+
+[[qso]]
+n = 10
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0050"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "011"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[prova_futura]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "0040"
+nominativo = "YB1AR/2"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["YB2@RTTY"], motivo = "YB1AR/2 vale il prefisso YB2 (regolamento); il motore per ora legge il prefisso come YB1" }
+
+# Totali (a mano): ammessi 1-6, 8 = 7; doppi 1 (n. 7); non ammessi 2 (n. 9, 10)
+#   punti: 2+1+3+10+10+10+10 = 46
+#   moltiplicatori: 20 m: DL I K YB1 YB YC1 = 6; 40 m: YB1 YB = 2; 15 m: 7A2 YB = 2; totale 10
+#   punteggio = 46 x 10 = 460
+[atteso]
+qso_ammessi = 7
+doppi = 1
+non_ammessi = 2
+punti = 46
+moltiplicatori = 10
+punteggio = 460

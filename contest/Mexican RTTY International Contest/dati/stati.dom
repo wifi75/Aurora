@@ -1,0 +1,46 @@
+; Mexican RTTY International Contest - 32 entita' messicane dello scambio (31 stati + Ciudad de Mexico), sigle del regolamento FMRE 2026 (tabella «Mexican states and abbreviation»).
+; Dopo i valori ufficiali, sigle vecchie o variabili che compaiono nei log (si ricondicono a quella ufficiale).
+; Formato .dom (docs/contest-file.md).
+Mexican RTTY International Contest - stati messicani
+
+XE:
+AGS = AGS
+BC = BC
+BCS = BCS
+CAM = CAM
+CHS = CHS
+CHH = CHH
+CDMX = CDMX
+COA = COA
+COL = COL
+DGO = DGO
+EMX = EMX
+GTO = GTO
+GRO = GRO
+HGO = HGO
+JAL = JAL
+MIC = MIC
+MOR = MOR
+NAY = NAY
+NL = NL
+OAX = OAX
+PUE = PUE
+QRO = QRO
+QTR = QTR
+SLP = SLP
+SIN = SIN
+SON = SON
+TAB = TAB
+TMS = TMS
+TLX = TLX
+VER = VER
+YUC = YUC
+ZAC = ZAC
+; sigle di edizioni precedenti o usate da altri programmi
+DF = CDMX
+CMX = CDMX
+CMD = CDMX
+CHI = CHS
+NLE = NL
+TAM = TMS
+QUI = QTR

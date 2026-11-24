@@ -1,0 +1,9 @@
+; Mexican RTTY International Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento FMRE 2026 (28a edizione) letto il 2026-11-24 su http://rtty.fmre.mx/reglas/Rules_FMRE_RTTY_2026.pdf.
+;
+; bands: da 80 a 10 m (3,5-28 MHz, WARC vietate).
+; points: 4 con qualunque stazione XE; 2 con una stazione dello stesso paese; 3 con un paese diverso.
+; mult, per banda: ogni stato messicano e Ciudad de Mexico (lo scambio delle stazioni XE) e ogni paese DXCC.
+bands=80,40,20,15,10
+points=dxcc:XE=4; same_dxcc=2; any=3
+mult=exch/band/if:dxcc:XE; dxcc/band

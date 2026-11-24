@@ -1,0 +1,8 @@
+; YB DX RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento 2026.
+;
+; bands: 80, 40, 20, 15, 10 m (niente bande WARC).
+; points: una stazione YB (Indonesia) vale 10; altrimenti stesso paese 1, stesso continente 2, altro continente 3.
+; mult: per banda, ogni prefisso YB (YB0-9, YC, YD, YE, YF, YG, 7A-7I, 8A-8I; YB1AR/2 vale YB2) e ogni paese DXCC.
+bands=80,40,20,15,10
+points=dxcc:YB=10; same_dxcc=1; same_cont=2; other_cont=3
+mult=wpx/band/if:dxcc:YB; dxcc/band

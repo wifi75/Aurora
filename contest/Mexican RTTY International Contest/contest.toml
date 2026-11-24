@@ -1,0 +1,137 @@
+# Mexican RTTY International Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su http://rtty.fmre.mx/reglas/Rules_FMRE_RTTY_2026.pdf (FMRE, 28a edizione 2026; pagina http://rtty.fmre.mx/reglas.html).
+
+[contest]
+id = "mexico-rtty"
+nome = "Mexican RTTY International Contest"
+alias = ["Mexican RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "FMRE (Federacion Mexicana de Radioexperimentadores)"
+sito = "https://rtty.fmre.mx"
+regolamento_url = "http://rtty.fmre.mx/reglas/Rules_FMRE_RTTY_2026.pdf"
+cabrillo_contest = "XE-RTTY"       # dal Cabrillo di esempio del sito (http://rtty.fmre.mx/cabrillo.html), datato 2012: da verificare
+note = "Solo RTTY (Baudot) da 80 a 10 metri (WARC vietate), 36 ore. Stazioni messicane: RST + stato; DX: RST + numero progressivo. Punti 2 (stesso paese) / 3 (altro paese) / 4 (stazione XE); moltiplicatori per banda: stati messicani e Ciudad de Mexico, paesi DXCC."
+
+[edizione]
+# Primo fine settimana pieno di febbraio: sabato 12:00 UTC - domenica 23:59 UTC (36 ore).
+mese = 2
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 36
+invio_log_giorni = 38              # 2026: gara 7-8 febbraio, log entro il 18 marzo 2026
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-07T12:00:00Z"
+fine = "2026-02-08T23:59:59Z"
+fonte = "http://rtty.fmre.mx/reglas/Rules_FMRE_RTTY_2026.pdf (letto il 2026-11-24): dalle 12:00 UTC di sabato 7 alle 23:59 UTC di domenica 8 febbraio 2026; log entro il 18 marzo 2026"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-06T12:00:00Z"
+fine = "2027-02-07T23:59:59Z"
+fonte = "calcolata: primo fine settimana pieno di febbraio (le regole 2027 non sono ancora pubblicate)"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]   # 3,5-28 MHz, WARC vietate
+
+[modi]
+ammessi = ["rtty"]                 # RTTY, solo Baudot
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "stato"
+etichetta_it = "Stato messicano"
+etichetta_en = "Mexican state"
+tipo = "testo"
+quando = "dxcc:XE"
+elenco = "dati/stati.dom"
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:XE"
+nota = "I DX mandano un numero progressivo da 001."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Stato messicano"
+etichetta_en = "Mexican state"
+tipo = "testo"
+quando = "my_dxcc:XE"
+elenco = "dati/stati.dom"
+nota = "Per chi opera dal Messico: il proprio stato si scrive in «Numero da mandare» della scheda del contest, con l'incremento automatico spento; le macro lo mandano con <NRS>."
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:XE"
+progressivo = true
+
+[doppi]
+per = "banda"                      # una volta per banda (il vecchio file contava per banda, senza distinzione di modo)
+
+[categorie]
+operatore = ["SINGLE-OP ALL LOW", "SINGLE-OP ALL HIGH"]
+potenza = ["LOW", "HIGH"]
+altre = ["SO2R ammesso (SOABLP2, SOABHP2 nel Cabrillo di esempio)", "Checklog"]
+
+[cabrillo]
+contest = "XE-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-BAND", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW"]
+invio = "solo Cabrillo, per e-mail a rtty@fmre.mx (solo il nominativo nell'oggetto) o dal caricamento https://rtty.fmre.mx/uploadfile.html entro il 18 marzo 2026; indicare Low o High Power"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati messicani per banda", en = "Mexican states by band" }
+ordine = 1
+moltiplicatore = "stato"
+dominio = "dati/stati.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]
