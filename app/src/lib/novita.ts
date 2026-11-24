@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.342',
+    released: '2026-11-24T12:00:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'Contest ufficiali, Beta contest e 13 nuovi contest RTTY',
+      'Official contests, Beta contests and 13 new RTTY contests',
+      'Offizielle Contests, Beta-Contests und 13 neue RTTY-Contests',
+      'Concours officiels, concours bêta et 13 nouveaux concours RTTY',
+      'Concursos oficiales, concursos beta y 13 nuevos concursos RTTY',
+      'Concursos oficiais, concursos beta e 13 novos concursos RTTY',
+    ],
+    text: [
+      'L’elenco dei contest dei modi testuali ha ora due schede: «Contest ufficiali», scritti dai regolamenti ufficiali con punteggio, moltiplicatori, bande, scambio e prove automatiche (sono 26, 13 nuovi in RTTY: CQ WPX, BARTG HF e Sprint, Alessandro Volta, SARTG WW e New Year, OK DX, EA, SP DX, JARTS WW, Mexican e YB DX), e «Beta contest», in giallo, importati dalle vecchie schede e non ancora verificati: controllali prima di una gara. Rimessi 20 contest RTTY e CW che erano stati tolti. Nuovo token di macro <MYSECT> per la propria zona o sezione, scritta nella scheda del contest: le macro non hanno più valori fissi di un altro operatore. Da verificare con le gare vere: nomi Cabrillo di alcuni contest e le date non ancora confermate.',
+      'The list of text-mode contests now has two sets: “Official contests”, written from the official rules with scoring, multipliers, bands, exchange and automated tests (26 of them, 13 new in RTTY: CQ WPX, BARTG HF and Sprint, Alessandro Volta, SARTG WW and New Year, OK DX, EA, SP DX, JARTS WW, Mexican and YB DX), and “Beta contests”, in yellow, imported from the old sheets and not yet checked: check them before a contest. 20 RTTY and CW contests that had been removed are back. New macro token <MYSECT> for your own zone or section, written in the contest sheet: macros no longer carry fixed values from another operator. To be verified with real contests: Cabrillo names of some contests and the dates not yet confirmed.',
+      'Die Liste der Textmodus-Contests hat jetzt zwei Gruppen: „Offizielle Contests“, nach den offiziellen Regeln geschrieben, mit Wertung, Multiplikatoren, Bändern, Austausch und automatischen Tests (26, davon 13 neue in RTTY: CQ WPX, BARTG HF und Sprint, Alessandro Volta, SARTG WW und New Year, OK DX, EA, SP DX, JARTS WW, Mexican und YB DX), und „Beta-Contests“, gelb, aus den alten Blättern importiert und noch nicht geprüft: Prüfe sie vor einem Contest. 20 zuvor entfernte RTTY- und CW-Contests sind wieder da. Neues Makro-Token <MYSECT> für die eigene Zone oder Sektion aus dem Contest-Blatt: Makros enthalten keine festen Werte eines anderen Operators mehr. Mit echten Contests zu prüfen: Cabrillo-Namen einiger Contests und noch nicht bestätigte Daten.',
+      'La liste des concours en modes texte a maintenant deux groupes : « Concours officiels », écrits d’après les règlements officiels avec points, multiplicateurs, bandes, échange et tests automatiques (26, dont 13 nouveaux en RTTY : CQ WPX, BARTG HF et Sprint, Alessandro Volta, SARTG WW et New Year, OK DX, EA, SP DX, JARTS WW, Mexican et YB DX), et « Concours bêta », en jaune, importés des anciennes fiches et pas encore vérifiés : vérifie-les avant un concours. 20 concours RTTY et CW qui avaient été retirés sont de retour. Nouveau jeton de macro <MYSECT> pour ta zone ou section, écrite dans la fiche du concours : les macros n’ont plus de valeurs fixes d’un autre opérateur. À vérifier avec de vrais concours : noms Cabrillo de certains concours et dates pas encore confirmées.',
+      'La lista de concursos de modos de texto tiene ahora dos grupos: «Concursos oficiales», escritos según los reglamentos oficiales con puntuación, multiplicadores, bandas, intercambio y pruebas automáticas (26, 13 nuevos en RTTY: CQ WPX, BARTG HF y Sprint, Alessandro Volta, SARTG WW y New Year, OK DX, EA, SP DX, JARTS WW, Mexican y YB DX), y «Concursos beta», en amarillo, importados de las fichas antiguas y aún sin comprobar: compruébalos antes de un concurso. Vuelven 20 concursos RTTY y CW que se habían quitado. Nuevo token de macro <MYSECT> para tu zona o sección, escrita en la ficha del concurso: las macros ya no llevan valores fijos de otro operador. Por verificar con concursos reales: nombres Cabrillo de algunos concursos y fechas aún sin confirmar.',
+      'A lista de concursos dos modos de texto tem agora dois grupos: «Concursos oficiais», escritos pelos regulamentos oficiais com pontuação, multiplicadores, bandas, troca e testes automáticos (26, 13 novos em RTTY: CQ WPX, BARTG HF e Sprint, Alessandro Volta, SARTG WW e New Year, OK DX, EA, SP DX, JARTS WW, Mexican e YB DX), e «Concursos beta», a amarelo, importados das fichas antigas e ainda por verificar: verifica-os antes de um concurso. Voltam 20 concursos RTTY e CW que tinham sido retirados. Novo token de macro <MYSECT> para a tua zona ou secção, escrita na ficha do concurso: as macros já não têm valores fixos de outro operador. Por verificar com concursos reais: nomes Cabrillo de alguns concursos e datas ainda não confirmadas.',
+    ],
+  },
+  {
     version: '0.11.341',
     released: '2026-11-24T06:59:45Z',
     kind: 'fixed',
@@ -841,28 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Les stations comme DDK3, qui n’envoient que du blanc, deux barres de phasage puis tout de suite la carte, sont désormais reçues (avant, l’attente ne finissait pas et la carte était perdue). L’info-bulle de l’AFC explique que la valeur affichée est la correction en cours. Dans le Guide et l’info-bulle de l’étalonnage de la carte son de SSTV figurent maintenant les sources de référence.',
       'Las estaciones como DDK3, que mandan solo blanco, dos barras de fasado y enseguida el mapa, ahora se reciben (antes la espera no terminaba y el mapa se perdía). La ayuda del AFC explica que el valor mostrado es la corrección en curso. En la Guía y en la ayuda de la calibración de la tarjeta de sonido de SSTV ahora figuran las fuentes de referencia.',
       'As estações como a DDK3, que enviam só branco, duas barras de fasagem e logo a carta, agora são recebidas (antes a espera não acabava e a carta perdia-se). A dica do AFC explica que o valor mostrado é a correção em curso. No Guia e na dica da calibração da placa de som do SSTV constam agora as fontes de referência.',
-    ],
-  },
-  {
-    version: '0.11.329',
-    released: '2026-11-22T07:21:16Z',
-    kind: 'new',
-    featured: false,
-    title: [
-      'Satelliti: tre Terre NASA, icone e zoom',
-      'Satellites: three NASA Earths, icons and zoom',
-      'Satelliten: drei NASA-Erdkarten, Symbole und Zoom',
-      'Satellites : trois Terres NASA, icônes et zoom',
-      'Satélites: tres Tierras NASA, iconos y zoom',
-      'Satélites: três Terras NASA, ícones e zoom',
-    ],
-    text: [
-      'Sulla pagina dei Satelliti puoi scegliere tra tre mappe della Terra della NASA a 8192 x 4096: «Terra (satellite NASA)» con rilievo e fondali marini (quella di base), «Terra (NASA, con rilievo)» e «Terra (NASA, solo colori)». Di notte il giorno resta visibile sotto un velo scuro, con le luci delle città sopra. Cambiando pagina non compare più per un attimo la mappa semplice, e con la rotella l’immagine non è più sgranata. I satelliti hanno un’icona unica, la ISS la sua sagoma, la stella della stazione è più piccola e lo zoom automatico si ferma a 3x. Nel tema scuro il testo è bianco ovunque.',
-      'On the Satellites page you can pick among three NASA Earth maps at 8192 x 4096: “Earth (NASA satellite)” with relief and sea floor (the default), “Earth (NASA, with relief)” and “Earth (NASA, colours only)”. At night the daytime Earth stays visible under a dark veil, with the city lights on top. Switching pages no longer flashes the simple map for a moment, and the mouse wheel no longer shows a blurry image. Satellites share a single icon, the ISS has its own silhouette, the station star is smaller and the automatic zoom stops at 3x. In the dark theme the text is white everywhere.',
-      'Auf der Satellitenseite kannst du zwischen drei NASA-Erdkarten mit 8192 x 4096 wählen: „Erde (NASA-Satellit)“ mit Relief und Meeresboden (die Standardkarte), „Erde (NASA, mit Relief)“ und „Erde (NASA, nur Farben)“. Nachts bleibt die Tagesseite unter einem dunklen Schleier sichtbar, mit den Lichtern der Städte darüber. Beim Seitenwechsel blitzt die einfache Karte nicht mehr kurz auf, und mit dem Mausrad ist das Bild nicht mehr körnig. Die Satelliten haben ein einheitliches Symbol, die ISS ihre eigene Silhouette, der Stern der Station ist kleiner und der automatische Zoom endet bei 3x. Im dunklen Design ist der Text überall weiß.',
-      'Sur la page des satellites tu peux choisir entre trois cartes de la Terre de la NASA en 8192 x 4096 : « Terre (satellite NASA) » avec relief et fonds marins (la carte de base), « Terre (NASA, avec relief) » et « Terre (NASA, couleurs seulement) ». La nuit, la face de jour reste visible sous un voile sombre, avec les lumières des villes par-dessus. En changeant de page la carte simple n’apparaît plus un instant, et à la molette l’image n’est plus pixellisée. Les satellites ont une icône unique, l’ISS sa silhouette, l’étoile de la station est plus petite et le zoom automatique s’arrête à 3x. Dans le thème sombre le texte est blanc partout.',
-      'En la página de los satélites puedes elegir entre tres mapas de la Tierra de la NASA a 8192 x 4096: «Tierra (satélite NASA)» con relieve y fondos marinos (la de base), «Tierra (NASA, con relieve)» y «Tierra (NASA, solo colores)». De noche el lado de día sigue visible bajo un velo oscuro, con las luces de las ciudades encima. Al cambiar de página ya no aparece un instante el mapa simple, y con la rueda la imagen ya no se ve pixelada. Los satélites tienen un icono único, la ISS su silueta, la estrella de la estación es más pequeña y el zoom automático se detiene en 3x. En el tema oscuro el texto es blanco en todas partes.',
-      'Na página dos satélites podes escolher entre três mapas da Terra da NASA a 8192 x 4096: «Terra (satélite NASA)» com relevo e fundos marinhos (a de base), «Terra (NASA, com relevo)» e «Terra (NASA, só cores)». À noite o lado do dia continua visível sob um véu escuro, com as luzes das cidades por cima. Ao mudar de página já não aparece por um instante o mapa simples, e com a roda a imagem já não fica pixelizada. Os satélites têm um ícone único, a ISS a sua silhueta, a estrela da estação é mais pequena e o zoom automático pára nos 3x. No tema escuro o texto é branco em todo o lado.',
     ],
   },
 ];
