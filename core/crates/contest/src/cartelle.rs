@@ -975,7 +975,14 @@ impl ElencoContest {
             .collect();
         // un `.contest` personalizzato vale piu' della cartella inclusa con lo stesso nome (non di quella dell'utente)
         let personalizzati: Vec<String> = out.iter().map(|v| normalizza(&v.contest.name)).collect();
-        let visibili = self.scansione().cartelle.iter().filter(|f| f.origine == Origine::Utente || !personalizzati.contains(&normalizza(&f.meta.nome))).cloned().collect::<Vec<_>>();
+        // (anche per alias: il `.contest` personalizzato con il vecchio nome della cartella vale piu' della cartella inclusa, non due righe)
+        let visibili = self
+            .scansione()
+            .cartelle
+            .iter()
+            .filter(|f| f.origine == Origine::Utente || !(personalizzati.contains(&normalizza(&f.meta.nome)) || f.meta.alias.iter().any(|a| personalizzati.contains(&normalizza(a)))))
+            .cloned()
+            .collect::<Vec<_>>();
         out.extend(visibili.into_iter().map(|f| self.voce_di_cartella(f, ora)));
         out.sort_by_key(|v| v.contest.name.to_lowercase());
         out
@@ -1231,6 +1238,25 @@ mod tests {
         for brutto in ["../dati/a.dom", "/dati/a.dom", "dati/../a.dom", "C:\\dati\\a.dom", "macros/a.dom", "dati/a.txt", "dati/b.dom"] {
             assert!(rimando_dom_ok(brutto, &dom).is_err(), "{brutto}");
         }
+    }
+
+    #[test]
+    fn un_contest_personalizzato_con_il_vecchio_nome_di_un_alias_non_compare_due_volte() {
+        let base = cartella_di_prova("alias_personalizzato");
+        let inclusa = base.join("incluse");
+        let dati = base.join("dati");
+        // la cartella si chiama «Contest di prova» e porta il vecchio nome come alias
+        prova_valida(&inclusa.join("Contest di prova"));
+        let con_alias = TOML_MINIMO.replace("note = \"CW\"", "note = \"CW\"
+alias = [\"Vecchio nome\"]");
+        scrivi(&inclusa, "Contest di prova/contest.toml", &con_alias);
+        // il `.contest` col vecchio nome e' stato cambiato dall'utente (e nessun predefinito lo dice intatto)
+        let mio = ContestTesto { id: "Mio".into(), name: "Vecchio nome".into(), notes: "mio".into(), ..ContestTesto::default() };
+        scrivi(&dati, "Mio.contest", &mio.in_testo());
+        let e = ElencoContest::new(&dati);
+        e.imposta_cartelle_incluse(Some(inclusa));
+        let v = e.voci();
+        assert_eq!(v.iter().map(|x| (x.origine(), x.contest.name.as_str())).collect::<Vec<_>>(), vec![("file", "Vecchio nome")], "vale il suo, una riga sola");
     }
 
     #[test]

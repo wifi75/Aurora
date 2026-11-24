@@ -265,10 +265,13 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
   // tutto quello che si vede nel cluster (DX e chi ha fatto lo spot) si carica in anticipo: al passaggio del mouse il riquadro e' gia' pronto
+  const ownCall = cluster.data ? (cluster.data.callsign ?? cluster.data.config.callsign) : null;
+  // gli spot nascosti del proprio nominativo (skimmer che ti sentono) non si caricano in anticipo e non fanno tornare la lista in cima
+  const visibleSpots = useMemo(() => (cluster.data ? (filters.showOwn === true ? cluster.data.spots : withoutOwnSpots(cluster.data.spots, ownCall)) : []), [cluster.data, filters.showOwn, ownCall]);
   useEffect(() => {
-    const visible = cluster.data ? filterSpots(cluster.data.spots, filters, myBand, status?.own_continent) : [];
+    const visible = filterSpots(visibleSpots, filters, myBand, status?.own_continent);
     prefetchCallsigns(visible.flatMap((s) => [s.dx_call, s.spotter]));
-  }, [cluster.data, filters, myBand, status?.own_continent]);
+  }, [visibleSpots, filters, myBand, status?.own_continent]);
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
@@ -280,7 +283,7 @@ function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler;
 
   // come Attivita' di banda: lo spot nuovo arriva in cima e la lista torna subito in cima per mostrarlo
   const body = useRef<HTMLTableSectionElement | null>(null);
-  const newestSpot = cluster.data?.spots[0]?.id ?? null;
+  const newestSpot = visibleSpots[0]?.id ?? null;
   useEffect(() => {
     for (let el: HTMLElement | null = body.current; el && el !== document.body; el = el.parentElement) {
       const oy = getComputedStyle(el).overflowY;

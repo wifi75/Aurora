@@ -11,7 +11,7 @@ import { displayModel } from '../lib/radioDisplay';
 import { StopButton } from '../components/StopButton';
 import { chooseTxMessage, useTxSequence } from '../components/TxPanel';
 import { useT } from '../i18n';
-import { filterSpots } from '../lib/cluster';
+import { filterSpots, withoutOwnSpots } from '../lib/cluster';
 import { countryOfCall } from '../lib/dxCountry';
 import { flagCode } from '../lib/flags';
 import { bandOf } from '../lib/format';
@@ -120,7 +120,9 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   // gli ultimi 5 spot, con i filtri banda/modo salvati nel cluster di Aurora; se con quei filtri sono meno di 5, si completa con gli ultimi arrivati
   const saved = readClusterFilters();
-  const all = cluster.data?.spots ?? [];
+  const allSpots = cluster.data?.spots ?? [];
+  // gli spot del proprio nominativo (gli skimmer che ti sentono) sono nascosti di base, come nel pannello del PC
+  const all = saved.showOwn === true ? allSpots : withoutOwnSpots(allSpots, cluster.data?.callsign ?? cluster.data?.config.callsign);
   const filtered = saved.bands.length > 0 || saved.modes.length > 0 ? filterSpots(all, { ...saved, search: '' }, band) : all;
   const spots = (filtered.length >= 5 ? filtered : [...filtered, ...all.filter((s) => !filtered.includes(s))]).slice(0, 5);
   const log = useQuery({ queryKey: ['log4om', 3], queryFn: () => getLog4om(3), refetchInterval: 10_000, retry: false });

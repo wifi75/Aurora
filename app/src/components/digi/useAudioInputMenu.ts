@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAudioDevices, putAudioSettings, type AudioDevice, type AudioDevices } from '../../api/client';
 import { useT } from '../../i18n';
+import { coreText } from '../../lib/coreText';
 import { toast } from '../../lib/toast';
 import type { MenuItem } from './MenuBar';
 
@@ -12,7 +13,7 @@ export function isInputChosen(d: AudioDevices, name: string): boolean {
 
 /**
  * La voce «Ingresso audio» del menu Configura: un sottomenu con i dispositivi di ingresso rilevati (come nelle Impostazioni › Audio) per
- * cambiare in un clic, per esempio fra l'audio della radio e un ricevitore SDR in rete (richiesta di ON7KEC, #95). Segna quello in uso.
+ * cambiare in un clic, per esempio fra l'audio della radio e un ricevitore SDR in rete (richiesta di un utente, #95). Segna quello in uso.
  */
 export function useAudioInputMenu(): MenuItem {
   const t = useT();
@@ -22,7 +23,7 @@ export function useAudioInputMenu(): MenuItem {
   const pick = (name: string) => {
     void putAudioSettings({ input: name })
       .then((r) => {
-        toast(r.input.status === 'failed' ? (r.input.message ?? t('digi.mi.audioInputFailed')) : t('digi.mi.audioInputDone', { name: r.input.in_use ?? name }), r.input.status === 'failed' ? 'error' : 'ok');
+        toast(r.input.status === 'failed' ? (r.input.message ? coreText(r.input.message, t) : t('digi.mi.audioInputFailed')) : t('digi.mi.audioInputDone', { name: r.input.in_use ?? name }), r.input.status === 'failed' ? 'error' : 'ok');
         void client.invalidateQueries({ queryKey: ['audio-devices'] });
       })
       .catch(() => toast(t('digi.mi.audioInputFailed'), 'error'));

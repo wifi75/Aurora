@@ -1032,7 +1032,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       notes: l.qso.notes,
       nrr: l.qso.nrr ?? '',
       nrs: exchangeSent(l.qso.nrs || fixedNrsRef.current, l.serial),
-      mysect: readSection(browserStorage(), sentSectionRef.current.id),
+      // come lo scambio che va nel log (`composeSent`): solo quando il contest chiede la propria sezione, cosi' macro e log dicono la stessa cosa
+      mysect: sentSectionRef.current.applies ? readSection(browserStorage(), sentSectionRef.current.id) : '',
       startTime: l.startAt,
       now: new Date(),
       dialHz: dial,

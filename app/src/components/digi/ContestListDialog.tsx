@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
@@ -67,16 +67,25 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
   const allContests = list.data?.contest ?? [];
   const none = { id: null as string | null, name: t('ctest.none'), notes: '' };
   const rows = [none, ...allContests];
-  const [setState, setSetState] = useState<SetView>(() => (allContests.find((c) => c.id === (list.data?.attivo ?? null))?.beta ? 'beta' : lastSetView));
+  // la scheda scelta a mano; finche' non si sceglie si apre quella del contest attivo (l'elenco arriva dopo il primo disegno: non si decide all'inizio)
+  const [setState, setSetState] = useState<SetView | null>(null);
   const betaCount = allContests.filter((c) => c.beta === true).length;
+  const activeIsBeta = allContests.find((c) => c.id === active)?.beta === true;
   // se un elenco e' vuoto si vede solo l'altro
-  const setView: SetView = betaCount === 0 ? 'official' : betaCount === allContests.length ? 'beta' : setState;
+  const setView: SetView = betaCount === 0 ? 'official' : betaCount === allContests.length ? 'beta' : (setState ?? (activeIsBeta ? 'beta' : lastSetView));
   const contests = useMemo(() => allContests.filter((c) => (c.beta === true) === (setView === 'beta')), [allContests, setView]);
   const chooseSet = (v: SetView) => {
     lastSetView = v;
     setSetState(v);
     setTabState('all');
+    // la riga scelta nell'altra scheda non si vede piu': Modifica, Elimina e Seleziona agirebbero su una riga nascosta
+    setPicked(undefined);
   };
+  // un contest appena aggiunto o importato (scelto da `setPicked`) sta nella scheda dove si vede: ci si va
+  useEffect(() => {
+    const c = picked ? allContests.find((x) => x.id === picked) : undefined;
+    if (c && (c.beta === true) !== (setView === 'beta')) setSetState(c.beta === true ? 'beta' : 'official');
+  }, [picked, allContests, setView]);
   const [tabState, setTabState] = useState<ModeTab>(lastModeTab);
   // i modi di ogni contest (dalle note) e quanti ne ha ogni linguetta; un contest con piu' modi sta in tutte le sue linguette
   const modesOf = useMemo(() => new Map(contests.map((c) => [c.id, contestModes(c.notes, c.name)] as const)), [contests]);

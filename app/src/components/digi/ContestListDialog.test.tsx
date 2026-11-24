@@ -144,4 +144,16 @@ describe('ufficiali e Beta contest', () => {
     expect(names()).toEqual(['Ufficiale RTTY']);
     expect(document.querySelector('.ctest-beta-note')).toBeNull();
   });
+
+  it('si apre sulla scheda del contest attivo anche se la lista arriva dopo, e cambiando scheda la riga scelta si azzera', async () => {
+    vi.mocked(getTextContests).mockImplementationOnce(() => Promise.resolve({ attivo: '2', contest: [ref('1', 'Ufficiale RTTY', false), ref('2', 'Vecchio RTTY', true)], macros: [], domini: [] }));
+    render(dialog());
+    await screen.findByText('Vecchio RTTY');
+    expect(names()).toEqual(['Vecchio RTTY']);
+    const sets = within(screen.getByRole('tablist', { name: /Elenco dei contest|Contest list/ }));
+    fireEvent.click(screen.getByText('Vecchio RTTY'));
+    fireEvent.click(sets.getByRole('tab', { name: /ufficiali|Official/ }));
+    expect(names()).toEqual(['Ufficiale RTTY']);
+    expect(screen.queryByText('Vecchio RTTY')).toBeNull();
+  });
 });

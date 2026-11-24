@@ -66,6 +66,9 @@ fn main() -> Result<(), String> {
                 c.contest.domain_file.clear();
             }
         }
+        // convertito dalle vecchie schede: Beta finche' non e' scritto dal regolamento ufficiale, e senza lo scambio fisso di chi le ha create
+        c.contest.beta = true;
+        c.contest.nrs.clear();
         std::fs::write(dst.join(format!("{}.contest", c.contest.id)), c.contest.in_testo()).map_err(|e| e.to_string())?;
         n_contest += 1;
     }
