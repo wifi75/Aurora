@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.347',
+    released: '2026-11-24T20:39:43Z',
+    kind: 'fixed',
+    title: [
+      'Di nuovo Linux e macOS, e lo schermo SSTV più compatto',
+      'Linux and macOS again, and a more compact SSTV screen',
+      'Wieder Linux und macOS, und ein kompakterer SSTV-Bildschirm',
+      'De nouveau Linux et macOS, et un écran SSTV plus compact',
+      'Otra vez Linux y macOS, y una pantalla SSTV más compacta',
+      'De novo Linux e macOS, e um ecrã SSTV mais compacto',
+    ],
+    text: [
+      'La versione precedente (0.11.346) usciva solo per Windows, perché la compilazione per Linux e macOS si era rotta: ora Linux (AppImage e .deb) e macOS (.dmg) ci sono di nuovo. Nella pagina SSTV in ricezione lo schermo dell’immagine non si allunga più su tutta la colonna: resta in formato 4:3, con una larghezza massima.',
+      'The previous version (0.11.346) came out for Windows only, because the Linux and macOS build had broken: Linux (AppImage and .deb) and macOS (.dmg) are back. In the SSTV receive page the picture screen no longer stretches across the whole column: it stays 4:3 with a maximum width.',
+      'Die vorige Version (0.11.346) erschien nur für Windows, weil der Linux- und macOS-Build kaputt war: Linux (AppImage und .deb) und macOS (.dmg) gibt es wieder. In der SSTV-Empfangsseite zieht sich der Bildschirm nicht mehr über die ganze Spalte: er bleibt 4:3 mit einer Maximalbreite.',
+      'La version précédente (0.11.346) n’est sortie que pour Windows, car la compilation pour Linux et macOS était cassée : Linux (AppImage et .deb) et macOS (.dmg) sont de retour. Dans la page SSTV en réception, l’écran de l’image ne s’étire plus sur toute la colonne : il reste en 4:3 avec une largeur maximale.',
+      'La versión anterior (0.11.346) salió solo para Windows porque la compilación de Linux y macOS se había roto: Linux (AppImage y .deb) y macOS (.dmg) vuelven a estar. En la página SSTV en recepción la pantalla de la imagen ya no se estira por toda la columna: se queda en 4:3 con un ancho máximo.',
+      'A versão anterior (0.11.346) saiu só para Windows, porque a compilação de Linux e macOS estava avariada: Linux (AppImage e .deb) e macOS (.dmg) estão de volta. Na página SSTV em receção o ecrã da imagem já não se estica por toda a coluna: fica em 4:3 com uma largura máxima.',
+    ],
+  },
+  {
     version: '0.11.346',
     released: '2026-11-24T19:55:06Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'La nouvelle fréquence n’est acceptée qu’après quatre lectures identiques, la confirmation CI-V admet les arrondis de la radio et une émission CI-V échouée est retentée après 15 secondes.',
       'La nueva frecuencia se acepta solo tras cuatro lecturas iguales, la confirmación CI-V admite los redondeos de la radio y una transmisión CI-V fallida se reintenta tras 15 segundos.',
       'A nova frequência só é aceite após quatro leituras iguais, a confirmação CI-V admite os arredondamentos do rádio e uma transmissão CI-V falhada é repetida após 15 segundos.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'fixed',
-    title: [
-      'SSTV: visore più sicuro',
-      'SSTV: safer viewer',
-      'SSTV: sichererer Betrachter',
-      'SSTV : visionneuse plus sûre',
-      'SSTV: visor más seguro',
-      'SSTV: visor mais seguro',
-    ],
-    text: [
-      'Nel visore, Canc cancella la foto e Invio conferma. Il salvataggio è più affidabile e le foto incomplete vanno in fondo alle miniature.',
-      'In the viewer, Del deletes the photo and Enter confirms. Saving is more reliable and incomplete photos go to the end of the thumbnails.',
-      'Im Betrachter löscht Entf das Foto und Eingabe bestätigt. Das Speichern ist zuverlässiger, und unvollständige Fotos stehen am Ende der Miniaturen.',
-      'Dans la visionneuse, Suppr supprime la photo et Entrée confirme. L’enregistrement est plus fiable et les photos incomplètes vont à la fin des miniatures.',
-      'En el visor, Supr borra la foto e Intro confirma. El guardado es más fiable y las fotos incompletas van al final de las miniaturas.',
-      'No visor, Del apaga a foto e Enter confirma. A gravação é mais fiável e as fotos incompletas vão para o fim das miniaturas.',
     ],
   },
 ];

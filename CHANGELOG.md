@@ -3,6 +3,10 @@
 ## Non rilasciato
 - Telefono, collegamento con il QR (segnalazione su eham): nuova «Rete Wi-Fi di Aurora» nella scheda Smartphone/Tablet. Con il QR di associazione aperto, il tasto «Crea la rete di Aurora» accende l'hotspot di Windows (nome e password nuovi a ogni volta, QR Wi-Fi per il telefono, indirizzo fisso 192.168.137.1) cosi' il telefono raggiunge il PC senza router, rete ospiti o isolamento dei client, che erano la causa di quasi tutti i «il telefono non ha mai raggiunto Aurora». Rotte `POST/DELETE /api/v1/lan/hotspot` (solo dal PC). Provato solo con compilazione e prove; l'accensione vera dell'hotspot va provata dal proprietario (serve una scheda Wi-Fi).
 
+## 0.11.347 - 2026-11-24
+- Linux e macOS: la compilazione della 0.11.346 falliva (`getrandom` dichiarato solo per Windows in `remote-api`), quindi la 0.11.346 ha solo l'installatore di Windows. La 0.11.347 e' uguale alla 0.11.346 con la dipendenza corretta e ha di nuovo AppImage, `.deb` e `.dmg`.
+- SSTV, pagina in ricezione: lo schermo dell'immagine non si allunga piu' su tutta la colonna, resta a 4:3 con una larghezza massima di 46 rem (segnalazione del proprietario). Prova in `sstvLayout.test.ts`.
+
 ## 0.11.346 - 2026-11-24
 - Hound, QSO non registrato all'RR73 della Fox (issue #103, AB7R): la riga DXpedition `IU3ABC RR73; W9XYZ <KH1/KH7Z> -08` veniva letta come testo libero, quindi il QSO non si chiudeva e Aurora continuava a mandare R+rapporto. Ora la riga vale due messaggi diretti (`IU3ABC KH1/KH7Z RR73` e `W9XYZ KH1/KH7Z -08`, `message::split_fox`): in Hound il QSO va a log e la trasmissione si ferma; se la Fox manda il rapporto a noi come secondo Hound, vale come Tx2. Prova automatica `a_hound_logs_the_qso_when_the_fox_sends_the_combined_rr73` (fallisce senza la correzione).
 - DX Cluster, nuovo filtro «Senza skimmer» (richiesta del proprietario): nasconde in blocco gli spot mandati dagli skimmer automatici (nominativo del segnalatore che finisce con `-#`, Reverse Beacon Network). Spento di base, si ricorda come gli altri filtri, vale anche per gli ultimi spot del telefono. Prova `hideSkimmers` in `cluster.test.ts`.
