@@ -1,0 +1,118 @@
+# BARTG Sprint75 Contest (aprile, 75 baud) - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://bartg.org.uk/wp-content/uploads/2026/02/bartg-sprint75-rules-2026-v1.pdf (revisione del 24 febbraio 2026)
+# e sulla pagina https://bartg.org.uk/?p=159 (calendario 2027-2032).
+
+[contest]
+id = "bartg-sprint75-rtty"
+nome = "BARTG Sprint 75 RTTY Contest"
+alias = ["BARTG Sprint 75 RTTY"]  # nome del vecchio file: la cartella lo sostituisce
+organizzatore = "BARTG (British Amateur Radio Teledata Group)"
+sito = "https://bartg.org.uk"
+regolamento_url = "https://bartg.org.uk/wp-content/uploads/2026/02/bartg-sprint75-rules-2026-v1.pdf"
+cabrillo_contest = "BARTG-SPRINT75"
+note = "Sprint75 di aprile, solo RTTY a 75 baud, 80-10 metri, 4 ore. Si manda solo il numero progressivo (niente RST). 1 punto per QSO; moltiplicatori una volta sola: paesi DXCC e aree JA, W, VE, VK; continenti a parte."
+
+[edizione]
+# Quarta domenica di aprile, 17:00-20:59 UTC (4 ore). La quarta domenica non coincide sempre con il quarto fine settimana pieno
+# (2029: 22 aprile): le date delle edizioni sono quindi scritte una per una, dal calendario BARTG.
+mese = 4
+fine_settimana_pieno = 4
+giorno_inizio = "domenica"
+ora_inizio = "17:00"
+durata_ore = 4
+invio_log_giorni = 7              # entro 7 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-04-26T17:00:00Z"
+fine = "2026-04-26T20:59:59Z"
+fonte = "calcolata dalla regola (quarta domenica di aprile); la pagina https://bartg.org.uk/?p=159 oggi mostra solo il 2027-2032"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-04-25T17:00:00Z"
+fine = "2027-04-25T20:59:59Z"
+fonte = "https://bartg.org.uk/?p=159 (letto il 2026-11-24): domenica 25 aprile 17:00z-20:59z"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-04-23T17:00:00Z"
+fine = "2028-04-23T20:59:59Z"
+fonte = "https://bartg.org.uk/?p=159 (letto il 2026-11-24): domenica 23 aprile 17:00z-20:59z"
+confermata = true
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # solo RTTY a 75 baud (nel Cabrillo RY)
+
+# Segmenti di frequenza (kHz) per banda, nel regolamento: fuori segmento zero punti e zero moltiplicatori; non controllati dal motore.
+#   80 m 3580-3615, 40 m 7040-7125, 20 m 14070-14125 (14100 +/- 0,5 kHz zero), 15 m 21070-21148, 10 m 28070-28189.
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Message number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Message number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Tre o quattro cifre da 001, +1 a ogni QSO. Nello Sprint non si manda l'RST."
+
+[doppi]
+per = "banda"                     # una stazione una volta per banda per punti e moltiplicatori
+
+[categorie]
+operatore = ["SOE", "SOAB", "SOAB100", "SOABQRP"]
+potenza = ["QRP", "100W", "MAX"]
+altre = ["Checklog"]
+
+[cabrillo]
+# Il regolamento non scrive il valore di CONTEST: BARTG-SPRINT75 e' un valore ragionevole ma non scritto ne' nel regolamento ne' nella specifica Cabrillo: da ricontrollare con l'esempio di log del sito.
+contest = "BARTG-SPRINT75"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY", "EMAIL"]
+facoltativi = ["CATEGORY-POWER", "CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_assisted = ["ASSISTED"]
+category_transmitter = ["ONE"]
+invio = "entro 7 giorni al robot RSGB http://bartg.rsgbcc.org/cgi-bin/hfenter.pl (Cabrillo); riga QSO: freq. in kHz = frequenza MARK, RY, numero (senza RST)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC e aree JA, W, VE, VK", en = "DXCC countries and JA, W, VE, VK areas" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Continenti", en = "Continents" }
+ordine = 2
+moltiplicatore = "continente"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

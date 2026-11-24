@@ -1,0 +1,10 @@
+; CQ WPX RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento 2026.
+;
+; bands: 80, 40, 20, 15, 10 m (3,5 - 28 MHz; niente 160 m).
+; points: 28, 21 e 14 MHz: stesso paese 1, stesso continente 2, altro continente 3.
+; points_band: su 80 e 40 m (3,5 e 7 MHz) i punti sono 2, 4 e 6, cioe' il doppio.
+; mult: i prefissi WPX contano una volta sola in tutto il contest, a prescindere da banda e QSO.
+bands=80,40,20,15,10
+points=same_dxcc=1; same_cont=2; other_cont=3
+points_band=80:2,40:2
+mult=wpx

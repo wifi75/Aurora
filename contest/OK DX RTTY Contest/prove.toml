@@ -1,0 +1,171 @@
+# OK DX RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (http://okrtty.crk.cz/index.php?page=english, letto il 2026-11-24).
+# Due punti di vista: [prova] e' una stazione italiana (non OK/OL: paesi + stazioni OK), [[altra_stazione]] una stazione OK (solo paesi).
+# Nominativi di fantasia, edizione 2027 (sabato 18 dicembre). Moltiplicatori: valore@modo, una volta per banda.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-12-18"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "14"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente su 20 m: 1 punto; paese DL" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "OK1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OK@RTTY", "OK1ABC@RTTY"], motivo = "stesso continente: 1 punto; paese OK e stazione OK1ABC" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "OK2XYZ"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["OK2XYZ@RTTY"], motivo = "un'altra stazione OK conta come moltiplicatore, il paese OK e' gia' preso" }
+
+[[qso]]
+n = 4
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0015"
+nominativo = "OK1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["OK@RTTY", "OK1ABC@RTTY"], motivo = "40 m, stesso continente: 3 punti; paese OK e stazione OK1ABC nuovi sulla banda" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "RTTY"
+freq_khz = 7041
+ora_utc = "0020"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["K@RTTY"], motivo = "40 m fuori continente: 6 punti" }
+
+[[qso]]
+n = 6
+banda = 80
+modo = "RTTY"
+freq_khz = 3580
+ora_utc = "0025"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "25"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["JA@RTTY"], motivo = "80 m fuori continente: 6 punti" }
+
+[[qso]]
+n = 7
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "0030"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "stesso paese (stesso continente): 1 punto sui 15 m" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0035"
+nominativo = "OK1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 9
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0040"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "14"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[atteso]
+qso_ammessi = 7
+doppi = 1
+non_ammessi = 1
+punti = 19
+moltiplicatori = 9
+punteggio = 171                   # 19 punti x (paesi 5 + stazioni OK 4 = 9)
+
+[[altra_stazione]]
+nominativo_proprio = "OK1AAA"
+locatore_proprio = "JO70"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "14"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente: 1 punto; paese DL" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0010"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["K@RTTY"], motivo = "40 m fuori continente: 6 punti" }
+
+[altra_stazione.atteso]
+qso_ammessi = 2
+doppi = 0
+non_ammessi = 0
+punti = 7
+moltiplicatori = 2
+punteggio = 14                    # 8 punti x 2 paesi (DL, K): le stazioni OK non contano per chi e' OK

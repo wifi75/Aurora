@@ -1,0 +1,159 @@
+# SARTG WW RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://www.sartg.com/contest/wwrules.htm).
+# Stazione italiana. Nominativi di fantasia, edizione 2027 (sabato 21 agosto). Moltiplicatori: valore@modo, una volta per banda.
+# Periodi: sabato 00:00-08:00 e 16:00-24:00, domenica 08:00-16:00 UTC (la prova gira in un solo giorno: il sabato).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-08-21"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente, altro paese: 10 punti; paese DL" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 5, moltiplicatori = ["I@RTTY"], motivo = "stesso paese: 5 punti; il proprio paese conta come moltiplicatore" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["K@RTTY", "K1@RTTY"], motivo = "altro continente: 15 punti; paese K e area K1" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0015"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["JA@RTTY", "JA1@RTTY"], motivo = "paese JA e area JA1" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0020"
+nominativo = "VK2ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["VK@RTTY", "VK2@RTTY"], motivo = "paese VK e area VK2" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0025"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["K@RTTY", "K1@RTTY"], motivo = "stessa stazione su 40 m: non e' doppio, moltiplicatori nuovi sulla banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "0030"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "0035"
+nominativo = "K5ABC/1"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = [], motivo = "K5ABC/1 e' nell'area 1: area K1 e paese K gia' presi su 20 m" }
+
+[[qso]]
+n = 9
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0040"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "009"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "RTTY"
+freq_khz = 14087
+ora_utc = "1000"
+nominativo = "DL2ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "sabato 10:00 UTC: fuori dai periodi (00-08, 16-24 sabato; 08-16 domenica)" }
+
+[[qso]]
+n = 11
+banda = 20
+modo = "RTTY"
+freq_khz = 14088
+ora_utc = "1605"
+nominativo = "DL3ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "011"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = [], motivo = "sabato 16:05 UTC: dentro il secondo periodo; DL gia' preso su 20 m" }
+
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 2
+punti = 100
+moltiplicatori = 10
+punteggio = 1000                  # 100 punti x 10 moltiplicatori

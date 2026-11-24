@@ -101,6 +101,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.132sl67alkh": "«herhaal je nummer, alsjeblieft» in de taal van het tegenstation",
   "t.134f56zi51": "In Aurora: [[nav.settings]] › [[sw.fam.log]] › [[sw.pg.reporting]] › “[[int.title]]” › “+ [[int.p.loghx]]”. Laat 127.0.0.1, poort 2237, “[[int.wsjtx]]” en “[[int.loggedAdif]]” aan.",
   "t.134vty509pa": "De AFC is begrensd: hij gaat niet verder dan ±15 Hz van de gekozen frequentie in PSK31 (±30 in PSK63), de halve shift in RTTY, ±50 Hz in CW; hij gaat niet in notches, blijft binnen de banddoorlaat en blijft staan als het signaal verdwijnt, in plaats van achter het naburige station aan te gaan.",
+  "t.1356z5fgfd0": "je sectie, staat, club of zone van de contest (uit het contestblad)",
   "t.135fe0e0jla": "voert de bestandstekst uit als macro (nooit externe programma's)",
   "t.135v7u6ma2a": "Op de telefoon staat de knop [[stop.button]] onderaan het scherm.",
   "t.137q52gni7k": "Nieuw DXCC en gezocht station: de gemarkeerde meldingen",

@@ -161,7 +161,7 @@ export function haSezionePropria(c: TextContest): boolean {
 
 /** Il contest vuole la propria zona CQ nello scambio mandato (campo `zona_cq` fra gli inviati): si scrive in «Numero da mandare». */
 export function mandaZonaCq(c: TextContest): boolean {
-  return c.grab_number_type === 2 || haCampo(c.scambio?.inviato, (x) => x.tipo === 'zona_cq' && !x.progressivo);
+  return !c.auto_inc && (c.grab_number_type === 2 || haCampo(c.scambio?.inviato, (x) => x.tipo === 'zona_cq' && !x.progressivo));
 }
 
 // ---------------------------------------------------------------- l'elenco delle voci attive

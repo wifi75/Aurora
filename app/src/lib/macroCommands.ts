@@ -39,6 +39,7 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('text', '<MYMAINCALL>', 'il tuo nominativo senza /P, /M...', 'your callsign without /P, /M...', 'dein Rufzeichen ohne /P, /M ...', 'ton indicatif sans /P, /M...', 'tu indicativo sin /P, /M...', 'o teu indicativo sem /P, /M...'),
   c('text', '<MYNAME>', 'il tuo nome', 'your name', 'dein Name', 'ton prénom', 'tu nombre', 'o teu nome'),
   c('text', '<MYQTH>', 'il tuo QTH', 'your QTH', 'dein QTH', 'ton QTH', 'tu QTH', 'o teu QTH'),
+  c('text', '<MYSECT>', 'la tua sezione, stato, club o zona del contest (dalla scheda del contest)', 'your section, state, club or zone of the contest (from the contest sheet)', 'deine Sektion, dein Staat, Club oder deine Zone im Contest (aus dem Contest-Blatt)', 'ta section, ton état, ton club ou ta zone du concours (de la fiche du concours)', 'tu sección, estado, club o zona del concurso (de la ficha del concurso)', 'a tua secção, estado, clube ou zona do concurso (da ficha do concurso)'),
   c('text', '<MYWWLOC>', 'il tuo locatore', 'your locator', 'dein Locator', 'ton locator', 'tu locator', 'o teu locator'),
   c('text', '<CALL>', 'nominativo del corrispondente', 'callsign of the other station', 'Rufzeichen der Gegenstation', 'indicatif du correspondant', 'indicativo del corresponsal', 'indicativo do correspondente'),
   c('text', '<NAME>', 'nome del corrispondente', 'name of the other operator', 'Name der Gegenstation', 'prénom du correspondant', 'nombre del corresponsal', 'nome do correspondente'),
@@ -300,7 +301,7 @@ export type HelpCategory = 'data' | 'prev' | 'select' | 'phrases' | 'time' | 'fo
 export const HELP_CATEGORIES: readonly HelpCategory[] = ['data', 'prev', 'select', 'phrases', 'time', 'format', 'freq', 'txrx', 'windows', 'qso', 'mode', 'autocq', 'rotor', 'cat', 'keyer', 'audio', 'files', 'nested', 'cw', 'rtty', 'sstv', 'hell', 'packet'];
 
 const CATEGORY: Record<string, HelpCategory> = {
-  '<MYCALL>': 'data', '<MYMAINCALL>': 'data', '<MYNAME>': 'data', '<MYQTH>': 'data', '<MYWWLOC>': 'data', '<CALL>': 'data', '<NAME>': 'data',
+  '<MYCALL>': 'data', '<MYMAINCALL>': 'data', '<MYNAME>': 'data', '<MYQTH>': 'data', '<MYWWLOC>': 'data', '<MYSECT>': 'data', '<CALL>': 'data', '<NAME>': 'data',
   '<QTH>': 'data', '<WWLOC>': 'data', '<RSTS>': 'data', '<RSTR>': 'data', '<NOTES>': 'data', '<ANYQSOBEFOREDATE>': 'data',
   '<ANYQSOBEFOREBAND>': 'data', '<ANYQSOBEFOREMODE>': 'data', '<PREVNRS>': 'data', '<PREVCALL>': 'data', '<PREVRSTS>': 'data', '<QSOBEFORETIME>': 'data', '<QSOBEFOREDATE>': 'data', '<IMD>': 'data', '<VER>': 'data',
   '<DATE>': 'time', '<TIME>': 'time', '<LOCALTIME>': 'time', '<STARTTIME>': 'time', '<CTIME>': 'time', '<GA>': 'time', '<GAL>': 'time',
@@ -327,7 +328,7 @@ const CATEGORY: Record<string, HelpCategory> = {
 /** Un esempio di uso per ogni comando (testo di macro: non si traduce). */
 const EXAMPLE: Record<string, string> = {
   '<MYCALL>': 'CQ CQ DE <MYCALL> <MYCALL> K', '<MYMAINCALL>': 'DE <MYMAINCALL>', '<MYNAME>': 'NAME <MYNAME>', '<MYQTH>': 'QTH <MYQTH>',
-  '<MYWWLOC>': 'LOC <MYWWLOC>', '<CALL>': '<CALL> DE <MYCALL> KN', '<NAME>': 'TNX <NAME> FER QSO', '<QTH>': 'UR QTH <QTH>', '<WWLOC>': 'UR LOC <WWLOC>',
+  '<MYSECT>': '<NRS> <MYSECT>', '<MYWWLOC>': 'LOC <MYWWLOC>', '<CALL>': '<CALL> DE <MYCALL> KN', '<NAME>': 'TNX <NAME> FER QSO', '<QTH>': 'UR QTH <QTH>', '<WWLOC>': 'UR LOC <WWLOC>',
   '<RSTS>': 'UR RST <RSTS> <RSTS>', '<RSTR>': 'TNX RPT <RSTR>', '<NOTES>': '<NOTES>', '<ANYQSOBEFOREDATE>': 'LAST QSO <ANYQSOBEFOREDATE> ON <ANYQSOBEFOREBAND>',
   '<ANYQSOBEFOREBAND>': 'LAST QSO ON <ANYQSOBEFOREBAND>', '<ANYQSOBEFOREMODE>': 'LAST QSO IN <ANYQSOBEFOREMODE>', '<PREVNRS>': 'NR <PREVNRS> <PREVNRS>', '<PREVCALL>': '<PREVCALL> TU', '<PREVRSTS>': '<PREVCALL> <PREVRSTS> <PREVNRS>', '<QSOBEFORETIME>': 'QSO B4 <QSOBEFORETIME>', '<QSOBEFOREDATE>': 'QSO B4 <QSOBEFOREDATE>', '<IMD>': 'IMD <IMD>', '<VER>': 'SW <VER>',
   '<DATE>': 'DATE <DATE>', '<TIME>': 'TIME <TIME> UTC', '<LOCALTIME>': 'LOCAL TIME <LOCALTIME>', '<STARTTIME>': 'QSO STARTED <STARTTIME>', '<CTIME>': '<CTIME>Z',

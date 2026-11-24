@@ -1,0 +1,9 @@
+; OK DX RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento letto il 2026-11-24 su http://okrtty.crk.cz/index.php?page=english (punti 7, moltiplicatori 8, punteggio finale 9).
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: su 10, 15 e 20 m 1 punto nel proprio continente e 2 fuori; su 40 e 80 m 3 e 6.
+; mult: paesi DXCC per banda; per le stazioni fuori da OK/OL anche ogni stazione OK (nominativo) per banda.
+bands=80,40,20,15,10
+points=band:80,40&same_cont=3; band:80,40=6; same_cont=1; any=2
+mult=dxcc/band; call/band/if:dxcc:OK&not_my_dxcc:OK

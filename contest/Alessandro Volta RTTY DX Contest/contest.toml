@@ -1,0 +1,132 @@
+# Alessandro Volta RTTY DX Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.contestvolta.it/rules.pdf (regolamento «updated at November 2025»), https://www.contestvolta.it/point%20table.htm (tabella dei punti REV. 2004) e https://www.contestvolta.it/cabrillo_volta_n.txt.
+
+[contest]
+id = "alessandro-volta-rtty"
+nome = "Alessandro Volta RTTY DX Contest"
+alias = ["ALESSANDRO VOLTA RTTY DX Contest", "Alessandro Volta RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "SSB and RTTY Club of Como e ARI"
+sito = "https://www.contestvolta.it"
+regolamento_url = "https://www.contestvolta.it/rules.pdf"
+cabrillo_contest = "A. VOLTA RTTY"
+note = "Solo RTTY, da 80 a 10 metri. Scambio: RST + numero progressivo + zona CQ. Punti dalla tabella delle zone (doppi fuori continente su 80 e 10 m), moltiplicatori per banda; punteggio = QSO x punti x moltiplicatori."
+
+[edizione]
+# Secondo fine settimana pieno di maggio, sabato 12:00 - domenica 12:00 UTC.
+mese = 5
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 15             # entro 15 giorni dalla fine del contest, solo caricamento web
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-05-09T12:00:00Z"
+fine = "2026-05-10T11:59:59Z"
+fonte = "calcolata dalla regola di https://www.contestvolta.it/rules.pdf (secondo fine settimana pieno di maggio; 60a edizione, risultati 2026 gia' pubblicati)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-05-08T12:00:00Z"
+fine = "2027-05-09T11:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di maggio (le date di ogni edizione sono sulla home page https://www.contestvolta.it)"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 001
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "testo"
+quando = "any"
+nota = "La propria zona CQ: si scrive in «La mia sezione / stato / club» della scheda del contest; le macro la mandano con <MYSECT>."
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["SINGLE-OP ALL", "SINGLE-OP xxM", "SINGLE-OP 6H", "MULTI-OP"]   # nessuna sottocategoria di potenza
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "A. VOLTA RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-TIME", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "10M", "15M", "20M", "40M", "80M"]
+invio = "solo caricamento web dal sito https://www.contestvolta.it (controllo di conformita' in linea); CATEGORY-TIME: 24 hours o 6 hours; la riga QSO termina con i punti del QSO (cabrillo_volta_n.txt)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+escludi = ["JA", "VE", "VK", "K", "ZL"]
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree di JA, VE, VK, W e ZL per banda", en = "JA, VE, VK, W and ZL call areas by band" }
+ordine = 2
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

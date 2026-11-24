@@ -1,0 +1,129 @@
+# CQ WPX RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.cqwpxrtty.com/rules.htm (regolamento 2026) e https://www.cqwpxrtty.com/cabrillo.htm.
+
+[contest]
+id = "cq-wpx-rtty"
+nome = "CQ WPX RTTY Contest"
+alias = []                        # il vecchio file ha gia' lo stesso nome: la cartella lo sostituisce
+organizzatore = "CQ Magazine"
+sito = "https://www.cqwpxrtty.com"
+regolamento_url = "https://www.cqwpxrtty.com/rules.htm"
+cabrillo_contest = "CQ-WPX-RTTY"
+note = "Solo RTTY 45,45 baud, da 80 a 10 metri. Scambio: RST + numero progressivo. Moltiplicatori: prefissi WPX, una volta sola in tutto il contest."
+
+[edizione]
+# Secondo fine settimana pieno di febbraio, sabato 00:00 - domenica 23:59:59 UTC (48 ore). Il regolamento 2026 dice solo "February 14-15, 2026":
+# la regola "secondo fine settimana" e' ricavata da quella data (e dal vecchio file, 8-9 febbraio 2014): il 2027 e' calcolato.
+mese = 2
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+ore_massime = 30                  # single op: 30 ore su 48; i multi-operatore tutte le 48
+pausa_minima_min = 60             # pause di almeno 60 minuti senza QSO nel log
+invio_log_giorni = 2              # entro 48 ore dalla fine (2026: 17 febbraio 23:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-14T00:00:00Z"
+fine = "2026-02-15T23:59:59Z"
+fonte = "https://www.cqwpxrtty.com/rules.htm (letto il 2026-11-24): February 14-15, 2026"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-13T00:00:00Z"
+fine = "2027-02-14T23:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di febbraio (il regolamento letto non da' il 2027)"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]   # 3,5 / 7 / 14 / 21 / 28 MHz; niente 160 m
+
+[modi]
+ammessi = ["rtty"]                # solo 45,45 baud, 170 Hz
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Parte da 001. Multi-Two, Multi-Unlimited e Multi-Distributed hanno una sequenza per banda (motore: una sola sequenza)."
+
+[doppi]
+per = "banda"                     # ogni stazione una volta per banda
+
+[categorie]
+operatore = ["SO", "MULTI-ONE", "MULTI-TWO", "MULTI-UNLIMITED", "MULTI-DISTRIBUTED"]
+potenza = ["QRP", "LOW", "HIGH"]
+sovrapposizioni = ["TB-WIRES", "ROOKIE", "CLASSIC", "YOUTH"]
+altre = ["Checklog"]
+
+[categorie.multi-one]
+potenza = ["LOW", "HIGH"]         # un trasmettitore alla volta, al massimo 10 cambi di banda per ora d'orologio
+
+[categorie.multi-two]
+potenza = ["HIGH"]                # due trasmettitori su bande diverse, 8 cambi per ora per trasmettitore; il log dice il trasmettitore
+
+[categorie.multi-unlimited]
+potenza = ["HIGH"]                # fino a cinque trasmettitori, uno per banda
+
+[categorie.multi-distributed]
+potenza = ["HIGH"]                # come Unlimited, in luoghi diversi ma nello stesso paese DXCC e nella stessa zona CQ
+
+[cabrillo]
+contest = "CQ-WPX-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "CATEGORY-STATION", "LOCATION", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+category_overlay = ["TB-WIRES", "ROOKIE", "CLASSIC", "YOUTH"]
+invio = "solo caricamento web (cqwpxrtty.com/logs.htm), Cabrillo; i W/VE mettono LOCATION; riga QSO: rst numero, per Multi-Two il trasmettitore in coda"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefissi WPX", en = "WPX prefixes" }
+ordine = 1
+moltiplicatore = "prefisso"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 2
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 3
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

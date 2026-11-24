@@ -1,0 +1,151 @@
+# BARTG Sprint75 Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 v1 (rev. 24 febbraio 2026).
+# Stazione italiana, edizione 2027 (domenica 25 aprile, 17:00 UTC). Nominativi di fantasia. Nessun RST nello scambio, 75 baud.
+# Moltiplicatori: valore@modo, una volta sola in tutto il contest.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-04-25"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1701"
+nominativo = "DL1ABC"
+rst_inviato = ""
+scambio_inviato = "001"
+rst_ricevuto = ""
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY", "EU@RTTY"], motivo = "1 punto; Germania e continente Europa" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1705"
+nominativo = "W1ABC"
+rst_inviato = ""
+scambio_inviato = "002"
+rst_ricevuto = ""
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K@RTTY", "K1@RTTY", "NA@RTTY"], motivo = "paese K, area K1 e continente Nord America" }
+
+[[qso]]
+n = 3
+banda = 40
+modo = "RTTY"
+freq_khz = 7045
+ora_utc = "1710"
+nominativo = "W1ABC"
+rst_inviato = ""
+scambio_inviato = "003"
+rst_ricevuto = ""
+scambio_ricevuto = "020"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "altra banda: 1 punto, ma i moltiplicatori contano una volta sola" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "1715"
+nominativo = "W1ABC"
+rst_inviato = ""
+scambio_inviato = "004"
+rst_ricevuto = ""
+scambio_ricevuto = "030"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 5
+banda = 15
+modo = "RTTY"
+freq_khz = 21100
+ora_utc = "1720"
+nominativo = "JA1ABC"
+rst_inviato = ""
+scambio_inviato = "005"
+rst_ricevuto = ""
+scambio_ricevuto = "040"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA@RTTY", "JA1@RTTY", "AS@RTTY"], motivo = "Giappone, area JA1 e continente Asia" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7046
+ora_utc = "1725"
+nominativo = "VK3ABC"
+rst_inviato = ""
+scambio_inviato = "006"
+rst_ricevuto = ""
+scambio_ricevuto = "050"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["VK@RTTY", "VK3@RTTY", "OC@RTTY"], motivo = "Australia, area VK3 e continente Oceania" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "1730"
+nominativo = "I2ABC"
+rst_inviato = ""
+scambio_inviato = "007"
+rst_ricevuto = ""
+scambio_ricevuto = "060"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "anche il proprio paese e' un moltiplicatore" }
+
+[[qso]]
+n = 8
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "1735"
+nominativo = "DL1ABC"
+rst_inviato = ""
+scambio_inviato = "008"
+rst_ricevuto = ""
+scambio_ricevuto = "070"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "1740"
+nominativo = "ZS1ABC"
+rst_inviato = ""
+scambio_inviato = "009"
+rst_ricevuto = ""
+scambio_ricevuto = "080"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["ZS@RTTY", "AF@RTTY"], motivo = "Sudafrica (nessuna area per ZS) e continente Africa" }
+
+# QSO fuori segmento: il motore non sa riconoscerlo (limite di frequenza per banda), non entra nei totali.
+[[prova_futura]]
+n = 10
+banda = 20
+modo = "RTTY"
+freq_khz = 14130
+ora_utc = "1745"
+nominativo = "DL2ABC"
+rst_inviato = ""
+scambio_inviato = "010"
+rst_ricevuto = ""
+scambio_ricevuto = "090"
+atteso = { ammesso = false, punti = 0, motivo = "14130 kHz e' fuori dal segmento 14070-14125 kHz di 20 m: zero punti e zero moltiplicatori" }
+
+# Totali (a mano): ammessi 1-3, 5-7, 9 = 7; doppi 1 (n. 4); non ammessi 1 (n. 8)
+#   punti: 7
+#   moltiplicatori (una volta sola): DL, K, K1, JA, JA1, VK, VK3, I, ZS = 9; continenti EU NA AS OC AF = 5; totale 9 x 5 = 45
+#   punteggio = 7 x 45 = 315
+[atteso]
+qso_ammessi = 7
+doppi = 1
+non_ammessi = 1
+punti = 7
+moltiplicatori = 45
+punteggio = 315

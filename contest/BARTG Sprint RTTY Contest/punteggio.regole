@@ -1,0 +1,9 @@
+; BARTG Sprint RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento 2025 v3 (rev. 21 maggio 2024).
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: 1 punto per QSO completo; una stazione si lavora una volta per banda.
+; mult: paesi DXCC e aree JA, W (K), VE, VK, una volta sola in tutto il contest (non per banda); i continenti una volta sola (al massimo 6) e moltiplicano a parte.
+; Punteggio = QSO x moltiplicatori x continenti.
+bands=80,40,20,15,10
+points=any=1
+mult=dxcc; area:JA,K,VE,VK; cont/product

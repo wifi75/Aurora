@@ -1,0 +1,10 @@
+; SARTG WW RTTY Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Regolamento 2026 letto su https://www.sartg.com/contest/wwrules.htm.
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: stesso paese 5, altri paesi del proprio continente 10, altri continenti 15.
+; mult: paesi DXCC per banda (anche Australia, Canada, Giappone e Stati Uniti) e aree numeriche di VK, VE, JA e W per banda.
+; Le tre fasce orarie sono controllate dallo script ammesso() (punteggio.rhai).
+bands=80,40,20,15,10
+points=same_dxcc=5; same_cont=10; other_cont=15
+mult=dxcc/band; area:K,VE,JA,VK/band

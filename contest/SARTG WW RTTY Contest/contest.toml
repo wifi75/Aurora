@@ -1,0 +1,119 @@
+# SARTG WW RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://www.sartg.com/contest/wwrules.htm (regolamento dell'edizione 2026).
+
+[contest]
+id = "sartg-ww-rtty"
+nome = "SARTG WW RTTY Contest"
+alias = ["SARTG WW RTTY Contest"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "Scandinavian Amateur Radio Teleprinter Group (SARTG)"
+sito = "https://www.sartg.com"
+regolamento_url = "https://www.sartg.com/contest/wwrules.htm"
+cabrillo_contest = "SARTG-RTTY"
+note = "Solo RTTY da 80 a 10 metri, in tre periodi di 8 ore. Scambio: RST + numero progressivo. Punti 5 / 10 / 15 (paese / continente / altri continenti); moltiplicatori per banda: paesi DXCC e aree di VK, VE, JA e W."
+
+[edizione]
+# Terzo fine settimana pieno di agosto. Tre periodi UTC: sabato 00:00-08:00, sabato 16:00-24:00, domenica 08:00-16:00.
+# La finestra del contest va dal sabato 00:00 alla domenica 16:00; i periodi li controlla punteggio.rhai.
+mese = 8
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 40
+invio_log_giorni = 28             # scadenza del 12 settembre nell'edizione 2026 (il regolamento dice la data, non i giorni)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-08-15T00:00:00Z"
+fine = "2026-08-16T15:59:59Z"
+fonte = "https://www.sartg.com/contest/wwrules.htm (letto il 2026-11-24): «15-16 August 2026, third full weekend in August»"
+confermata = true
+nota = "periodi: sabato 00:00-08:00 e 16:00-24:00, domenica 08:00-16:00 UTC"
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-08-21T00:00:00Z"
+fine = "2027-08-22T15:59:59Z"
+fonte = "calcolata: terzo fine settimana pieno di agosto"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true                # da 001
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["A", "B", "C", "D", "E"]   # A: single op tutte le bande; B: single op una banda; C: multi-op; D: SWL; E: single op tutte le bande, low power (max 100 W)
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "SARTG-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-POWER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "10M", "15M", "20M", "40M", "80M"]
+category_power = ["LOW", "HIGH"]
+invio = "caricamento sul robot dei log (ua9qcq.com) o e-mail a contest@sartg.com; file chiamato nominativo.log (un log di una sola banda: nominativo_banda.log); Cabrillo preferito ma non obbligatorio"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Aree di VK, VE, JA e W per banda", en = "VK, VE, JA and W call areas by band" }
+ordine = 2
+moltiplicatore = "area"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

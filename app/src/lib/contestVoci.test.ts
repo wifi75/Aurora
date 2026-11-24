@@ -259,7 +259,7 @@ describe('pezziInline', () => {
 
 describe('mandaZonaCq', () => {
   it('vale per i contest che mandano la propria zona CQ, non per gli altri', () => {
-    const base = newTextContest();
+    const base = { ...newTextContest(), auto_inc: false };
     expect(mandaZonaCq(base)).toBe(false);
     expect(mandaZonaCq({ ...base, grab_number_type: 2 })).toBe(true);
     const campo = { nome: 'zona', etichetta_it: 'Zona CQ', etichetta_en: 'CQ zone', tipo: 'zona_cq', quando: 'any' } as unknown as ExchangeField;

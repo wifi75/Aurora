@@ -39,6 +39,8 @@ export interface MacroContext {
   /** Scambio ricevuto e da mandare (contest). */
   nrr: string;
   nrs: string;
+  /** La propria sezione, stato, club o zona del contest attivo (`<MYSECT>`), dalla scheda del contest. */
+  mysect?: string;
   /** Inizio del QSO, se gia' fissato. */
   startTime: Date | null;
   now: Date;
@@ -190,6 +192,7 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'NOTES': return c.notes;
     case 'NRR': return c.nrr;
     case 'NRS': return c.nrs;
+    case 'MYSECT': return c.mysect ?? '';
     // con un formato (`<TIME:%H%M>`, `<DATE:%d/%m/%Y>`) data e ora si scrivono cosi'
     case 'DATE': return arg ? formatTime(c.now, arg, true) : utcDate(c.now);
     case 'TIME': return arg ? formatTime(c.now, arg, true) : utcTime(c.now);

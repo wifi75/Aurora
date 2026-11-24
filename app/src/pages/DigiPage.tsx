@@ -1032,6 +1032,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       notes: l.qso.notes,
       nrr: l.qso.nrr ?? '',
       nrs: exchangeSent(l.qso.nrs || fixedNrsRef.current, l.serial),
+      mysect: readSection(browserStorage(), sentSectionRef.current.id),
       startTime: l.startAt,
       now: new Date(),
       dialHz: dial,

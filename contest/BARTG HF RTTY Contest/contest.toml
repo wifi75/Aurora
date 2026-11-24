@@ -1,0 +1,155 @@
+# BARTG HF RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su https://bartg.org.uk/wp-content/uploads/2025/05/bartg-hf-rtty-rules-2025-v3.pdf (revisione del 19 maggio 2024,
+# e' il regolamento piu' recente pubblicato) e sulla pagina https://bartg.org.uk/?p=154 (calendario 2027-2032).
+
+[contest]
+id = "bartg-hf-rtty"
+nome = "BARTG HF RTTY Contest"
+alias = ["BARTG HF RTTY"]         # nome del vecchio file: la cartella lo sostituisce
+organizzatore = "BARTG (British Amateur Radio Teledata Group)"
+sito = "https://bartg.org.uk"
+regolamento_url = "https://bartg.org.uk/wp-content/uploads/2025/05/bartg-hf-rtty-rules-2025-v3.pdf"
+cabrillo_contest = "BARTG-RTTY"
+note = "Solo RTTY, 80-10 metri, 48 ore. Scambio: RST + numero progressivo + ora UTC. 1 punto per QSO; moltiplicatori per banda: paesi DXCC e aree JA, W, VE, VK; continenti una volta sola."
+
+[edizione]
+# Terzo fine settimana pieno di marzo, da sabato 02:00 UTC a lunedi' 01:59 UTC (48 ore).
+mese = 3
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "02:00"
+durata_ore = 48
+ore_massime = 30                  # tutte le classi single operator tranne SOAB6 (6 ore); multi-operatore tutte le 48
+pausa_minima_min = 180            # pause di almeno 3 ore
+invio_log_giorni = 7              # entro 7 giorni dalla fine
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-03-21T02:00:00Z"
+fine = "2026-03-23T01:59:59Z"
+fonte = "calcolata dalla regola (terzo fine settimana pieno di marzo); la pagina https://bartg.org.uk/?p=154 oggi mostra solo il 2027-2032, una ricerca indica 21-23 marzo"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-03-20T02:00:00Z"
+fine = "2027-03-22T01:59:59Z"
+fonte = "https://bartg.org.uk/?p=154 (letto il 2026-11-24): 02:00z sabato 20 marzo - 01:59z lunedi' 22 marzo"
+confermata = true
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-03-18T02:00:00Z"
+fine = "2028-03-20T01:59:59Z"
+fonte = "https://bartg.org.uk/?p=154 (letto il 2026-11-24): 02:00z sabato 18 marzo - 01:59z lunedi' 20 marzo"
+confermata = true
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # solo RTTY (nel Cabrillo RY)
+
+# Segmenti di frequenza (kHz) per banda, nel regolamento: fuori segmento il QSO vale zero punti e zero moltiplicatori.
+# Il formato dei limiti e' per modo, non per banda: il controllo non e' fatto dal motore (vedi punteggio.md e prove.toml, prova_futura).
+#   80 m 3580-3615, 40 m 7040-7125, 20 m 14070-14125 (14100 +/- 0,5 kHz, la frequenza del radiofaro, vale zero),
+#   15 m 21070-21148, 10 m 28070-28189.
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Message number"
+tipo = "testo"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "ora"
+etichetta_it = "Ora UTC (hhmm)"
+etichetta_en = "UTC time (hhmm)"
+tipo = "testo"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Message number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Tre o quattro cifre, da 001, +1 a ogni contatto."
+
+[[scambio.inviato]]
+nome = "ora"
+etichetta_it = "Ora UTC (hhmm)"
+etichetta_en = "UTC time (hhmm)"
+tipo = "testo"
+quando = "any"
+nota = "Quattro cifre, mandata ogni volta (macro <CTIME>)."
+motore = false
+
+[doppi]
+per = "banda"                     # una stazione una volta per banda per punti e moltiplicatori
+
+[categorie]
+operatore = ["SOE", "SOAB", "SOAB100", "SOABQRP", "SOAB6", "SS10", "SS15", "SS20", "SS40", "SS80", "MS", "MM"]
+potenza = ["QRP", "100W", "MAX"]
+altre = ["Checklog"]
+# Tutte le classi sono "assisted". SOE: piu' radio; SOAB: una radio; SOAB6: primi 6 ore di operativita'; SS: una banda; MS: multi-op una radio; MM: multi-op piu' radio.
+# Radio singola tutte le bande (SOAB, SOAB100, SOABQRP, SOAB6, MS): dopo un QSO su una banda non si cambia banda per 5 minuti.
+
+[cabrillo]
+# Il regolamento non scrive il valore di CONTEST: BARTG-RTTY e' quello della specifica Cabrillo, da ricontrollare con l'esempio di log del sito.
+contest = "BARTG-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY", "EMAIL"]
+facoltativi = ["CATEGORY-POWER", "CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_assisted = ["ASSISTED"]
+category_transmitter = ["ONE", "UNLIMITED"]
+invio = "entro 7 giorni al robot RSGB http://bartg.rsgbcc.org/cgi-bin/hfenter.pl (Cabrillo); riga QSO: freq. in kHz = frequenza MARK, RY, rst numero ora"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC e aree JA, W, VE, VK per banda", en = "DXCC countries and JA, W, VE, VK areas by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Continenti (una volta sola)", en = "Continents (once)" }
+ordine = 2
+moltiplicatore = "continente"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

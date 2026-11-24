@@ -1,0 +1,118 @@
+# OK DX RTTY Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-24 su http://okrtty.crk.cz/index.php?page=english (pagina ufficiale del contest, Club Radioamatori Cechi) e calendario 2026 sulla stessa pagina.
+
+[contest]
+id = "ok-dx-rtty"
+nome = "OK DX RTTY Contest"
+alias = ["OK DX RTTY CONTEST"]   # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "Czech Radio Club (CRK)"
+sito = "http://okrtty.crk.cz"
+regolamento_url = "http://okrtty.crk.cz/index.php?page=english"
+cabrillo_contest = "OK-DX-RTTY"
+note = "Solo RTTY (Baudot) da 80 a 10 metri, 24 ore. Scambio: RST + zona CQ. Punti 1/2 (10-20 m) e 3/6 (40 e 80 m) secondo il continente; moltiplicatori per banda: paesi DXCC e, per chi non e' OK/OL, stazioni OK."
+
+[edizione]
+# Terzo fine settimana pieno di dicembre: solo il sabato, 00:00-24:00 UTC.
+mese = 12
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 24
+invio_log_giorni = 7              # entro il 7 giorno dopo il contest (nel 2026: 26 dicembre, 23:59:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-12-19T00:00:00Z"
+fine = "2026-12-19T23:59:59Z"
+fonte = "http://okrtty.crk.cz/index.php?page=english (letto il 2026-11-24): «19. 12. 2026, 00:00-24:00 UTC», log entro il 26. 12. 2026 23:59:59"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-12-18T00:00:00Z"
+fine = "2027-12-18T23:59:59Z"
+fonte = "calcolata: terzo fine settimana pieno di dicembre"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # RTTY Baudot
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+
+[doppi]
+per = "banda"                     # una stazione si lavora una volta per banda
+
+[categorie]
+operatore = ["SINGLE-OP ALL HIGH", "SINGLE-OP ALL LOW", "SINGLE-OP 10M", "SINGLE-OP 15M", "SINGLE-OP 20M", "SINGLE-OP 40M", "SINGLE-OP 80M", "MULTI-OP", "SWL"]
+potenza = ["LOW", "HIGH"]         # A1 alta (oltre 100 W), A2 bassa (sotto 100 W)
+altre = ["Checklog"]
+
+[cabrillo]
+contest = "OK-DX-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP"]
+category_band = ["ALL", "10M", "15M", "20M", "40M", "80M"]
+category_power = ["LOW", "HIGH"]
+invio = "solo caricamento web su http://okrtty.crk.cz entro il 7 giorno dopo il contest (e-mail a okrtty at crk.cz solo se il caricamento fallisce); cambi di banda: una volta ogni 5 minuti nelle categorie A1, A2 e C"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stazioni OK per banda", en = "OK stations by band" }
+ordine = 2
+moltiplicatore = "nominativo"
+per_banda = true
+per_modo = false
+quando = "not_my_dxcc:OK"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori_per_banda"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

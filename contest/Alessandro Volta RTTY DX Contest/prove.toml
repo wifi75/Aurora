@@ -1,0 +1,159 @@
+# Alessandro Volta RTTY DX Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento aggiornato a novembre 2025 (https://www.contestvolta.it/rules.pdf)
+# e dalla tabella dei punti REV. 2004. Stazione italiana (zona CQ 15). Nominativi di fantasia, edizione 2027 (sabato 8 maggio, 12:00 UTC).
+# Moltiplicatori: valore@modo (paesi e aree contano una volta per banda). Il moltiplicatore in piu' (paese di altro continente su 4 bande) e' nel punteggio finale.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-05-08"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1201"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 14"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@RTTY"], motivo = "stesso continente: tabella zona 15 -> zona 14 = 3 punti; paese DL" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1205"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "002 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 05"
+atteso = { ammesso = true, doppio = false, punti = 20, moltiplicatori = ["K1@RTTY"], motivo = "altro continente su 20 m: tabella zona 15 -> zona 5 = 20 punti; del K conta solo l'area K1, non il paese" }
+
+[[qso]]
+n = 3
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "1210"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "002 05"
+atteso = { ammesso = true, doppio = false, punti = 20, moltiplicatori = ["K1@RTTY"], motivo = "stessa stazione su un'altra banda: non e' doppio; area K1 nuova sui 15 m" }
+
+[[qso]]
+n = 4
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1215"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "004 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "003 05"
+atteso = { ammesso = true, doppio = false, punti = 20, moltiplicatori = ["K1@RTTY"], motivo = "area K1 nuova sui 40 m; 40 m non raddoppia" }
+
+[[qso]]
+n = 5
+banda = 10
+modo = "RTTY"
+freq_khz = 28080
+ora_utc = "1220"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "005 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "004 05"
+atteso = { ammesso = true, doppio = false, punti = 40, moltiplicatori = ["K1@RTTY"], motivo = "28 MHz fuori continente: il doppio (2 x 20); quarta banda con K: moltiplicatore in piu' del paese K nel punteggio finale" }
+
+[[qso]]
+n = 6
+banda = 80
+modo = "RTTY"
+freq_khz = 3580
+ora_utc = "1225"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "006 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 25"
+atteso = { ammesso = true, doppio = false, punti = 54, moltiplicatori = ["JA1@RTTY"], motivo = "3,5 MHz fuori continente: 2 x 27 (tabella zona 15 -> zona 25); area JA1" }
+
+[[qso]]
+n = 7
+banda = 10
+modo = "RTTY"
+freq_khz = 28081
+ora_utc = "1230"
+nominativo = "PY2ABC"
+rst_inviato = "599"
+scambio_inviato = "007 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 11"
+atteso = { ammesso = true, doppio = false, punti = 56, moltiplicatori = ["PY@RTTY"], motivo = "28 MHz fuori continente: 2 x 28 (zona 15 -> zona 11); PY non ha aree, conta il paese" }
+
+[[qso]]
+n = 8
+banda = 80
+modo = "RTTY"
+freq_khz = 3581
+ora_utc = "1235"
+nominativo = "OZ1ABC"
+rst_inviato = "599"
+scambio_inviato = "008 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 14"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["OZ@RTTY"], motivo = "3,5 MHz ma stesso continente: nessun raddoppio, 3 punti" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "1240"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "009 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 15"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "stesso paese: QSO non valido, nessun punto e nessun moltiplicatore" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "1245"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "010 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "002 14"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 11
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "1250"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "011 15"
+rst_ricevuto = "599"
+scambio_ricevuto = "003 14"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 2
+punti = 216
+moltiplicatori = 8
+punteggio = 15552                 # 216 x (8 + 1 paese su 4 bande: K) x 8 QSO

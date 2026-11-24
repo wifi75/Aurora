@@ -1,0 +1,228 @@
+# CQ WPX RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://www.cqwpxrtty.com/rules.htm).
+# Due punti di vista: [prova] e' una stazione italiana, [[altra_stazione]] una stazione degli Stati Uniti. Edizione 2027 (13-14 febbraio).
+# Nominativi di fantasia. Moltiplicatori: prefissi WPX, una volta sola (valore@modo).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-02-13"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL1@RTTY"], motivo = "stesso continente, altro paese: 2 punti su 20 m; prefisso DL1" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K1@RTTY"], motivo = "altro continente: 3 punti su 20 m; prefisso K1" }
+
+[[qso]]
+n = 3
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0010"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = [], motivo = "altra banda, non e' doppio; su 40 m i punti raddoppiano (6); prefisso K1 gia' preso" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0015"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 5
+banda = 40
+modo = "RTTY"
+freq_khz = 7041
+ora_utc = "0020"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["I2@RTTY"], motivo = "stesso paese su 40 m: 1 x 2 = 2 punti; prefisso I2" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0025"
+nominativo = "W1XYZ"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["W1@RTTY"], motivo = "altro continente; prefisso W1 (diverso da K1)" }
+
+[[qso]]
+n = 7
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0030"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "011"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del CQ WPX RTTY" }
+
+[[qso]]
+n = 8
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "0035"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "012"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA1@RTTY"], motivo = "altro continente su 15 m; prefisso JA1" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0040"
+nominativo = "DL1XYZ"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "013"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "altra stazione tedesca: prefisso DL1 gia' preso" }
+
+[[qso]]
+n = 10
+banda = 80
+modo = "RTTY"
+freq_khz = 3590
+ora_utc = "0045"
+nominativo = "OE1ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "014"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["OE1@RTTY"], motivo = "stesso continente su 80 m: 2 x 2 = 4; prefisso OE1" }
+
+[[qso]]
+n = 11
+banda = 80
+modo = "RTTY"
+freq_khz = 3591
+ora_utc = "0050"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "015"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = [], motivo = "altro continente su 80 m: 3 x 2 = 6; K1 gia' preso" }
+
+# Totali (a mano): ammessi 1-3, 5, 6, 8-11 = 9; n. 4 e' doppio e n. 7 non e' ammesso
+#   punti: 2+3+6+2+3+3+2+4+6 = 31
+#   prefissi: DL1 K1 I2 W1 JA1 OE1 = 6
+#   punteggio = 31 x 6 = 186
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 31
+moltiplicatori = 6
+punteggio = 186
+
+[[altra_stazione]]
+nominativo_proprio = "K1ABC"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0101"
+nominativo = "K2ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K2@RTTY"], motivo = "stesso paese su 20 m: 1 punto; prefisso K2" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 80
+modo = "RTTY"
+freq_khz = 3590
+ora_utc = "0105"
+nominativo = "K2ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "stesso paese su 80 m: 2 punti; prefisso K2 gia' preso" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0110"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL1@RTTY"], motivo = "altro continente: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0115"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["VE3@RTTY"], motivo = "stesso continente, altro paese su 40 m: 2 x 2 = 4; prefisso VE3" }
+
+# Totali (a mano): 4 QSO, punti 1+2+3+4 = 10, prefissi K2 DL1 VE3 = 3, punteggio 30
+[altra_stazione.atteso]
+qso_ammessi = 4
+doppi = 0
+non_ammessi = 0
+punti = 10
+moltiplicatori = 3
+punteggio = 30

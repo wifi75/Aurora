@@ -1,0 +1,165 @@
+# BARTG HF RTTY Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2025 v3 (rev. 19 maggio 2024).
+# Stazione italiana, edizione 2027 (sabato 20 marzo, 02:00 UTC). Nominativi di fantasia.
+# Moltiplicatori: valore@modo; paesi e aree contano una volta per banda, i continenti una volta sola.
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-03-20"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0201"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "001 0201"
+rst_ricevuto = "599"
+scambio_ricevuto = "001 0201"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY", "EU@RTTY"], motivo = "1 punto; Germania su 20 m e continente Europa" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0205"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "002 0205"
+rst_ricevuto = "599"
+scambio_ricevuto = "010 0205"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K@RTTY", "K1@RTTY", "NA@RTTY"], motivo = "paese K, area K1 e continente Nord America" }
+
+[[qso]]
+n = 3
+banda = 40
+modo = "RTTY"
+freq_khz = 7045
+ora_utc = "0210"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "003 0210"
+rst_ricevuto = "599"
+scambio_ricevuto = "020 0210"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K@RTTY", "K1@RTTY"], motivo = "altra banda: non e' doppio, paese e area contano di nuovo; il continente no" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0215"
+nominativo = "W1ABC"
+rst_inviato = "599"
+scambio_inviato = "004 0215"
+rst_ricevuto = "599"
+scambio_ricevuto = "030 0215"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 5
+banda = 15
+modo = "RTTY"
+freq_khz = 21100
+ora_utc = "0220"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "005 0220"
+rst_ricevuto = "599"
+scambio_ricevuto = "040 0220"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA@RTTY", "JA1@RTTY", "AS@RTTY"], motivo = "Giappone, area JA1 e continente Asia" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0225"
+nominativo = "W2ABC"
+rst_inviato = "599"
+scambio_inviato = "006 0225"
+rst_ricevuto = "599"
+scambio_ricevuto = "050 0225"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["K2@RTTY"], motivo = "paese K gia' preso su 20 m, area K2 nuova" }
+
+[[qso]]
+n = 7
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0230"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "007 0230"
+rst_ricevuto = "599"
+scambio_ricevuto = "060 0230"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[qso]]
+n = 8
+banda = 80
+modo = "RTTY"
+freq_khz = 3590
+ora_utc = "0235"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "008 0235"
+rst_ricevuto = "599"
+scambio_ricevuto = "070 0235"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "anche il proprio paese e' un moltiplicatore (Italia su 80 m)" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0240"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "009 0240"
+rst_ricevuto = "599"
+scambio_ricevuto = "080 0240"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "Italia su 20 m: nuova su questa banda" }
+
+[[qso]]
+n = 10
+banda = 10
+modo = "RTTY"
+freq_khz = 28100
+ora_utc = "0245"
+nominativo = "VK3ABC"
+rst_inviato = "599"
+scambio_inviato = "010 0245"
+rst_ricevuto = "599"
+scambio_ricevuto = "090 0245"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["VK@RTTY", "VK3@RTTY", "OC@RTTY"], motivo = "Australia, area VK3 e continente Oceania" }
+
+# QSO fuori segmento: il motore non lo sa riconoscere (limite di frequenza per banda), non entra nei totali.
+[[prova_futura]]
+n = 11
+banda = 20
+modo = "RTTY"
+freq_khz = 14130
+ora_utc = "0250"
+nominativo = "DL2ABC"
+rst_inviato = "599"
+scambio_inviato = "011 0250"
+rst_ricevuto = "599"
+scambio_ricevuto = "100 0250"
+atteso = { ammesso = false, punti = 0, motivo = "14130 kHz e' fuori dal segmento 14070-14125 kHz di 20 m: zero punti e zero moltiplicatori" }
+
+# Totali (a mano): ammessi 1-3, 5, 6, 8-10 = 8; doppi 1 (n. 4); non ammessi 1 (n. 7)
+#   punti: 8 (1 per QSO)
+#   moltiplicatori per banda: 20 m DL, K, K1, K2, I (5); 40 m K, K1 (2); 15 m JA, JA1 (2); 80 m I (1); 10 m VK, VK3 (2) = 12
+#   continenti: EU NA AS OC = 4 (una volta sola); totale moltiplicatori 12 x 4 = 48
+#   punteggio = 8 x 48 = 384
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 1
+punti = 8
+moltiplicatori = 48
+punteggio = 384
