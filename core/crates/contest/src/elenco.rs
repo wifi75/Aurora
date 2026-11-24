@@ -68,6 +68,8 @@ pub struct ContestTesto {
     pub suggest_dxcc_pfx: bool,
     pub dupe_no_band: bool,
     pub dupe_no_mode: bool,
+    /// Contest importato dall'altro programma e non ancora verificato sul regolamento ufficiale: l'elenco lo mette nella scheda «Beta contest».
+    pub beta: bool,
     pub log_bar_mode: i32,
     /// I QTC del WAE (`m_iQtc`, `docs/contest-qtc.md`): 0 nessuno, 1 dalle stazioni non europee alle europee (CW, SSB), 2 in entrambe
     /// le direzioni fra continenti diversi (RTTY).
@@ -117,6 +119,7 @@ impl Default for ContestTesto {
             suggest_dxcc_pfx: false,
             dupe_no_band: false,
             dupe_no_mode: false,
+            beta: false,
             log_bar_mode: 0,
             qtc: 0,
             score: String::new(),
@@ -242,6 +245,7 @@ impl ContestTesto {
                 "m_bSuggestDxccPfx" => c.suggest_dxcc_pfx = b(),
                 "m_bDupeNoBand" => c.dupe_no_band = b(),
                 "m_bDupeNoMode" => c.dupe_no_mode = b(),
+                "m_bBeta" => c.beta = b(),
                 "m_iLogBarDispMode" => c.log_bar_mode = i(),
                 "m_iQtc" => {
                     c.qtc = i().clamp(0, 2);
@@ -310,6 +314,7 @@ impl ContestTesto {
         s("m_bSuggestDxccPfx", b(self.suggest_dxcc_pfx).into());
         s("m_bDupeNoBand", b(self.dupe_no_band).into());
         s("m_bDupeNoMode", b(self.dupe_no_mode).into());
+        s("m_bBeta", b(self.beta).into());
         s("m_iLogBarDispMode", self.log_bar_mode.to_string());
         s("m_iQtc", self.qtc.clamp(0, 2).to_string());
         let regole: Vec<String> = self.score.lines().map(str::trim).filter(|x| x.contains('=') && !x.starts_with('[')).map(String::from).collect();

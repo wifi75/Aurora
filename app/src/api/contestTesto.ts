@@ -105,6 +105,8 @@ export interface TextContest {
   suggest_dxcc_pfx: boolean;
   dupe_no_band: boolean;
   dupe_no_mode: boolean;
+  /** Importato dall'altro programma e non ancora verificato sul regolamento ufficiale: sta nella scheda «Beta contest». */
+  beta?: boolean;
   log_bar_mode: number;
   /** QTC del WAE: 0 nessuno, 1 dalle stazioni non europee alle europee (CW, SSB), 2 in entrambe le direzioni fra continenti diversi (RTTY). */
   qtc: number;
@@ -116,6 +118,7 @@ export interface TextContestRef {
   notes: string;
   start: string;
   end: string;
+  beta?: boolean;
 }
 
 export interface TextContestList {

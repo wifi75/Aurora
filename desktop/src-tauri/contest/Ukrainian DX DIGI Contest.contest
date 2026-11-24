@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=Ukrainian DX DIGI Contest
 m_sNotes=RTTY + PSK31
 m_dtStart=20170624120000

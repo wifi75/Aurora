@@ -28,6 +28,9 @@ type ModeTab = 'all' | ContestModeTab;
 const MODE_TABS: readonly ModeTab[] = ['all', ...CONTEST_MODE_TABS];
 /** La linguetta scelta si ricorda finche' l'app resta aperta (alla riapertura della finestra riparte da dove era). */
 let lastModeTab: ModeTab = 'all';
+/** Quale elenco si vede: i contest ufficiali (verificati sul regolamento) o i «Beta contest» (importati, non ancora verificati). */
+type SetView = 'official' | 'beta';
+let lastSetView: SetView = 'official';
 
 /** Sceglie il contest attivo (`null` = «Nessun contest») e lo dice. */
 export function useSelectTextContest() {
@@ -61,8 +64,19 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
   const active = list.data?.attivo ?? null;
   const current = picked === undefined ? active : picked;
   const [query, setQuery] = useState('');
-  const contests = list.data?.contest ?? [];
-  const rows = [{ id: null as string | null, name: t('ctest.none'), notes: '' }, ...contests];
+  const allContests = list.data?.contest ?? [];
+  const none = { id: null as string | null, name: t('ctest.none'), notes: '' };
+  const rows = [none, ...allContests];
+  const [setState, setSetState] = useState<SetView>(() => (allContests.find((c) => c.id === (list.data?.attivo ?? null))?.beta ? 'beta' : lastSetView));
+  const betaCount = allContests.filter((c) => c.beta === true).length;
+  // se un elenco e' vuoto si vede solo l'altro
+  const setView: SetView = betaCount === 0 ? 'official' : betaCount === allContests.length ? 'beta' : setState;
+  const contests = useMemo(() => allContests.filter((c) => (c.beta === true) === (setView === 'beta')), [allContests, setView]);
+  const chooseSet = (v: SetView) => {
+    lastSetView = v;
+    setSetState(v);
+    setTabState('all');
+  };
   const [tabState, setTabState] = useState<ModeTab>(lastModeTab);
   // i modi di ogni contest (dalle note) e quanti ne ha ogni linguetta; un contest con piu' modi sta in tutte le sue linguette
   const modesOf = useMemo(() => new Map(contests.map((c) => [c.id, contestModes(c.notes, c.name)] as const)), [contests]);
@@ -89,7 +103,7 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
   };
   // la ricerca guarda nome e note dentro la linguetta scelta; «Nessun contest» resta sempre in cima
   const q = query.trim().toLowerCase();
-  const shown = rows.filter((r) => r.id === null || ((tab === 'all' || (modesOf.get(r.id) ?? []).includes(tab)) && (q === '' || `${r.name} ${r.notes}`.toLowerCase().includes(q))));
+  const shown = [none, ...contests].filter((r) => r.id === null || ((tab === 'all' || (modesOf.get(r.id) ?? []).includes(tab)) && (q === '' || `${r.name} ${r.notes}`.toLowerCase().includes(q))));
 
   const choose = async (id: string | null) => {
     const name = rows.find((r) => r.id === id)?.name;
@@ -163,6 +177,17 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => (e.key === 'Escape' && query ? (e.stopPropagation(), setQuery('')) : undefined)}
         />
+        {betaCount > 0 ? (
+          <div role="tablist" className="ctest-sets" aria-label={t('ctest.sets')}>
+            <button type="button" role="tab" aria-selected={setView === 'official'} className={`glass sstv-btn ctest-set${setView === 'official' ? ' active' : ''}`} onClick={() => chooseSet('official')} disabled={allContests.length === betaCount}>
+              {t('ctest.set.official')} <span className="ctest-tab-n">{allContests.length - betaCount}</span>
+            </button>
+            <button type="button" role="tab" aria-selected={setView === 'beta'} className={`glass sstv-btn ctest-set ctest-set--beta${setView === 'beta' ? ' active' : ''}`} onClick={() => chooseSet('beta')}>
+              {t('ctest.set.beta')} <span className="ctest-tab-n">{betaCount}</span>
+            </button>
+          </div>
+        ) : null}
+        {setView === 'beta' ? <p className="ctest-beta-note">{t('ctest.betaNote')}</p> : null}
         <div role="tablist" className="ctest-tabs" aria-label={t('ctest.tabs')}>
           {MODE_TABS.map((m) => (
             <button
@@ -197,7 +222,7 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
                 </tr>
               ) : (
                 shown.map((r) => (
-                  <tr key={r.id ?? ''} className={r.id === current ? 'is-picked' : undefined} aria-selected={r.id === current} onClick={() => setPicked(r.id)} onDoubleClick={() => void choose(r.id)}>
+                  <tr key={r.id ?? ''} className={`${r.id === current ? 'is-picked' : ''}${setView === 'beta' && r.id !== null ? ' is-beta' : ''}`.trim() || undefined} aria-selected={r.id === current} onClick={() => setPicked(r.id)} onDoubleClick={() => void choose(r.id)}>
                     <td className="ctest-col-active">{r.id === active ? '►' : ''}</td>
                     <td>{r.name}</td>
                     <td>{r.notes}</td>

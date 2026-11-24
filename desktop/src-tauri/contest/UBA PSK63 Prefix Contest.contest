@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=UBA PSK63 Prefix Contest
 m_sNotes=PSK63
 m_dtStart=20170114115901

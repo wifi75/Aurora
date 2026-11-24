@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=TRC DIGI Contest
 m_sNotes=RTTY PSK; i soci aggiungono TRC al numero (scambio in m_sNrs)
 m_dtStart=

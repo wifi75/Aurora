@@ -125,3 +125,23 @@ describe('linguette per modo', () => {
     expect(tabs().getByRole('tab', { name: /SSB/ })).toHaveAttribute('aria-selected', 'true');
   });
 });
+
+describe('ufficiali e Beta contest', () => {
+  const ref = (id: string, name: string, beta: boolean) => ({ id, name, notes: 'RTTY', start: '', end: '', beta });
+  const names = () => screen.getAllByRole('row').slice(2).map((r) => r.querySelectorAll('td')[1]?.textContent);
+
+  it('i contest beta stanno in una scheda a parte, con l avviso; gli ufficiali restano nell elenco di base', async () => {
+    vi.mocked(getTextContests).mockImplementationOnce(() => Promise.resolve({ attivo: null, contest: [ref('1', 'Ufficiale RTTY', false), ref('2', 'Vecchio RTTY', true), ref('3', 'Altro RTTY', true)], macros: [], domini: [] }));
+    render(dialog());
+    await screen.findByText('Ufficiale RTTY');
+    expect(names()).toEqual(['Ufficiale RTTY']);
+    const sets = within(screen.getByRole('tablist', { name: /Elenco dei contest|Contest list/ }));
+    expect(sets.getByRole('tab', { name: /Beta/ })).toHaveTextContent('2');
+    fireEvent.click(sets.getByRole('tab', { name: /Beta/ }));
+    expect(names()).toEqual(['Vecchio RTTY', 'Altro RTTY']);
+    expect(document.querySelector('.ctest-beta-note')).not.toBeNull();
+    fireEvent.click(sets.getByRole('tab', { name: /ufficiali|Official/ }));
+    expect(names()).toEqual(['Ufficiale RTTY']);
+    expect(document.querySelector('.ctest-beta-note')).toBeNull();
+  });
+});

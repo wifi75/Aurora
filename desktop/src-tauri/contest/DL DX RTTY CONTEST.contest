@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=DL DX RTTY CONTEST
 m_sNotes=RTTY & PSK31 & PSK63
 m_dtStart=20140705110000

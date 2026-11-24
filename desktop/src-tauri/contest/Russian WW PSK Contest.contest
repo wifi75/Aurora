@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=Russian WW PSK Contest
 m_sNotes=PSK31 - PSK63 - PSK125
 m_dtStart=20160220120000

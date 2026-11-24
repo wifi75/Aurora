@@ -66,3 +66,12 @@ html[data-theme='light'] .ctest-table tbody tr:nth-child(even) { background: rgb
 .ctest-rules { overflow-x: hidden; overflow-wrap: anywhere; }
 .ctest-rules code { font-size: 0.78rem; padding: 0 0.2em; border-radius: 3px; background: color-mix(in srgb, var(--text, #888) 12%, transparent); }
 .ctest-rules a { color: var(--accent, #1b6ef3); text-decoration: underline; }
+
+/* ufficiali e «Beta contest»: la scheda beta e' ben riconoscibile, in giallo-ambra su fondo e testo del tema (leggibile in chiaro e scuro) */
+.ctest-sets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.5rem; }
+.ctest-set.active { outline: 2px solid var(--accent, #4a9eff); background: color-mix(in srgb, var(--accent, #4a9eff) 22%, transparent); color: var(--text); }
+.ctest-set--beta { border: 1px solid #d9a400; background: color-mix(in srgb, #f2b705 22%, transparent); color: var(--text); }
+.ctest-set--beta.active { outline: 2px solid #d9a400; background: color-mix(in srgb, #f2b705 45%, transparent); }
+.ctest-beta-note { margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; border-left: 4px solid #d9a400; border-radius: 6px; background: color-mix(in srgb, #f2b705 18%, transparent); color: var(--text); font-size: 0.85rem; }
+.ctest-table tr.is-beta td:first-child { box-shadow: inset 4px 0 0 #d9a400; }
+.ctest-table tr.is-beta.is-picked td { background: color-mix(in srgb, #f2b705 35%, transparent); }

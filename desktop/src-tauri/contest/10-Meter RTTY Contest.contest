@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=10-Meter RTTY Contest
 m_sNotes=RTTY
 m_dtStart=20161204000001

@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=Russian WW Digital Contest
 m_sNotes=RTTY + BPSK63
 m_dtStart=20261003120000

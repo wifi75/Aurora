@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=Russian WW MultiMode Contest
 m_sNotes=CW, BPSK63, RTTY45, SSB
 m_dtStart=20160430120000

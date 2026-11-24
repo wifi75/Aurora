@@ -4967,6 +4967,10 @@ digi.txm.copy,Copy,Копировать
 digi.txm.paste,Paste,Вставить
 ctest.search,Search a contest (name or notes)…,Поиск контеста (по названию или заметкам)…
 ctest.tabs,Contest mode,Режим контеста
+ctest.sets,Contest list,Список контестов
+ctest.set.official,Official contests,Официальные контесты
+ctest.set.beta,Beta contests,Бета-контесты
+ctest.betaNote,"Contests imported from the old sheets and not yet checked against the official rules: points, multipliers, bands and exchange may differ from this year’s. Check them before a contest.","Контесты, импортированные из старых карточек и ещё не проверенные по официальному регламенту: очки, множители, диапазоны и обмен могут отличаться от нынешних. Проверьте их перед соревнованием."
 ctest.tab.all,All,Все
 ctest.tab.ssb,SSB,SSB
 ctest.tab.cw,CW,CW

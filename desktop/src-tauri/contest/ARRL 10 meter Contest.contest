@@ -1,4 +1,5 @@
 [Contest]
+m_bBeta=1
 m_sName=ARRL 10 meter Contest
 m_sNotes=CW & SSB
 m_dtStart=20131214000001

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Elenco dei contest: due schede, «Contest ufficiali» (i 13 in formato cartella, scritti dai regolamenti ufficiali) e «Beta contest» (gli altri, importati dalle vecchie schede e non ancora verificati), quest'ultima in giallo con un avviso; le linguette per modo valgono dentro ciascuna. Nuovo campo `m_bBeta=1` nei `.contest` distribuiti (i contest creati o importati dall'utente restano ufficiali). Prova in `ContestListDialog.test.tsx`.
 - Contest dei modi testuali: rimessi fra quelli distribuiti 20 contest RTTY e CW che erano stati tolti perche' non piu' organizzati (10-Meter RTTY, Aegean RTTY, CBNR CW, CQ BDM RTTY WW, Croatian CW, DL DX RTTY, DMC RTTY, DRCG WW RTTY, Jakarta RTTY, Mongolian DX CW-SSB e RTTY, RTTYOPS WW DX, SCC RTTY Championship, TARA Melee, Skirmish, Grid Dip e Rumble, Taras 200, Ukrainian DX Classic RTTY, Ukrainian RTTY Championship), con le loro macro e senza valori personali nello scambio da mandare. Richiesta del proprietario, 2026-11-24.
 
 ## 0.11.341 - 2026-11-24

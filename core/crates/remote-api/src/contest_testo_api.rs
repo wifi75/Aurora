@@ -30,7 +30,7 @@ pub(crate) async fn elenco(State(state): State<AppState>, _: Authed) -> Result<J
         .map(|v| {
             let mut m = v.campi_api(false);
             let c = &v.contest;
-            for (k, x) in [("id", json!(c.id)), ("name", json!(c.name)), ("notes", json!(c.notes)), ("start", json!(c.start)), ("end", json!(c.end))] {
+            for (k, x) in [("id", json!(c.id)), ("name", json!(c.name)), ("notes", json!(c.notes)), ("start", json!(c.start)), ("end", json!(c.end)), ("beta", json!(c.beta))] {
                 m.insert(k.into(), x);
             }
             Value::Object(m)
