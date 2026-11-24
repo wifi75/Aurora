@@ -982,6 +982,15 @@ tip.acc.home,Aurora announces itself on the home network with this name: it stay
 acc.noHome,"Fixed name not active (Aurora only listens on this PC, or the network does not allow the announcement). Use the IP below.",Постоянное имя не активно (Aurora слушает только этот ПК или сеть не разрешает объявление). Используйте IP-адрес ниже.
 acc.pairedNow,Phone paired: you find it below in «Paired devices».,"Телефон сопряжён: найдёте его ниже, в разделе «Сопряжённые устройства»."
 acc.camera,"Scan the QR with the phone camera and open the link in Chrome or Safari: inside Messenger or WhatsApp the page often does not open. Phone and PC on the same Wi-Fi. Chrome on Android does not open the page? Turn off ⋮ › Settings › Privacy and security › «Always use secure connections» and allow «Local network» from the lock icon, or use Firefox.",Отсканируйте QR-код камерой телефона и откройте ссылку в Chrome или Safari: внутри Messenger или WhatsApp страница часто не открывается. Телефон и ПК должны быть в одной сети Wi-Fi. Chrome на Android не открывает страницу? Выключите ⋮ › Настройки › Конфиденциальность и безопасность › «Всегда использовать защищённые соединения» и разрешите «Локальная сеть» по значку замка либо используйте Firefox.
+acc.hot.title,The phone does not connect? Create the Aurora Wi-Fi network,Телефон не подключается? Создайте Wi-Fi сеть Aurora
+acc.hot.help,"The PC creates its own Wi-Fi network: the phone connects straight to the PC, with no router, guest network or isolation. The PC needs a Wi-Fi adapter; the phone has no internet while connected.","ПК создаёт собственную сеть Wi-Fi: телефон подключается напрямую к ПК, без роутера, гостевой сети и изоляции. В ПК нужен адаптер Wi-Fi; пока телефон подключён, интернета на нём нет."
+acc.hot.start,Create the Aurora network,Создать сеть Aurora
+acc.hot.working,Turning the network on…,Включаю сеть…
+acc.hot.stop,Turn the network off,Выключить сеть
+acc.hot.steps,1) Scan this QR with the phone: it joins the Aurora network. 2) Then scan the pairing QR above (the one with the address 192.168.137.1) or open http://192.168.137.1 in the browser.,1) Отсканируйте этот QR телефоном: он подключится к сети Aurora. 2) Затем отсканируйте QR сопряжения выше (с адресом 192.168.137.1) или откройте http://192.168.137.1 в браузере.
+acc.hot.name,Network,Сеть
+acc.hot.pass,Password,Пароль
+acc.hot.failed,Network not turned on. The PC needs a Wi-Fi adapter and Windows «Mobile hotspot» must not be blocked.,"Сеть не включена. В ПК нужен адаптер Wi-Fi, а «Мобильный хот-спот» Windows не должен быть заблокирован."
 acc.alt.title,The phone does not open the page? The PC also has these addresses: try the next QR.,Телефон не открывает страницу? У ПК есть и другие адреса: попробуйте следующий QR-код.
 acc.kind.wifi,Wi-Fi,Wi-Fi
 acc.kind.cable,Network cable,Сетевой кабель

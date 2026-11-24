@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Telefono, collegamento con il QR (segnalazione su eham): nuova «Rete Wi-Fi di Aurora» nella scheda Smartphone/Tablet. Con il QR di associazione aperto, il tasto «Crea la rete di Aurora» accende l'hotspot di Windows (nome e password nuovi a ogni volta, QR Wi-Fi per il telefono, indirizzo fisso 192.168.137.1) cosi' il telefono raggiunge il PC senza router, rete ospiti o isolamento dei client, che erano la causa di quasi tutti i «il telefono non ha mai raggiunto Aurora». Rotte `POST/DELETE /api/v1/lan/hotspot` (solo dal PC). Provato solo con compilazione e prove; l'accensione vera dell'hotspot va provata dal proprietario (serve una scheda Wi-Fi).
 
 ## 0.11.345 - 2026-11-24
 - SSTV, pagina in ricezione (richiesta di Luc, #102): le informazioni (modo, nominativo FSK ID, riga, sincronismo, livello, sintonia, pulsanti) stanno ora a sinistra e l'immagine ricevuta grande al centro (con il registro del QSO, a destra); con una colonna sola (finestra sotto gli 820 px) l'immagine sta sopra. Solo disposizione, niente cambia nella ricezione. Provato nel browser (finestra larga e stretta) e con `sstvLayout.test.ts`.

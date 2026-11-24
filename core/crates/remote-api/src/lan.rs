@@ -215,6 +215,59 @@ pub fn allow_in_firewall(port: u16) -> Result<(), String> {
     }
 }
 
+/// La rete Wi-Fi che Aurora crea sul PC (hotspot di Windows): il telefono ci si collega e raggiunge Aurora senza passare dal router
+/// (niente rete «ospiti», niente isolamento dei client). L'indirizzo del PC su quella rete e' fisso: 192.168.137.1.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct Hotspot {
+    pub ssid: String,
+    pub password: String,
+    pub ip: String,
+    /// Il testo del QR che fa collegare il telefono alla rete (formato `WIFI:`).
+    pub wifi_qr: String,
+}
+
+/// Il testo del QR per collegarsi a una rete Wi-Fi WPA (i caratteri `\ ; , : "` vanno preceduti da `\`).
+pub fn wifi_qr_text(ssid: &str, password: &str) -> String {
+    let esc = |t: &str| t.chars().flat_map(|c| if "\\;,:\"".contains(c) { vec!['\\', c] } else { vec![c] }).collect::<String>();
+    format!("WIFI:T:WPA;S:{};P:{};;", esc(ssid), esc(password))
+}
+
+/// Nome e password della rete di Aurora: lettere e numeri senza i caratteri che si confondono.
+pub fn hotspot_credentials() -> Result<(String, String), String> {
+    const ALPHABET: &[u8] = b"abcdefghjkmnpqrstuvwxyz23456789";
+    let mut bytes = [0u8; 14];
+    getrandom::fill(&mut bytes).map_err(|e| format!("generatore casuale: {e}"))?;
+    let pick = |b: &[u8]| b.iter().map(|x| ALPHABET[*x as usize % ALPHABET.len()] as char).collect::<String>();
+    Ok((format!("Aurora-{}", pick(&bytes[..4]).to_uppercase()), pick(&bytes[4..])))
+}
+
+/// Accende l'hotspot di Windows con nome e password nuovi. Serve un adattatore Wi-Fi e una connessione (anche solo il cavo).
+pub fn hotspot_start() -> Result<Hotspot, String> {
+    #[cfg(windows)]
+    {
+        let (ssid, password) = hotspot_credentials()?;
+        win::hotspot_start(&ssid, &password)?;
+        let wifi_qr = wifi_qr_text(&ssid, &password);
+        Ok(Hotspot { ssid, password, ip: "192.168.137.1".to_string(), wifi_qr })
+    }
+    #[cfg(not(windows))]
+    {
+        Err("solo su Windows".into())
+    }
+}
+
+/// Spegne l'hotspot di Windows.
+pub fn hotspot_stop() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        win::hotspot_stop()
+    }
+    #[cfg(not(windows))]
+    {
+        Err("solo su Windows".into())
+    }
+}
+
 #[cfg(windows)]
 mod win {
     use windows::Win32::Foundation::{CloseHandle, ERROR_CANCELLED, HANDLE, VARIANT_BOOL, WAIT_OBJECT_0};
@@ -236,6 +289,35 @@ mod win {
     use windows::core::{HSTRING, Interface, PCWSTR, w};
 
     use super::FirewallRule;
+
+    use windows::Networking::Connectivity::NetworkInformation;
+    use windows::Networking::NetworkOperators::{NetworkOperatorTetheringAccessPointConfiguration, NetworkOperatorTetheringManager, TetheringOperationStatus, TetheringOperationalState};
+
+    fn tethering() -> Result<NetworkOperatorTetheringManager, String> {
+        let profile = NetworkInformation::GetInternetConnectionProfile().map_err(|_| "nessuna connessione a internet: l'hotspot di Windows ne ha bisogno".to_string())?;
+        NetworkOperatorTetheringManager::CreateFromConnectionProfile(&profile).map_err(|e| format!("hotspot non disponibile: {e}"))
+    }
+
+    pub fn hotspot_start(ssid: &str, password: &str) -> Result<(), String> {
+        let manager = tethering()?;
+        let config = NetworkOperatorTetheringAccessPointConfiguration::new().map_err(|e| e.to_string())?;
+        config.SetSsid(&HSTRING::from(ssid)).map_err(|e| e.to_string())?;
+        config.SetPassphrase(&HSTRING::from(password)).map_err(|e| e.to_string())?;
+        manager.ConfigureAccessPointAsync(&config).map_err(|e| e.to_string())?.join().map_err(|e| format!("rete non configurata: {e}"))?;
+        if manager.TetheringOperationalState().map_err(|e| e.to_string())? != TetheringOperationalState::On {
+            let result = manager.StartTetheringAsync().map_err(|e| e.to_string())?.join().map_err(|e| format!("hotspot non acceso: {e}"))?;
+            if result.Status().ok() != Some(TetheringOperationStatus::Success) {
+                return Err("Windows non ha acceso l'hotspot (serve un adattatore Wi-Fi libero)".to_string());
+            }
+        }
+        Ok(())
+    }
+
+    pub fn hotspot_stop() -> Result<(), String> {
+        let manager = tethering()?;
+        manager.StopTetheringAsync().map_err(|e| e.to_string())?.join().map_err(|e| e.to_string())?;
+        Ok(())
+    }
 
     /// COM acceso per il thread finche' vive (se era gia' acceso in un altro modo si usa quello).
     pub struct Com(bool);
@@ -496,6 +578,22 @@ impl Drop for Announcer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_wifi_qr_escapes_the_special_characters() {
+        assert_eq!(wifi_qr_text("Aurora-AB12", "pass1234"), "WIFI:T:WPA;S:Aurora-AB12;P:pass1234;;");
+        assert_eq!(wifi_qr_text("a;b", r"p:w\d"), r"WIFI:T:WPA;S:a\;b;P:p\:w\\d;;");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_hotspot_credentials_are_readable_and_new_every_time() {
+        let (ssid, pw) = hotspot_credentials().expect("credenziali");
+        assert!(ssid.starts_with("Aurora-") && ssid.len() == 11);
+        assert_eq!(pw.len(), 10);
+        assert!(pw.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
+        assert_ne!(hotspot_credentials().expect("credenziali").1, pw);
+    }
 
     fn rule(name: &str, program: &str, allow: bool) -> FirewallRule {
         FirewallRule { name: name.into(), program: program.into(), inbound: true, enabled: true, allow }

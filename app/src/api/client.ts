@@ -325,6 +325,22 @@ export async function allowFirewall(): Promise<void> {
   await request('/lan/allow', { method: 'POST' });
 }
 
+export interface HotspotInfo {
+  ssid: string;
+  password: string;
+  ip: string;
+  wifi_qr_svg: string;
+}
+
+/** Accende la rete Wi-Fi di Aurora (hotspot di Windows): il telefono si collega al PC senza passare dal router. */
+export async function startHotspot(): Promise<HotspotInfo> {
+  return (await (await request('/lan/hotspot', { method: 'POST' })).json()) as HotspotInfo;
+}
+
+export async function stopHotspot(): Promise<void> {
+  await request('/lan/hotspot', { method: 'DELETE' });
+}
+
 export async function startPairing(baseUrl: string): Promise<PairingOffer> {
   return (await (await request('/pair/start', jsonInit({ base_url: baseUrl }))).json()) as PairingOffer;
 }

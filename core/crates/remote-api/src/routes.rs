@@ -36,6 +36,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/pair/start", post(pair_start))
         .route("/api/v1/lan/check", get(lan_check))
         .route("/api/v1/lan/allow", post(lan_allow))
+        .route("/api/v1/lan/hotspot", post(lan_hotspot_start).delete(lan_hotspot_stop))
         .route("/api/v1/pair/finish", post(pair_finish))
         .route("/api/v1/devices", get(devices))
         .route("/api/v1/devices/{id}", delete(revoke_device))
@@ -457,6 +458,37 @@ async fn lan_check(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, 
     }
     let check = tokio::task::spawn_blocking(lan::network_check).await.unwrap_or_default();
     Ok(Json(json!(check)))
+}
+
+/// «Rete di Aurora»: accende l'hotspot di Windows (nome e password nuovi) e da' il QR per collegare il telefono; solo dal PC stesso.
+#[utoipa::path(post, path = "/api/v1/lan/hotspot", responses((status = 200, description = "{ssid, password, ip, wifi_qr_svg}"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Non acceso (hotspot_failed)")))]
+async fn lan_hotspot_start(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let spot = tokio::task::spawn_blocking(lan::hotspot_start)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "hotspot_failed"))?
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "hotspot_failed").with_message(e))?;
+    let wifi_qr_svg = qrcode::QrCode::new(spot.wifi_qr.as_bytes())
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "qr_failed"))?
+        .render::<qrcode::render::svg::Color>()
+        .min_dimensions(200, 200)
+        .build();
+    Ok(Json(json!({ "ssid": spot.ssid, "password": spot.password, "ip": spot.ip, "wifi_qr_svg": wifi_qr_svg })))
+}
+
+/// Spegne l'hotspot di Windows (solo dal PC stesso).
+#[utoipa::path(delete, path = "/api/v1/lan/hotspot", responses((status = 200, description = "Spento"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Non spento (hotspot_failed)")))]
+async fn lan_hotspot_stop(Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    tokio::task::spawn_blocking(lan::hotspot_stop)
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "hotspot_failed"))?
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "hotspot_failed").with_message(e))?;
+    Ok(Json(json!({ "ok": true })))
 }
 
 /// «Consenti Aurora»: aggiunge la regola del firewall di Windows (chiede la conferma da amministratore; solo dal PC stesso).
