@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Linux, il pacchetto .deb si chiama «aurora-multimode» (issue #99): «aurora» e' anche il programma degli inverter solari dei repository di Linux Mint, e il gestore dei pacchetti scambiava i due. Il passo «AppImage e .deb» del workflow `linux.yml` cambia il nome del pacchetto nel `.deb` gia' fatto e aggiunge `Conflicts: aurora` e `Replaces: aurora`, cosi' un vecchio pacchetto «aurora» si toglie da solo all'aggiornamento; le cartelle in `/usr/lib/Aurora` non cambiano (Hamlib le cerca li'). Non provato (serve Linux): se il cambio non riesce il `.deb` resta com'era. Il file continua a chiamarsi `Aurora-Linux-amd64.deb`.
 - Telefono, collegamento con il QR (segnalazione su eham): nuova «Rete Wi-Fi di Aurora» nella scheda Smartphone/Tablet. Con il QR di associazione aperto, il tasto «Crea la rete di Aurora» accende l'hotspot di Windows (nome e password nuovi a ogni volta, QR Wi-Fi per il telefono, indirizzo fisso 192.168.137.1) cosi' il telefono raggiunge il PC senza router, rete ospiti o isolamento dei client, che erano la causa di quasi tutti i «il telefono non ha mai raggiunto Aurora». Rotte `POST/DELETE /api/v1/lan/hotspot` (solo dal PC). Provato solo con compilazione e prove; l'accensione vera dell'hotspot va provata dal proprietario (serve una scheda Wi-Fi).
 
 ## 0.11.347 - 2026-11-24

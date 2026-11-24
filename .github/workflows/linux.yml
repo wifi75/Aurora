@@ -125,6 +125,23 @@ jobs:
           mkdir -p ../dist-linux
           cp src-tauri/target/release/bundle/appimage/*.AppImage ../dist-linux/Aurora-Linux-x86_64.AppImage
           cp src-tauri/target/release/bundle/deb/*.deb ../dist-linux/Aurora-Linux-amd64.deb
+          # il pacchetto si chiama «aurora-multimode»: «aurora» e' anche il programma degli inverter solari dei repository (Linux Mint, issue #99), e il gestore
+          # dei pacchetti scambiava i due. Solo il nome del pacchetto cambia (le cartelle in /usr/lib/Aurora restano: Hamlib le cerca li'); Conflicts e
+          # Replaces fanno togliere il vecchio pacchetto «aurora» all'aggiornamento. Se qualcosa non va si lascia il .deb com'era.
+          D=../dist-linux/Aurora-Linux-amd64.deb
+          W=$(mktemp -d)
+          if dpkg-deb -R "$D" "$W/pkg" \
+            && grep -qi '^Package: aurora$' "$W/pkg/DEBIAN/control" \
+            && sed -i 's/^Package: [Aa]urora$/Package: aurora-multimode/' "$W/pkg/DEBIAN/control" \
+            && echo 'Conflicts: aurora' >> "$W/pkg/DEBIAN/control" \
+            && echo 'Replaces: aurora' >> "$W/pkg/DEBIAN/control" \
+            && dpkg-deb --root-owner-group -b "$W/pkg" "$W/nuovo.deb" \
+            && [ "$(dpkg-deb -f "$W/nuovo.deb" Package)" = aurora-multimode ]; then
+            cp "$W/nuovo.deb" "$D"
+            dpkg-deb -f "$D" Package Version Conflicts Replaces
+          else
+            echo 'nome del pacchetto non cambiato: resta il .deb originale'
+          fi
           cd ../dist-linux && sha256sum * > SHA256SUMS-linux.txt
 
       - name: Prova dell'AppImage (Hamlib dentro e che parta da solo)
