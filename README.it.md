@@ -51,7 +51,7 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.348: motore proprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW, Olivia, Contestia (e SSB per il log e i contest in fonia), SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.349: motore proprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW, Olivia, Contestia (e SSB per il log e i contest in fonia), SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.
@@ -63,6 +63,8 @@ Versione 0.11.348: motore proprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–
 - **Icom IC-756PRO**: con Hamlib la radio non finisce più sul VFO B dopo il riavvio di Aurora (il VFO B non si legge più se la radio non dice su che VFO è).
 - **QSO e comandi**: il PTT non scatta e si spegne più a fine QSO quando l'ultimo messaggio del DX è decodificato in ritardo (la trasmissione già partita si lascia finire, come in WSJT-X) e i pulsanti della finestra Comandi mostrano tutto il bordo inferiore.
 - **Logger32**: la Guida spiega la mappa UDP (porta 2237), come aprirla e la diagnosi.
+- **RTTY**: scelta «Diddle in attesa» (acceso di base): il tasto RX/TX in basso mette in trasmissione anche a casella vuota e manda il diddle come MMTTY e fldigi; si spegne dalle impostazioni.
+- **CW via TCI**: nuova uscita CW «TCI (CWX della radio)», con il comando TCI `cw_macros` (Flex, ExpertSDR).
 - **WSPR e FST4W**: beacon con potenza, «Tx Pct» e invio facoltativo degli spot a WSPRnet, spento di fabbrica. Tutto è in Impostazioni › Modi › WSPR · FST4W; le opzioni di decodifica di WSJT-X sono in Impostazioni › Modi › FT8 · FT4 › Decodifica (e nelle pagine JT65 · JT9 · FST4 e VHF · EME).
 - **Comandi come JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, frequenze Tx/Rx con copia, Canc DX; il doppio clic su un messaggio imposta il DX, sceglie il messaggio da cui partire e accende Abilita Tx, così Aurora lo chiama nel periodo giusto (opzione «Doppio clic: rispondi alla stazione» in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri; spenta, il doppio clic seleziona soltanto). AutoTX: accendendolo si accende anche Abilita Tx, e a QSO finito il CQ riparte da solo solo se è acceso.
 - **Trasmissione**: CQ, messaggio libero, frequenza Tx, livello Pwr verticale, STOP TX sempre attivo (discreto a riposo, pieno in trasmissione); il tasto Esc fa lo stesso (spegne le Automazioni e Abilita Tx; AutoTX e AutoSeq restano come sono). Non ha opzioni: è sempre abilitata (restano STOP TX, i tetti e le automazioni spente di base).

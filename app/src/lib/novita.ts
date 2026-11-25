@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.349',
+    released: '2026-11-25T07:36:58Z',
+    kind: 'new',
+    title: [
+      'RTTY: diddle a scelta, CW dal CWX della radio via TCI',
+      'RTTY: diddle on request, CW from the radio’s CWX over TCI',
+      'RTTY: Diddle zur Wahl, CW über das CWX des Funkgeräts per TCI',
+      'RTTY : diddle au choix, CW depuis le CWX de la radio via TCI',
+      'RTTY: diddle a elección, CW desde el CWX de la radio por TCI',
+      'RTTY: diddle à escolha, CW a partir do CWX do rádio por TCI',
+    ],
+    text: [
+      'Nuova scelta «Diddle in attesa» (RTTY, acceso di base): il tasto RX/TX in basso (o Pausa) mette in trasmissione anche con la casella vuota e ci resta finché non lo si preme di nuovo; in attesa del testo Aurora manda il diddle come MMTTY e fldigi, spento manda solo il tono di riposo. Si cambia nelle Impostazioni del modo, nella finestra «Impostazioni RTTY» e nel menu del modo. Nuova uscita CW «TCI (CWX della radio)»: il testo delle macro va al CWX della radio con il comando TCI «cw_macros» (Flex, ExpertSDR), che fa da sola CW, PTT e tasto; non provata con una radio vera. In «Sostieni Aurora» c’è ora, in piccolo, la nota che la donazione è libera e volontaria, senza contropartita.',
+      'New “Diddle while waiting” choice (RTTY, on by default): the RX/TX button at the bottom (or Pause) puts the station on the air even with an empty box and keeps it there until you press it again; while it waits for text Aurora sends the diddle like MMTTY and fldigi, and with the choice off it sends only the idle tone. You change it in the mode settings, in the “RTTY settings” window and in the mode menu. New CW output “TCI (radio CWX)”: the text of the macros goes to the radio’s CWX with the TCI command “cw_macros” (Flex, ExpertSDR), which does CW, PTT and key by itself; not tested with a real radio. “Support Aurora” now has a small note saying the donation is free and voluntary, with nothing given in return.',
+      'Neue Wahl „Diddle im Wartezustand“ (RTTY, standardmäßig an): Die RX/TX-Taste unten (oder Pause) schaltet auch bei leerem Feld auf Senden und bleibt dort, bis man sie erneut drückt; beim Warten auf Text sendet Aurora das Diddle wie MMTTY und fldigi, ausgeschaltet nur den Ruheton. Umschalten in den Modus-Einstellungen, im Fenster „RTTY-Einstellungen“ und im Modus-Menü. Neuer CW-Ausgang „TCI (CWX des Funkgeräts)“: Der Text der Makros geht mit dem TCI-Befehl „cw_macros“ an das CWX des Funkgeräts (Flex, ExpertSDR), das CW, PTT und Taste selbst erledigt; nicht mit einem echten Funkgerät getestet. Unter „Aurora unterstützen“ steht jetzt klein der Hinweis, dass die Spende frei und freiwillig ist, ohne Gegenleistung.',
+      'Nouveau choix « Diddle en attente » (RTTY, activé par défaut) : le bouton RX/TX en bas (ou Pause) met en émission même avec la case vide et y reste jusqu’à un nouvel appui ; en attendant le texte, Aurora envoie le diddle comme MMTTY et fldigi, désactivé elle n’envoie que la tonalité de repos. Cela se règle dans les réglages du mode, dans la fenêtre « Réglages RTTY » et dans le menu du mode. Nouvelle sortie CW « TCI (CWX de la radio) » : le texte des macros va au CWX de la radio par la commande TCI « cw_macros » (Flex, ExpertSDR), qui gère seule CW, PTT et manip ; non testé avec une vraie radio. « Soutenir Aurora » a maintenant, en petit, la mention que le don est libre et volontaire, sans contrepartie.',
+      'Nueva opción «Diddle en espera» (RTTY, activada por defecto): el botón RX/TX de abajo (o Pausa) pone en transmisión aunque la casilla esté vacía y se queda hasta que se vuelve a pulsar; mientras espera texto, Aurora manda el diddle como MMTTY y fldigi, desactivada manda solo el tono de reposo. Se cambia en los ajustes del modo, en la ventana «Ajustes RTTY» y en el menú del modo. Nueva salida CW «TCI (CWX de la radio)»: el texto de las macros va al CWX de la radio con el comando TCI «cw_macros» (Flex, ExpertSDR), que hace sola CW, PTT y manipulador; no probada con una radio real. «Apoya Aurora» tiene ahora, en pequeño, la nota de que la donación es libre y voluntaria, sin contrapartida.',
+      'Nova opção «Diddle em espera» (RTTY, ligada por omissão): o botão RX/TX em baixo (ou Pausa) põe em transmissão mesmo com a caixa vazia e fica até voltar a ser carregado; enquanto espera texto, o Aurora envia o diddle como o MMTTY e o fldigi, desligada envia só o tom de repouso. Muda-se nas definições do modo, na janela «Definições RTTY» e no menu do modo. Nova saída CW «TCI (CWX do rádio)»: o texto das macros vai para o CWX do rádio com o comando TCI «cw_macros» (Flex, ExpertSDR), que faz sozinho CW, PTT e manipulador; não testada com um rádio real. «Apoie o Aurora» tem agora, em pequeno, a nota de que o donativo é livre e voluntário, sem contrapartida.',
+    ],
+  },
+  {
     version: '0.11.348',
     released: '2026-11-24T22:23:45Z',
     kind: 'new',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Le phasage court sans tonalité de début ne reste plus bloqué en attente : la carte démarre normalement.',
       'El fasado corto sin tono de inicio ya no se queda bloqueado esperando: el mapa arranca con normalidad.',
       'A fasagem curta sem tom de início já não fica presa à espera: a carta arranca normalmente.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'new',
-    title: [
-      'Livelli audio in dB e opzioni per banda e Tune',
-      'Audio levels in dB and per-band and Tune options',
-      'Audiopegel in dB und Optionen pro Band und Tune',
-      'Niveaux audio en dB et options par bande et Tune',
-      'Niveles de audio en dB y opciones por banda y Tune',
-      'Níveis de áudio em dB e opções por banda e Tune',
-    ],
-    text: [
-      'Il cursore «Lvl TX» mostra i dB e il livello di ricezione è scritto in dB sotto la barra. Nuove caselle, tutte spente di fabbrica: «Non toccare i volumi di Windows», «Ricorda la potenza per banda e modo» e «Livello separato per il Tune, ricordato per banda» (come in WSJT-X).',
-      'The “Lvl TX” slider shows dB, and the receive level is written in dB below the bar. New checkboxes, all off by default: “Do not touch the Windows volumes”, “Remember the power per band and mode” and “Separate level for Tune, remembered per band” (as in WSJT-X).',
-      'Der Regler „Lvl TX“ zeigt dB, und der Empfangspegel steht in dB unter der Anzeige. Neue Kästchen, alle standardmäßig aus: „Windows-Lautstärken nicht verändern“, „Leistung pro Band und Betriebsart merken“ und „Eigener Pegel für Tune, pro Band gemerkt“ (wie in WSJT-X).',
-      'Le curseur « Lvl TX » affiche les dB, et le niveau de réception est écrit en dB sous la barre. Nouvelles cases, toutes désactivées par défaut : « Ne pas toucher aux volumes de Windows », « Mémoriser la puissance par bande et mode » et « Niveau séparé pour le Tune, mémorisé par bande » (comme dans WSJT-X).',
-      'El control «Lvl TX» muestra los dB y el nivel de recepción está escrito en dB bajo la barra. Casillas nuevas, todas desactivadas de base: «No tocar los volúmenes de Windows», «Recordar la potencia por banda y modo» y «Nivel separado para el Tune, recordado por banda» (como en WSJT-X).',
-      'O cursor «Lvl TX» mostra os dB e o nível de receção está escrito em dB por baixo da barra. Novas caixas, todas desligadas por defeito: «Não mexer nos volumes do Windows», «Lembrar a potência por banda e modo» e «Nível separado para o Tune, lembrado por banda» (como no WSJT-X).',
     ],
   },
 ];
