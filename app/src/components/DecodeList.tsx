@@ -488,18 +488,29 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const dxTagFor = (txText: string) => lastTagOf.get((txText.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()) ?? null;
   // le mie trasmissioni uguali (lo stesso CQ ripetuto ogni periodo) restano una riga sola, la piu' recente, con «×N»; i messaggi
   // diversi (rapporto, RR73...) restano tutti, cosi' il QSO si legge passo per passo (scelta del proprietario: JTDX le mostra tutte)
+  // una risposta a me fra due trasmissioni uguali le separa in due gruppi: l'R-18 di prima e quello di dopo la risposta del DX (RRR) non
+  // sono la stessa ripetizione, altrimenti l'R-18 delle 07:55:00 spariva e si vedeva solo quello delle 07:55:30, dopo l'RRR delle 07:55:15
+  // (segnalazione #92 di EA3CUU)
   const txKey = (d: DecodedMessage) => d.text.trim().replace(/\s+/g, ' ').toUpperCase();
-  const txNewest = new Map<string, DecodedMessage>();
-  const txCount = new Map<string, number>();
-  for (const d of decodes) {
-    if (d.id >= 0) continue;
+  const rxToMe = decodes.filter((d) => d.id >= 0 && isCallToMe(d.text, myCall)).map((d) => d.time_ms);
+  type TxGroup = { newest: DecodedMessage; count: number };
+  const txGroupOf = new Map<DecodedMessage, TxGroup>();
+  const txOpen = new Map<string, TxGroup>();
+  for (const d of decodes.filter((x) => x.id < 0).sort((x, y) => x.time_ms - y.time_ms || y.id - x.id)) {
     const k = txKey(d);
-    txCount.set(k, (txCount.get(k) ?? 0) + 1);
-    const cur = txNewest.get(k);
-    if (!cur || d.time_ms > cur.time_ms) txNewest.set(k, d);
+    const cur = txOpen.get(k);
+    if (cur && !rxToMe.some((t) => t > cur.newest.time_ms && t < d.time_ms)) {
+      cur.count += 1;
+      cur.newest = d;
+      txGroupOf.set(d, cur);
+    } else {
+      const g: TxGroup = { newest: d, count: 1 };
+      txOpen.set(k, g);
+      txGroupOf.set(d, g);
+    }
   }
-  const txRepeat = (d: DecodedMessage) => (d.id < 0 ? (txCount.get(txKey(d)) ?? 1) : 1);
-  const shown = (d: DecodedMessage) => d.id >= 0 || d === pin || txNewest.get(txKey(d)) === d;
+  const txRepeat = (d: DecodedMessage) => (d.id < 0 ? (txGroupOf.get(d)?.count ?? 1) : 1);
+  const shown = (d: DecodedMessage) => d.id >= 0 || d === pin || txGroupOf.get(d)?.newest === d;
   // «Inverti colore» cambia solo i colori; l'ordine lo decide «piu' recente in fondo» (prima il colore invertito spostava anche lo scorrimento)
   const allRows = (newestAtBottom ? [...[...rest].reverse(), ...[...top].reverse()] : [...top, ...rest]).filter(shown);
   // all'apertura della pagina si disegnano subito le righe che si vedono e le altre un attimo dopo: con 200 righe la Stazione

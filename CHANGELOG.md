@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Finestra di ricezione, righe Tx raggruppate (#92, Pere EA3CUU): le mie trasmissioni uguali si raggruppano in «×N» solo se fra una e l'altra non c'e' una risposta a me; prima, con un R-18 prima e uno dopo l'RRR del DX, restava visibile solo il secondo (l'ora faceva sembrare che il DX rispondesse prima di ricevere). Il motore era giusto: la ritrasmissione dopo la decodifica tardiva c'e' gia' (`tx.rs`, `port.replace`). Prova in `DecodeList.test.tsx`.
+
 ## 0.11.349 - 2026-11-25
 - Linux, pacchetti per ARM a 64 bit (aarch64, Raspberry Pi 4 e 5): `.github/workflows/linux.yml` compila ora anche su un computer ARM di GitHub (`ubuntu-22.04-arm`) e allega `Aurora-Linux-aarch64.AppImage`, `Aurora-Linux-arm64.deb` e `SHA256SUMS-linux-arm64.txt`. Nuovo e non provato su una Raspberry vera (ne' la velocita' di decodifica); se la compilazione ARM fallisce non ferma quella x86_64.
 - RTTY, scelta «Diddle in attesa» (richiesta di Greg, #105): acceso di base (come prima). Il tasto RX/TX in basso (o Pausa) mette in trasmissione anche con la casella vuota e ci resta finche' non si preme di nuovo; in attesa del testo Aurora manda il diddle (LTRS di riposo, come MMTTY e fldigi). Spento manda il solo tono di riposo. Si cambia nelle Impostazioni del modo, nella finestra «Impostazioni RTTY» e nel menu del modo (`rtty_diddle`, `TxModulator::with_diddle`). Prova in `tx_stream.rs`; testo con la spiegazione in 6 lingue + nl/ru.

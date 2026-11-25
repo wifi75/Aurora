@@ -563,6 +563,25 @@ describe('DecodeList a griglia (Finestra RX)', () => {
     expect(tx.querySelector('[data-dl-col="snr"]')).toHaveTextContent('Tx');
   });
 
+  it("una risposta del DX fra due trasmissioni uguali le separa: l'R-18 di prima non sparisce dietro quello di dopo (#92)", () => {
+    render(
+      <DecodeList
+        decodes={[
+          decode({ id: -3, time_ms: 45_030_000, snr: 0, text: 'JA1XYZ AA1AA 73' }),
+          decode({ id: -2, time_ms: 45_030_000, snr: 0, text: 'JA1XYZ AA1AA R-18' }),
+          decode({ id: 5, time_ms: 45_015_000, text: 'AA1AA JA1XYZ RRR' }),
+          decode({ id: -1, time_ms: 45_000_000, snr: 0, text: 'JA1XYZ AA1AA R-18' }),
+        ]}
+        onReply={() => {}}
+        myCall="AA1AA"
+        columnsKey={KEY}
+      />,
+    );
+    // due R-18 (uno prima e uno dopo l'RRR) e nessun «×N»: non sono la stessa ripetizione
+    expect(screen.getAllByText(/JA1XYZ AA1AA R-18/)).toHaveLength(2);
+    expect(document.querySelector('.tx-rep')).toBeNull();
+  });
+
   it("senza chiave l'elenco resta quello di sempre, senza titoli", () => {
     render(<DecodeList decodes={[decode()]} onReply={() => {}} />);
     expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
