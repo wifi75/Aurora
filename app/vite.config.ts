@@ -9,6 +9,8 @@ const version = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: 
 export default defineConfig({
   plugins: [react()],
   define: { __AURORA_UI_VERSION__: JSON.stringify(version) },
+  // macOS Monterey ha un Safari vecchio (15/16): senza un traguardo esplicito l'interfaccia non partiva sul Mac di un utente (#108)
+  build: { target: ['es2021', 'safari14'] },
   server: {
     port: 5173,
     proxy: {

@@ -39,6 +39,8 @@ export const MAX_OFFSET_KHZ = 50;
 /** Distanza massima di una QSX dallo spot (kHz), come nel core. */
 const MAX_QSX_KHZ = 500;
 
+// niente lookbehind `(?<!...)` nelle espressioni: Safari prima del 16.4 (macOS Monterey) non lo capisce e l'interfaccia non partiva (#108); al suo
+// posto si consuma il carattere prima (`(?:^|[^...])`), che nessun gruppo usa
 /** I modi in cui lo Split DX non si usa (vedi sopra). */
 const WSJT_MODES = /^(FT8|FT4|FST4W?|JT65|JT9|JT4|Q65|MSK144|WSPR)/i;
 
@@ -47,14 +49,14 @@ const RANGE = String.raw`(${NUM})(?:\s*[-/]\s*(${NUM}))?`;
 const UNIT = String.raw`(?:\s*K(?:HZ)?)?`;
 const WORD = String.raw`(UP|DN|DWN|DOWN)`;
 /** «UP 5», «UP5», «up 1-3», «DN 2», «UP 5KHZ», «UP +5»; dopo il numero niente altre cifre, nemmeno decimali («UP 14.0305» non e' «UP 14»). */
-const AFTER = new RegExp(String.raw`(?<![A-Z0-9])${WORD}\s*\+?\s*${RANGE}${UNIT}(?![A-Z0-9]|[.,][0-9])`, 'gi');
+const AFTER = new RegExp(String.raw`(?:^|[^A-Z0-9])${WORD}\s*\+?\s*${RANGE}${UNIT}(?![A-Z0-9]|[.,][0-9])`, 'gi');
 /** «5 UP», «5UP», «10up», «1-3 UP», «2 DOWN». */
-const BEFORE = new RegExp(String.raw`(?<![A-Z0-9.,])${RANGE}${UNIT}\s*${WORD}(?![A-Z0-9])`, 'gi');
+const BEFORE = new RegExp(String.raw`(?:^|[^A-Z0-9.,])${RANGE}${UNIT}\s*${WORD}(?![A-Z0-9])`, 'gi');
 /** «UP» o «DN» da soli: non seguiti da un numero (quello che AFTER non ha letto, come «UP 14.0305», non vale come «UP» da solo). */
-const BARE = new RegExp(String.raw`(?<![A-Z0-9])${WORD}(?![A-Z0-9])(?!\s*\+?\s*\d)`, 'i');
+const BARE = new RegExp(String.raw`(?:^|[^A-Z0-9])${WORD}(?![A-Z0-9])(?!\s*\+?\s*\d)`, 'i');
 /** «DN31», «dn40»: un locatore (campo DN e quadrato), non «giu' di 31 kHz». */
 const LOCATOR = /^DN\d{2}$/i;
-const QSX = new RegExp(String.raw`(?<![A-Z0-9])QSX\s*:?\s*(${NUM})(?![0-9]|[.,][0-9])`, 'i');
+const QSX = new RegExp(String.raw`(?:^|[^A-Z0-9])QSX\s*:?\s*(${NUM})(?![0-9]|[.,][0-9])`, 'i');
 
 function num(text: string): number {
   return Number(text.replace(',', '.'));
@@ -154,7 +156,7 @@ export function parseSpotSplit(comment: string | null | undefined, spotKhz: numb
   // prima «UP 5», poi «5 UP»: vale il primo che e' davvero uno spostamento; i locatori («DN31», «DN70») si saltano del tutto
   const found = [
     ...Array.from(text.matchAll(AFTER))
-      .filter((m) => !LOCATOR.test(m[0]))
+      .filter((m) => !LOCATOR.test(m[0].replace(/^[^A-Z0-9]/i, '')))
       .map((m) => (m[1] && m[2] ? fromMatch(m[1], m[2], m[3], spotKhz) : null)),
     ...Array.from(text.matchAll(BEFORE), (m) => (m[3] && m[1] ? fromMatch(m[3], m[1], m[2], spotKhz) : null)),
   ];

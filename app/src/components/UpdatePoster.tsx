@@ -77,7 +77,9 @@ export function notesForLang(notes: string, lang: string): string {
 export function noteLines(notes: string): string[] {
   return notes
     .replace(/[#*_`>]/g, '')
-    .split(/\n+|(?<=[.;])\s+(?=[A-ZÀ-Ý«])/)
+    // a capo dopo «.» o «;» seguiti da una maiuscola (senza lookbehind: Safari prima del 16.4 non lo capisce, #108)
+    .replace(/([.;])\s+(?=[A-ZÀ-Ý«])/g, '$1\n')
+    .split(/\n+/)
     .map((l) => l.replace(/^[-•\s]+/, '').trim())
     .filter((l) => l.length > 2)
     .slice(0, 6);
