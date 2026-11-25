@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.352 - 2026-11-25
 - Contest, elenchi dei domini `.dom` dagli elenchi ufficiali: UBA DX CW e SSB (83 sezioni UBA, `dati/sezioni.dom`), EUDX (275 regioni UE, `dati/regioni.dom`) e REF Contest CW (dipartimenti francesi e prefissi d'oltremare, `dati/dipartimenti.dom`; il regolamento chiede il numero ma non lo elenca: dipartimenti standard francesi). Dichiarati in `contest.toml` con `elenco` e `dominio`. SP DX RTTY (powiat) non fatto: l'elenco ufficiale del PKRVG risponde 404. Gli altri contest della cartella non hanno un dominio nello scambio.
 
 - Potenza RF della radio, ripristino alla chiusura (Pascal F4LHL, IC-7610): Aurora rimette a ogni collegamento la potenza ricordata con i pulsanti PWR − e + (nel suo caso 70%, da 100 W a 65 W) e alla chiusura non riportava quella che la radio aveva. Ora, con «Alla chiusura riporta la radio com'era prima» (acceso), la chiusura riporta anche la potenza RF di prima (`extras::restore_original_power`, `HamlibRig::restore_original_power`, `CatService::restore_original_if_chosen`); prova `the_power_the_radio_had_comes_back_at_the_end`. Per non far toccare la potenza all'avvio: cancellare `potenza-rf.txt` nella cartella dati.

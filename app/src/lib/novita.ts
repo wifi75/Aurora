@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.352',
+    released: '2026-11-25T20:16:48Z',
+    kind: 'changed',
+    title: [
+      'La radio torna alla sua potenza, e più domini nei contest',
+      'The radio goes back to its own power, and more contest domains',
+      'Das Funkgerät kehrt zu seiner Leistung zurück, und mehr Contest-Domains',
+      'La radio retrouve sa puissance, et plus de domaines de contest',
+      'La radio vuelve a su potencia, y más dominios en los concursos',
+      'O rádio volta à sua potência, e mais domínios nos concursos',
+    ],
+    text: [
+      'Alla chiusura Aurora riporta ora anche la potenza RF che la radio aveva prima (insieme a frequenza e modo, con «Alla chiusura riporta la radio com’era prima» acceso): prima rimetteva a ogni avvio la potenza ricordata con i pulsanti PWR e non riportava quella di prima, così chi usava anche altri programmi si ritrovava con la potenza abbassata. Nei contest UBA DX (CW e SSB), EUDX e REF CW è ora compreso l’elenco dei domini dello scambio (sezioni UBA, regioni UE, dipartimenti francesi).',
+      'On exit Aurora now also puts back the RF power the radio had before (together with frequency and mode, with “On exit restore the radio as before” on): before, it set at every start the power remembered with the PWR buttons and did not restore the previous one, so anyone using other programs too found the power lowered. The UBA DX (CW and SSB), EUDX and REF CW contests now include the list of exchange domains (UBA sections, EU regions, French departments).',
+      'Beim Beenden stellt Aurora jetzt auch die HF-Leistung wieder her, die das Funkgerät vorher hatte (zusammen mit Frequenz und Betriebsart, mit eingeschaltetem „Beim Beenden das Funkgerät wie vorher einstellen“): Vorher setzte es bei jedem Start die mit den PWR-Tasten gemerkte Leistung und stellte die frühere nicht wieder her, sodass, wer auch andere Programme nutzte, eine gesenkte Leistung vorfand. Die Contests UBA DX (CW und SSB), EUDX und REF CW enthalten jetzt die Liste der Austausch-Domains (UBA-Sektionen, EU-Regionen, französische Départements).',
+      'À la fermeture, Aurora remet maintenant aussi la puissance HF que la radio avait avant (avec la fréquence et le mode, avec « À la fermeture, remettre la radio comme avant » activé) : avant, elle remettait à chaque démarrage la puissance mémorisée avec les boutons PWR et ne rétablissait pas la précédente, si bien que celui qui utilisait aussi d’autres programmes retrouvait une puissance abaissée. Les contests UBA DX (CW et SSB), EUDX et REF CW incluent maintenant la liste des domaines de l’échange (sections UBA, régions UE, départements français).',
+      'Al cerrar, Aurora ahora también devuelve la potencia de RF que tenía la radio antes (junto con frecuencia y modo, con «Al cerrar, dejar la radio como antes» activado): antes ponía en cada arranque la potencia recordada con los botones PWR y no devolvía la anterior, así que quien usaba también otros programas se encontraba con la potencia bajada. Los concursos UBA DX (CW y SSB), EUDX y REF CW incluyen ahora la lista de dominios del intercambio (secciones UBA, regiones UE, departamentos franceses).',
+      'Ao fechar, o Aurora agora também repõe a potência de RF que o rádio tinha antes (com frequência e modo, com «Ao fechar, repor o rádio como antes» ligado): antes colocava em cada arranque a potência memorizada com os botões PWR e não repunha a anterior, pelo que quem usava também outros programas encontrava a potência reduzida. Os concursos UBA DX (CW e SSB), EUDX e REF CW incluem agora a lista dos domínios da troca (secções UBA, regiões UE, departamentos franceses).',
+    ],
+  },
+  {
     version: '0.11.351',
     released: '2026-11-25T18:11:39Z',
     kind: 'fixed',
@@ -841,28 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Les entrées des menus déroulants ont toujours un fond et un texte contrastés (avant, rien ne se lisait dans le menu des modes SSTV). Dans la barre WEFAX, l’indicateur et le nom de la station ne sont plus coupés, et « RX » est un cadre vert bien visible.',
       'Las entradas de los menús desplegables tienen siempre fondo y texto con contraste (antes en el menú de modos de SSTV no se leía nada). En la barra de WEFAX el medidor y el nombre de la estación ya no se cortan, y «RX» es un recuadro verde bien visible.',
       'As entradas dos menus suspensos têm sempre fundo e texto com contraste (antes, no menu de modos do SSTV não se lia nada). Na barra do WEFAX o medidor e o nome da estação já não ficam cortados, e «RX» é um quadro verde bem visível.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'new',
-    featured: false,
-    title: [
-      'WEFAX: Imposta inizio riga',
-      'WEFAX: Set line start',
-      'WEFAX: Zeilenanfang festlegen',
-      'WEFAX : Définir le début de ligne',
-      'WEFAX: Fijar el inicio de línea',
-      'WEFAX: Definir o início da linha',
-    ],
-    text: [
-      'Con «Imposta inizio riga» basta un clic sul bordo sinistro vero della cartina (per esempio la cornice): la cartina in arrivo e le righe seguenti si allineano lì. Sulle cartine salvate crea una copia spostata, oppure sostituisce l’originale. Utile per stazioni come DDK3.',
-      'With “Set line start” a single click on the true left edge of the chart (for example the frame) is enough: the incoming chart and the following lines line up there. On saved charts it creates a shifted copy, or replaces the original. Useful for stations like DDK3.',
-      'Mit „Zeilenanfang festlegen“ genügt ein Klick auf den wahren linken Rand der Karte (zum Beispiel den Rahmen): die ankommende Karte und die folgenden Zeilen richten sich dort aus. Bei gespeicherten Karten wird eine verschobene Kopie erstellt oder das Original ersetzt. Nützlich für Stationen wie DDK3.',
-      'Avec « Définir le début de ligne », un seul clic sur le vrai bord gauche de la carte (par exemple le cadre) suffit : la carte en cours de réception et les lignes suivantes s’alignent là. Sur les cartes enregistrées, cela crée une copie décalée ou remplace l’original. Utile pour des stations comme DDK3.',
-      'Con «Fijar el inicio de línea» basta un clic en el borde izquierdo verdadero del mapa (por ejemplo el marco): el mapa que llega y las líneas siguientes se alinean ahí. En los mapas guardados crea una copia desplazada, o sustituye el original. Útil para estaciones como DDK3.',
-      'Com «Definir o início da linha» basta um clique na verdadeira margem esquerda da carta (por exemplo a moldura): a carta em chegada e as linhas seguintes alinham-se aí. Nas cartas guardadas cria uma cópia deslocada, ou substitui a original. Útil para estações como a DDK3.',
     ],
   },
 ];
