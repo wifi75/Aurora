@@ -1951,6 +1951,7 @@ fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::Na
         rig_control::cat_config::Backend::Tci => cat.tci().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Ft991link => cat.ft991().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Cat4om => cat.cat4om().and_then(|r| r.set_tx_audio_frequency(hz)),
+        rig_control::cat_config::Backend::Hrd => cat.hrd().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Omnirig => rig_control::omnirig::set_tx_audio_frequency(hz),
         _ => Ok(()),
     };
@@ -1970,6 +1971,7 @@ fn cat_split_active(cat: &rig_control::cat::CatService) -> bool {
                 | rig_control::cat_config::Backend::Tci
                 | rig_control::cat_config::Backend::Ft991link
                 | rig_control::cat_config::Backend::Cat4om
+                | rig_control::cat_config::Backend::Hrd
                 | rig_control::cat_config::Backend::Omnirig
         )
 }
@@ -2022,6 +2024,9 @@ fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native
     if cat.backend() == rig_control::cat_config::Backend::Cat4om {
         return cat.cat4om().map_err(failed)?.set_ptt(on).map_err(failed);
     }
+    if cat.backend() == rig_control::cat_config::Backend::Hrd {
+        return cat.hrd().map_err(failed)?.set_ptt(on).map_err(failed);
+    }
     cat.hamlib().map_err(failed)?.set_ptt(on).map_err(failed)
 }
 
@@ -2047,7 +2052,7 @@ impl tx_native::Ptt for AutoPtt {
         let by_rig = radio.ptt != rig_control::cat_config::PttMethod::Vox
             && match radio.backend {
                 rig_control::cat_config::Backend::Hamlib => radio.model != 0,
-                rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om => true,
+                rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om | rig_control::cat_config::Backend::Hrd => true,
                 _ => false,
             };
         if by_rig {
@@ -2260,6 +2265,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
         && (radio.backend == rig_control::cat_config::Backend::Tci
             || radio.backend == rig_control::cat_config::Backend::Ft991link
             || radio.backend == rig_control::cat_config::Backend::Cat4om
+            || radio.backend == rig_control::cat_config::Backend::Hrd
             || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
         && radio.ptt != rig_control::cat_config::PttMethod::Vox
     {
@@ -2272,7 +2278,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
         (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
         (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
         (rig_control::cat_config::Backend::Hamlib, _) if radio.model != 0 => "cat".to_string(),
-        (rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om, _) => "cat".to_string(),
+        (rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om | rig_control::cat_config::Backend::Hrd, _) => "cat".to_string(),
         _ => "vox".to_string(),
     }
 }
@@ -2411,7 +2417,7 @@ pub async fn run(
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
-            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om | rig_control::cat_config::Backend::None => {}
+            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om | rig_control::cat_config::Backend::Hrd | rig_control::cat_config::Backend::None => {}
         }
     }
     if config.rig_hamlib {

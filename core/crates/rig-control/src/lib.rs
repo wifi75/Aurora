@@ -13,6 +13,7 @@ pub mod extras;
 #[cfg(any(test, feature = "testing"))]
 pub mod fake_rigctld;
 pub mod ft991link;
+pub mod hrd;
 pub mod hamlib;
 pub mod hamlib_restore;
 pub mod hamlib_rig;

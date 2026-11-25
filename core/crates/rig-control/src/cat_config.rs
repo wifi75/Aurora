@@ -25,6 +25,8 @@ pub enum Backend {
     Ft991link,
     /// Cat4OM (Log4OM): client nativo del Control Port, la radio si divide con Log4OM e gli altri programmi collegati.
     Cat4om,
+    /// Ham Radio Deluxe (HRD Rig Control): server TCP di HRD, dialetti v5 e v4.
+    Hrd,
     /// Nessuna radio comandata: la frequenza si cambia a mano (le bande muovono solo quella di Aurora).
     None,
 }
@@ -169,6 +171,12 @@ pub struct RigConfig {
     pub cat4om_key: String,
     /// La radio del gruppo (`radioId` o nome); vuoto = la prima collegata.
     pub cat4om_radio: String,
+    /// Host del server di Ham Radio Deluxe; vuoto = quello di base, 127.0.0.1.
+    pub hrd_host: String,
+    /// Porta TCP del server di Ham Radio Deluxe; 0 = quella di base, 7809.
+    pub hrd_port: u16,
+    /// La radio di HRD (indice o nome); vuoto = la prima dell'elenco.
+    pub hrd_radio: String,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -215,6 +223,9 @@ impl Default for RigConfig {
             cat4om_address: String::new(),
             cat4om_key: String::new(),
             cat4om_radio: String::new(),
+            hrd_host: crate::hrd::DEFAULT_HRD_HOST.to_string(),
+            hrd_port: crate::hrd::DEFAULT_HRD_PORT,
+            hrd_radio: String::new(),
         }
     }
 }
@@ -672,6 +683,7 @@ fn suggest_name(config: &RigConfig, profiles: &[RigProfile]) -> String {
         Backend::Tci => "TCI",
         Backend::Ft991link => "FT-991(A) Link",
         Backend::Cat4om => "Cat4OM",
+        Backend::Hrd => "Ham Radio Deluxe",
         Backend::None => "senza CAT",
     };
     let base: String = format!("{rig} {backend}").chars().take(76).collect();
