@@ -184,6 +184,27 @@ pub fn cmd_drive(rx: Option<u32>, percent: u32) -> String {
     }
 }
 
+/// Il testo di una macro CW pronto per il TCI: i caratteri di controllo e i due che chiudono o dividono i comandi (`;` e `:`) diventano spazi,
+/// le minuscole maiuscole (la CW non le distingue).
+pub fn cw_text_clean(text: &str) -> String {
+    text.chars().map(|c| if c.is_control() || c == ';' || c == ':' { ' ' } else { c.to_ascii_uppercase() }).collect()
+}
+
+/// `cw_macros:<rx>,<testo>;`: manda il testo alla CW della radio (i CWX di Flex e di ExpertSDR passano di qui).
+pub fn cmd_cw_macros(rx: u32, text: &str) -> String {
+    format!("cw_macros:{rx},{};", cw_text_clean(text))
+}
+
+/// `cw_macros_stop;`: ferma il testo CW in uscita.
+pub fn cmd_cw_macros_stop() -> String {
+    "cw_macros_stop;".to_string()
+}
+
+/// `cw_macros_speed:<wpm>;` e `cw_keyer_speed:<wpm>;`: la velocita' della CW (parole al minuto).
+pub fn cmd_cw_speed(wpm: u32) -> [String; 2] {
+    [format!("cw_macros_speed:{wpm};"), format!("cw_keyer_speed:{wpm};")]
+}
+
 /// `tune:<rx>,<true|false>;`: portante di accordo (senza ricevitore per i server che la mandano cosi').
 pub fn cmd_tune(rx: Option<u32>, on: bool) -> String {
     match rx {
@@ -1038,6 +1059,25 @@ impl TciRig {
         inner.confirm(&cmd_tune(rx, on), LEVEL_ECHO, |s| s.tune_on.load(Ordering::SeqCst) == on)
     }
 
+    /// Manda `text` alla CW della radio (`cw_macros`) alla velocita' `wpm`. Il TCI non conferma: il comando parte e basta.
+    pub fn send_cw_text(&self, text: &str, wpm: u32) -> Result<(), RigError> {
+        let inner = &self.inner;
+        inner.connected()?;
+        for c in cmd_cw_speed(wpm.clamp(5, 99)) {
+            inner.send(c);
+        }
+        inner.send(cmd_cw_macros(inner.rx, text));
+        Ok(())
+    }
+
+    /// Ferma il testo CW che la radio sta mandando (`cw_macros_stop`).
+    pub fn stop_cw_text(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        inner.connected()?;
+        inner.send(cmd_cw_macros_stop());
+        Ok(())
+    }
+
     /// La portante di accordo e' accesa.
     pub fn tuning(&self) -> bool {
         self.inner.tune_on.load(Ordering::SeqCst)
@@ -1354,6 +1394,13 @@ impl Rig for TciRig {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn i_comandi_cw_del_tci_sono_quelli_della_specifica() {
+        assert_eq!(super::cmd_cw_macros(0, "cq de IU3ABC:;"), "cw_macros:0,CQ DE IU3ABC  ;");
+        assert_eq!(super::cmd_cw_macros_stop(), "cw_macros_stop;");
+        assert_eq!(super::cmd_cw_speed(25), ["cw_macros_speed:25;".to_string(), "cw_keyer_speed:25;".to_string()]);
+    }
+
     use std::net::TcpListener;
 
     use super::*;

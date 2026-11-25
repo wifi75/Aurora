@@ -62,6 +62,7 @@ export function AboutTab() {
               {t('about.star')}
             </a>
           </div>
+          <p className="about-donate-note">{t('about.donateNote')}</p>
         </div>
       </section>
       </div>

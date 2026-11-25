@@ -60,6 +60,7 @@ export function digiWithDefaults(snap: DigiSnapshot): DigiSnapshot {
     rtty_squelch_snr_db: raw.rtty_squelch_snr_db ?? 0,
     rtty_receiver: raw.rtty_receiver ?? 'auto',
     rtty_charset: raw.rtty_charset ?? 'ita2',
+    rtty_diddle: raw.rtty_diddle ?? true,
     rtty_profile: raw.rtty_profile ?? 0,
     rtty_profiles: raw.rtty_profiles ?? [],
     afc_on: raw.afc_on ?? true,

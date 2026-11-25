@@ -160,6 +160,10 @@ export function ModeSettingsFields({
         <input type="checkbox" checked={s.rtty_uos} onChange={(e) => onSave({ rtty_uos: e.target.checked })} />
         {t('digi.rtty.uos')}
       </label>
+      <label className="sstv-check" title={t('digi.rtty.diddleTip')}>
+        <input type="checkbox" checked={s.rtty_diddle} onChange={(e) => onSave({ rtty_diddle: e.target.checked })} />
+        {t('digi.rtty.diddle')}
+      </label>
       <label title={t('digi.rtty.receiverTip')}>
         <span>{t('digi.rtty.receiver')}</span>
         <select value={s.rtty_receiver} onChange={(e) => onSave({ rtty_receiver: e.target.value as DigiSettings['rtty_receiver'] })}>

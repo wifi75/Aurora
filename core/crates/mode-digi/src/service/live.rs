@@ -58,7 +58,7 @@ pub(super) fn modulator(s: &DigiSettings, lsb: bool) -> Result<TxModulator, Digi
     Ok(match (s.mode.psk(), s.mode) {
         (Some(mode), _) => TxModulator::psk(mode, s.tx_freq()),
         (None, DigiMode::Cw) => TxModulator::cw(s.tx_freq(), s.cw_wpm),
-        (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset),
+        (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset).with_diddle(s.rtty_diddle),
     })
 }
 
@@ -69,6 +69,9 @@ impl DigiService {
         self.text_mode_or_err()?;
         if self.keyer_selected() {
             return self.keyer_session(text, true);
+        }
+        if self.tcicw_selected() {
+            return self.tcicw_session(text, true);
         }
         let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
         if !port.can_stream() {
@@ -134,6 +137,9 @@ impl DigiService {
         self.text_mode_or_err()?;
         if self.keyer_selected() {
             return self.keyer_restart(text, open);
+        }
+        if self.tcicw_selected() {
+            return self.tcicw_restart(text, open);
         }
         let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
         if port.can_stream() {

@@ -37,6 +37,7 @@ export function WinKeyerFields({
   const t = useT();
   const wk: WinKeyerSettings = { ...WINKEYER_DEFAULTS, ...(s.winkeyer ?? {}) };
   const on = s.cw_output === 'winkeyer';
+  const viaTci = s.cw_output === 'tci';
   const [ports, setPorts] = useState<CatPort[]>([]);
   const [result, setResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
@@ -75,13 +76,17 @@ export function WinKeyerFields({
     </label>
   );
   const output = (
-    <label title={t('digi.wk.outputTip')}>
-      <span>{t('digi.wk.output')}</span>
-      <select value={on ? 'winkeyer' : 'audio'} onChange={(e) => onSave({ cw_output: e.target.value as 'audio' | 'winkeyer' })}>
-        <option value="audio">{t('digi.wk.outAudio')}</option>
-        <option value="winkeyer">WinKeyer</option>
-      </select>
-    </label>
+    <>
+      <label title={t('digi.wk.outputTip')}>
+        <span>{t('digi.wk.output')}</span>
+        <select value={on ? 'winkeyer' : viaTci ? 'tci' : 'audio'} onChange={(e) => onSave({ cw_output: e.target.value as 'audio' | 'winkeyer' | 'tci' })}>
+          <option value="audio">{t('digi.wk.outAudio')}</option>
+          <option value="winkeyer">WinKeyer</option>
+          <option value="tci">{t('digi.wk.outTci')}</option>
+        </select>
+      </label>
+      {viaTci ? <p className="sstv-hint">{t('digi.wk.tciHint')}</p> : null}
+    </>
   );
   const testRow = (
     <div className="digi-wk-test">

@@ -40,6 +40,7 @@ export function RttySettingsDialog({ settings: s, onApply, onClose }: { settings
     return saved.map((p, i) => (i === s.rtty_profile ? currentProfile(s, p) : p));
   });
   const [active, setActive] = useState(Math.min(3, Math.max(0, s.rtty_profile)));
+  const [diddle, setDiddle] = useState(s.rtty_diddle);
   const [rxHz, setRxHz] = useState(String(Math.round(s.rx_freq_hz)));
   const [txHz, setTxHz] = useState(String(Math.round(s.tx_freq_hz)));
   const p = profiles[active] ?? BASE_PROFILE;
@@ -59,6 +60,7 @@ export function RttySettingsDialog({ settings: s, onApply, onClose }: { settings
       rtty_reverse: p.reverse,
       rtty_receiver: p.receiver,
       rtty_charset: p.charset,
+      rtty_diddle: diddle,
       afc_on: p.afc,
       snap_on: p.snap,
       squelch_on: p.squelch,
@@ -97,6 +99,10 @@ export function RttySettingsDialog({ settings: s, onApply, onClose }: { settings
             {check('snap', t('digi.mi.snap'))}
             {check('squelch', t('digi.mi.squelch'))}
             {check('uos', t('digi.rtty.uos'))}
+            <label className="rtty-check" title={t('digi.rtty.diddleTip')}>
+              <input type="checkbox" checked={diddle} onChange={(e) => setDiddle(e.target.checked)} />
+              <span>{t('digi.rtty.diddle')}</span>
+            </label>
           </div>
           <label className="rtty-sq" title={t('digi.rtty.squelchSnrHint')}>
             <input type="range" className="rtty-vertical" min={0} max={40} step={1} value={p.squelch_snr_db} onChange={(e) => set({ squelch_snr_db: Number(e.target.value) })} aria-label={t('digi.rtty.squelchSnr', { db: p.squelch_snr_db })} />

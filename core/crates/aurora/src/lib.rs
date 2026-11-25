@@ -2171,9 +2171,19 @@ struct DigiTx {
     transmitter: Arc<tx_native::Transmitter>,
     volume: Option<Arc<WindowsVolumePort>>,
     free_tx: FreeTx,
+    cat: Arc<rig_control::cat::CatService>,
 }
 
 impl mode_digi::DigiTxPort for DigiTx {
+    // CW dal comando CWX della radio via TCI (Flex, ExpertSDR): la radio fa CW, PTT e tasto
+    fn cw_text(&self, text: &str, wpm: u32) -> Result<(), String> {
+        self.cat.tci().and_then(|r| r.send_cw_text(text, wpm)).map_err(|e| e.0)
+    }
+
+    fn cw_text_stop(&self) {
+        let _ = self.cat.tci().and_then(|r| r.stop_cw_text());
+    }
+
     fn start(&self, wave: Vec<f32>) -> Result<(), String> {
         if let Some(v) = &self.volume {
             v.route(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
@@ -3319,13 +3329,13 @@ pub async fn run(
                             let user_set = Arc::new(std::sync::atomic::AtomicBool::new(false));
                             let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls), user_set: Arc::clone(&user_set), started: std::sync::atomic::AtomicBool::new(true) });
                             sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)), free_tx: Arc::clone(&free_tx) }));
-                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume), free_tx: Arc::clone(&free_tx) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume), free_tx: Arc::clone(&free_tx), cat: Arc::clone(&cat) }));
                             let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls), user_set, started: std::sync::atomic::AtomicBool::new(false) };
                             Arc::new(EngineTxPort { inner: Arc::new(port), free_tx }) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
                             sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: None, free_tx: Arc::clone(&free_tx) }));
-                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None, free_tx: Arc::clone(&free_tx) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None, free_tx: Arc::clone(&free_tx), cat: Arc::clone(&cat) }));
                             Arc::new(EngineTxPort { inner, free_tx }) as Arc<dyn engine_native::TxPort>
                         }
                     })

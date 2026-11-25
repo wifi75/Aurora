@@ -1981,7 +1981,7 @@ export interface DigiSettings {
   /** CW: ricevitore preciso, o veloce con testo provvisorio corretto dal preciso. */
   cw_receiver?: 'precise' | 'fast';
   /** CW: uscita della trasmissione, audio della scheda o manipolatore esterno WinKeyer. */
-  cw_output?: 'audio' | 'winkeyer';
+  cw_output?: 'audio' | 'winkeyer' | 'tci';
   /** CW: impostazioni del WinKeyer. */
   winkeyer?: WinKeyerSettings;
   /** Anti-click della cascata mentre la pagina ascolta (acceso di base). */
@@ -2003,6 +2003,8 @@ export interface DigiSettings {
   rtty_receiver: 'auto' | 'filters' | 'discriminator';
   /** RTTY: set di caratteri (ITA2 maiuscolo di base, minuscole, cirillico MTK-2, svedese). */
   rtty_charset: RttyCharset;
+  /** RTTY: in attesa di testo si manda il «diddle» (LTRS) come MMTTY e fldigi; spento solo il tono di riposo. Acceso di base. */
+  rtty_diddle: boolean;
   /** RTTY: i quattro profili della finestra «Impostazioni RTTY» e quello scelto (0-3), gia' copiato nei campi qui sopra. */
   rtty_profile: number;
   rtty_profiles: RttyProfile[];

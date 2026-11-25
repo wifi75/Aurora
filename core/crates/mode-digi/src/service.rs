@@ -25,6 +25,7 @@ use crate::{CwDemodulator, PskDemodulator, PskMode, RATE, RttyDemodulator, RttyP
 mod live;
 /// Il CW con il WinKeyer: il testo va al manipolatore esterno, l'avanzamento viene dalla sua eco (vedi `service/keyer.rs`).
 mod keyer;
+mod tcicw;
 
 pub use keyer::{KeyerOpener, KeyerStatus};
 pub use rig_control::winkeyer::{PaddleMode, WinKeyerConfig};
@@ -47,6 +48,12 @@ pub trait DigiTxPort: Send + Sync {
         Err("questa catena di trasmissione non trasmette a flusso".into())
     }
     fn close_stream(&self) {}
+    /// CW dal comando CWX della radio (TCI `cw_macros`): manda `text` alla velocita' `wpm`; la radio fa CW, PTT e tasto.
+    fn cw_text(&self, _text: &str, _wpm: u32) -> Result<(), String> {
+        Err("questa radio non ha il comando CW del TCI: serve il collegamento TCI".into())
+    }
+    /// Ferma il testo CW mandato con `cw_text`.
+    fn cw_text_stop(&self) {}
     /// Quanti campioni (a 12 kHz) della trasmissione a flusso sono gia' usciti dalla scheda; `None` se la catena non lo sa.
     fn played(&self) -> Option<u64> {
         None
@@ -311,6 +318,8 @@ pub enum CwOutput {
     Audio,
     /// Manipolatore esterno WinKeyer (K1EL WK2/WK3 e compatibili): CW, PTT e tasto li fa lui.
     WinKeyer,
+    /// Il comando CWX della radio via TCI (`cw_macros`: Flex, ExpertSDR): la radio fa CW, PTT e tasto. Serve il collegamento TCI.
+    Tci,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -335,6 +344,9 @@ pub struct DigiSettings {
     pub rtty_receiver: RttyReceiver,
     /// RTTY: il set di caratteri (ITA2 di base, minuscole, cirillico, svedese).
     pub rtty_charset: RttyCharset,
+    /// RTTY: in attesa di testo (trasmissione aperta con la casella vuota, o testo finito) si manda il «diddle» (LTRS), come MMTTY e fldigi.
+    /// Spento si manda il solo tono di riposo (mark). Acceso di base.
+    pub rtty_diddle: bool,
     /// RTTY: i quattro profili della finestra «Impostazioni RTTY» e quello scelto (0-3). Il profilo scelto e' gia' copiato nei campi
     /// qui sopra e in `afc_on`, `snap_on`, `squelch_on`: il motore usa quelli.
     pub rtty_profile: u8,
@@ -461,6 +473,7 @@ impl Default for DigiSettings {
             rtty_squelch_snr_db: 0.0,
             rtty_receiver: RttyReceiver::Auto,
             rtty_charset: RttyCharset::Ita2,
+            rtty_diddle: true,
             rtty_profile: 0,
             rtty_profiles: RttyProfile::factory(),
             cw_wpm: 20.0,
@@ -1311,6 +1324,9 @@ impl DigiService {
         if self.keyer_selected() {
             return self.keyer_session(text, false);
         }
+        if self.tcicw_selected() {
+            return self.tcicw_session(text, false);
+        }
         let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
         if port.can_stream() {
             return self.start_session(port, text, false);
@@ -1997,6 +2013,7 @@ mod tests {
         let s: DigiSettings = serde_json::from_str(r#"{"mode":"rtty","rx_freq_hz":1500,"rtty_shift_hz":170,"rtty_baud":45.45}"#).expect("json");
         assert!(!s.rtty_reverse);
         assert!(s.rtty_uos);
+        assert!(s.rtty_diddle, "il diddle e' acceso di base");
         assert_eq!(s.rtty_receiver, RttyReceiver::Auto);
         assert!(!s.rtty_receiver.discriminator(170.0));
         assert!(s.rtty_receiver.discriminator(23.0));

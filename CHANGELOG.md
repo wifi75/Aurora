@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+- RTTY, scelta «Diddle in attesa» (richiesta di Greg, #105): acceso di base (come prima). Il tasto RX/TX in basso (o Pausa) mette in trasmissione anche con la casella vuota e ci resta finche' non si preme di nuovo; in attesa del testo Aurora manda il diddle (LTRS di riposo, come MMTTY e fldigi). Spento manda il solo tono di riposo. Si cambia nelle Impostazioni del modo, nella finestra «Impostazioni RTTY» e nel menu del modo (`rtty_diddle`, `TxModulator::with_diddle`). Prova in `tx_stream.rs`; testo con la spiegazione in 6 lingue + nl/ru.
+- CW, nuova uscita «TCI (CWX della radio)» (richiesta di Greg, #106): il testo delle macro e della finestra di trasmissione va al CWX della radio con il comando TCI `cw_macros` (Flex, ExpertSDR), con velocita' da `cw_macros_speed`/`cw_keyer_speed` e Esc con `cw_macros_stop`. Aurora tiene il testo in coda e lo passa a pochi caratteri alla volta, in anticipo di 1,5 s sul tempo stimato dalla velocita' (il TCI non dice quando un carattere esce), cosi' Backspace e l'eco seguono. Moduli: `rig-control/src/tci.rs`, `mode-digi/src/service/tcicw.rs`; prove con una radio finta. Non provato con una radio vera.
+- Impostazioni, pagina «Sostieni Aurora»: aggiunta in piccolo la nota «donazione libera e volontaria, senza alcuna contropartita in beni o servizi» in 6 lingue + nl/ru.
+
 ## 0.11.348 - 2026-11-24
 - SSTV, miniature Ricevute e Trasmesse: le frecce di scorrimento spente non occupano piu' il lato sinistro, cosi' le immagini partono dal bordo (si vedono solo se c'e' qualcosa da scorrere). Prova in `sstvLayout.test.ts`; non visto a schermo.
 - SSTV, pagina in ricezione con il Log QSO: il riquadro del log sta subito accanto all'immagine e non piu' lontano, all'estremo destro (la colonna dell'immagine ha una larghezza massima di 46 rem, come lo schermo a 4:3). Prova in `sstvLayout.test.ts`; non visto a schermo.

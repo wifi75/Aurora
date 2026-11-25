@@ -1787,6 +1787,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               { label: `${t('digi.rtty.baud')}: ${roundBaud(s.rtty_baud)}`, items: withCurrent(RTTY_BAUDS, roundBaud(s.rtty_baud)).map((v) => ({ label: `${v} baud`, checked: v === roundBaud(s.rtty_baud), onSelect: () => save({ rtty_baud: v }) })) },
               { label: t('digi.rtty.reverse'), checked: s.rtty_reverse, onSelect: () => save({ rtty_reverse: !s.rtty_reverse }) },
               { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
+              { label: t('digi.rtty.diddle'), checked: s.rtty_diddle, onSelect: () => save({ rtty_diddle: !s.rtty_diddle }) },
             ]
           : []),
         // CW: banda del filtro scelta al volo (anche larga, per la panoramica) e trasmissione alla velocita' ricevuta

@@ -64,7 +64,16 @@ impl TxModulator {
         }
     }
 
-    /// Un tratto di attesa (niente da mandare): RTTY un LTRS, PSK quattro zeri, CW un decimo di secondo di silenzio.
+    /// RTTY: in attesa si manda il «diddle» (LTRS, come MMTTY e fldigi) o, spento, il solo tono di riposo (mark); negli altri modi non fa nulla.
+    #[must_use]
+    pub fn with_diddle(mut self, on: bool) -> Self {
+        if let TxModulator::Rtty(m) = &mut self {
+            m.diddle = on;
+        }
+        self
+    }
+
+    /// Un tratto di attesa (niente da mandare): RTTY un LTRS (o il tono di riposo senza diddle), PSK quattro zeri, CW un decimo di secondo di silenzio.
     pub fn idle(&mut self) -> Vec<f32> {
         match self {
             TxModulator::Rtty(m) => m.idle(),
@@ -111,6 +120,8 @@ fn byte_of(c: char) -> u8 {
 pub struct RttyTx {
     params: RttyParams,
     charset: RttyCharset,
+    /// In attesa si manda LTRS (diddle) invece del solo mark.
+    diddle: bool,
     spb: f64,
     phase: f64,
     t_end: f64,
@@ -121,7 +132,7 @@ pub struct RttyTx {
 
 impl RttyTx {
     fn new(params: RttyParams, charset: RttyCharset) -> Self {
-        Self { params, charset, spb: f64::from(RATE) / f64::from(params.baud), phase: 0.0, t_end: 0.0, emitted: 0, shift: Some(Reg::Letters) }
+        Self { params, charset, diddle: true, spb: f64::from(RATE) / f64::from(params.baud), phase: 0.0, t_end: 0.0, emitted: 0, shift: Some(Reg::Letters) }
     }
 
     fn synth(&mut self, seq: &[(bool, f64)]) -> Vec<f32> {
@@ -155,8 +166,13 @@ impl RttyTx {
 
     fn idle(&mut self) -> Vec<f32> {
         let mut seq = Vec::new();
-        push_frame(&mut seq, LTRS);
-        self.shift = Some(Reg::Letters);
+        if self.diddle {
+            push_frame(&mut seq, LTRS);
+            self.shift = Some(Reg::Letters);
+        } else {
+            // senza diddle: il tono di riposo (mark), per la durata di un carattere
+            seq.push((true, 7.5));
+        }
         self.synth(&seq)
     }
 
@@ -470,5 +486,30 @@ mod tests {
         audio.extend(vec![0.0; 6000]);
         let mut rx = rtty::RttyDemodulator::new(p);
         assert_eq!(String::from_utf8_lossy(&rx.process(&audio)), "CQDE");
+    }
+
+    #[test]
+    fn senza_diddle_l_attesa_rtty_e_solo_il_tono_di_riposo() {
+        let p = RttyParams::default();
+        let mut con = TxModulator::rtty(p, RttyCharset::Ita2);
+        let mut senza = TxModulator::rtty(p, RttyCharset::Ita2).with_diddle(false);
+        let (a, b) = (con.idle(), senza.idle());
+        // stessa durata di un carattere, ma senza il diddle l'onda e' un tono solo (mark)
+        assert_eq!(a.len(), b.len());
+        assert_ne!(a, b);
+        // il testo prima e dopo l'attesa arriva intatto
+        let mut m = TxModulator::rtty(p, RttyCharset::Ita2).with_diddle(false);
+        let mut audio = m.preamble();
+        audio.extend(m.token("C"));
+        audio.extend(m.token("Q"));
+        audio.extend(m.idle());
+                audio.extend(m.token("D"));
+        audio.extend(m.token("E"));
+        audio.extend(m.postamble());
+        audio.extend(vec![0.0; 6000]);
+        let mut rx = rtty::RttyDemodulator::new(p);
+        // il ricevitore di prova puo' stampare un carattere vuoto nel lungo mark di riposo: conta che il testo arrivi intatto prima e dopo
+        let text = String::from_utf8_lossy(&rx.process(&audio)).to_string();
+        assert!(text.starts_with("CQ") && text.ends_with("DE"), "ricevuto: {text:?}");
     }
 }
