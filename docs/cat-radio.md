@@ -239,6 +239,23 @@ Kenwood TS-590, TS-890, TS-2000, TS-480; Elecraft K3, KX3, KX2, K4; FlexRadio (C
 La **FT-2000** non ha un'identita' USB propria (di solito arriva da un adattatore seriale): la riconosce solo se il nome della porta o il numero di serie dell'interfaccia lo contiene,
 e il CP2105 doppio la elenca tra le Yaesu possibili. In tutti gli altri casi basta sceglierla nell'elenco (modello 1029).
 
+## Ham Radio Deluxe (HRD Rig Control)
+
+Se la radio e' gia' comandata da **HRD Rig Control** (il modulo di Ham Radio Deluxe), Aurora si collega a quel programma via rete invece di aprire la porta della radio: cosi' i due programmi non si contendono la porta COM. Implementato in `rig-control/src/hrd.rs`; **non ancora provato con HRD vero**: il protocollo e' ricostruito dalla documentazione e dai programmi che parlano con HRD, quindi il primo collegamento reale potrebbe richiedere correzioni.
+
+Come collegarlo:
+
+1. Apri HRD Rig Control e collega la radio (deve mostrare la frequenza e rispondere).
+2. In Aurora, Impostazioni › Stazione › Radio: «Sistema di controllo» = **Ham Radio Deluxe (HRD Rig Control)**.
+3. **Indirizzo**: `127.0.0.1` se HRD e' sullo stesso PC (di base), altrimenti l'indirizzo dell'altro PC. **Porta**: 7809 (di base). **Radio** (facoltativo): numero (1, 2...) o nome della radio in HRD; vuoto = la prima.
+4. Premi **Collega**.
+
+Nel JSON della configurazione radio (`radio.json`): `"backend": "hrd"`, `"hrd_host"`, `"hrd_port"`, `"hrd_radio"`.
+
+Cosa supporta: frequenza, modo (modo dati incluso) e PTT; il PTT usa il pulsante TX di HRD. Il collegamento rilegge frequenza e modo a intervalli e si ricollega da solo se HRD smette di rispondere.
+
+Limiti: **niente misuratori** (S-meter, potenza, ROS, ALC), **niente accensione e spegnimento** della radio, **split limitato** (quello di FT8 e' simulato come con gli altri sistemi; lo split DX usa i comandi di HRD se li offre), nessun comando del motore della radio (preamplificatore, AGC, ecc.). HRD deve essere aperto prima di premere Collega; se non risponde, Aurora lo dice con l'indirizzo provato.
+
 ## Da fare ancora
 
 - **TCI** (SDR Expert Electronics e compatibili): fatto in `rig-control/src/tci.rs` (protocollo e conferme con l'eco letti da WSJT-X 3, ricevitore RX1/RX2, audio nei due sensi); manca la prova dal vivo (`docs/tasks.md`, voce 16).
@@ -247,6 +264,7 @@ e il CP2105 doppio la elenca tra le Yaesu possibili. In tutti gli altri casi bas
   come osservatore `noRegister`, scelta con «Usa», `POST /cat/cat4om/search`) e audio in rete in `rig-control/src/cat4om_audio.rs`
   (dispositivo «Cat4OM (audio in rete)» in ingresso e in uscita: ricezione a 12 kHz mono o 48 kHz se rifiutata, trasmissione a 48 kHz in
   blocchi da 20 ms su uno stream aperto prima del PTT). Manca la prova dal vivo con Log4OM/Cat4OM.
+- **Ham Radio Deluxe** (HRD Rig Control, `rig-control/src/hrd.rs`): fatto, ma manca la prova dal vivo con HRD vero (dialetti v5 e v4 del protocollo, split, modo dati).
 - Rilevamento **attivo** (interrogare la radio con le sonde di Hamlib): non fatto, volutamente. Se si fara' sara' un'opzione spenta.
 - Misuratori (S-meter, potenza, ROS, ALC) e limite di ROS; keep-alive e backoff speciali per le Icom con CI-V; sorgente audio TX (Rear/Data, Front/Mic).
 - Rendere disponibili i **sorgenti** di Hamlib (e di libusb) con la stessa versione dei file inclusi, oltre al rimando a https://github.com/Hamlib/Hamlib gia' in `VERSIONE.txt` e nei testi di licenza.

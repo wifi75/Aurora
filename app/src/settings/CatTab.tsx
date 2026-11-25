@@ -421,6 +421,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             <option value="tci">{t('cat.backend.tci')}</option>
             <option value="ft991link">{t('cat.backend.ft991link')}</option>
             <option value="cat4om">{t('cat.backend.cat4om')}</option>
+            <option value="hrd">{t('cat.backend.hrd')}</option>
             <option value="none">{t('cat.backend.none')}</option>
           </select>
         </Field>
@@ -463,6 +464,40 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               onChange={(e) => set({ ft991_address: e.target.value.trim() })}
             />
           </Field>
+        ) : null}
+        {fields.hrd ? (
+          <>
+            <Field label={t('cat.hrd.host')} className="cat-w-m" hint={t('tip.cat.hrd.host')}>
+              <input
+                type="text"
+                value={config.hrd_host ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="127.0.0.1"
+                onChange={(e) => set({ hrd_host: e.target.value.trim() })}
+              />
+            </Field>
+            <Field label={t('cat.hrd.port')} className="cat-w-s" hint={t('tip.cat.hrd.port')}>
+              <input
+                type="number"
+                min={1}
+                max={65535}
+                value={config.hrd_port ?? 7809}
+                placeholder="7809"
+                onChange={(e) => set({ hrd_port: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label={t('cat.hrd.radio')} className="cat-w-m" hint={t('tip.cat.hrd.radio')}>
+              <input
+                type="text"
+                value={config.hrd_radio ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder={t('cat.hrd.firstRadio')}
+                onChange={(e) => set({ hrd_radio: e.target.value.trim() })}
+              />
+            </Field>
+          </>
         ) : null}
         {fields.cat4om ? (
           <>
@@ -684,6 +719,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
         </Message>
       ) : null}
       {fields.cat4om ? <Message kind="muted">{t('cat.cat4om.audioHint')}</Message> : null}
+      {fields.hrd ? <Message kind="muted">{t('cat.hrd.hint')}</Message> : null}
       {fields.rig ? <Message kind="muted">{models.isLoading ? t('cat.rig.loading') : models.isError ? t('cat.rig.failed') : t('cat.rig.count', { n: modelList.length })}</Message> : null}
       <datalist id="cat-ports">
         {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (

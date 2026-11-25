@@ -18,6 +18,7 @@ const BACKEND_KEY: Record<CatBackend, Key> = {
   tci: 'cat.backend.tci',
   ft991link: 'cat.backend.ft991link',
   cat4om: 'cat.backend.cat4om',
+  hrd: 'cat.backend.hrd',
   none: 'cat.backend.none',
 };
 

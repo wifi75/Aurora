@@ -24,12 +24,13 @@ Gli id `s-...` sono delle sezioni nuove; gli altri sono voci già presenti in `g
 | Operatore · Cognome, Email (facoltativa), nota sui dati | Dati personali › Operatore | s-personal |
 | Pagina Radio (CAT e PTT) | Stazione › Radio (CAT e PTT) | s-radio, s-radio-state, s-radio-display |
 | Avvisi OmniRig non installato / rigctld mancante, pulsante Ripristina Hamlib (solo Windows) | Radio › Collegamento | s-radio |
-| Sistema di controllo (Hamlib, OmniRig, TCI, FT-991(A) Link, Cat4OM, Nessuno) | Radio › Collegamento | s-radio (Nessuno: anche `nocat`) |
+| Sistema di controllo (Hamlib, OmniRig, TCI, FT-991(A) Link, Cat4OM, Ham Radio Deluxe, Nessuno) | Radio › Collegamento | s-radio (Nessuno: anche `nocat`) |
 | Indirizzo TCI, Ricevitore (RX1/RX2) | Radio › Collegamento (solo TCI) | s-radio, `tci` |
 | Radio di OmniRig (Rig 1/Rig 2) | Radio › Collegamento (solo OmniRig) | s-radio |
 | Indirizzo FT-991(A) Link | Radio › Collegamento (solo FT-991(A) Link) | s-radio, `ft991link` |
 | Gestione Cat4OM, Gruppo, Controllo, Chiave del gruppo, Radio | Radio › Collegamento (solo Cat4OM) | s-radio, `cat4om` |
 | Pulsante Cerca di Cat4OM, elenco «Gruppi e radio», Usa/Scelta, problema audio in rete | Radio › Collegamento (solo Cat4OM) | s-radio |
+| Indirizzo, Porta, Radio (facoltativo), avviso sul PTT e i limiti | Radio › Collegamento (solo Ham Radio Deluxe) | s-radio, `hrd` |
 | Cerca (marca o modello) e menu Radio | Radio › Collegamento (solo Hamlib) | s-radio |
 | Porta (COM, /dev/ttyUSB*, /dev/ttyACM*, indirizzo:porta) | Radio › Collegamento (solo Hamlib) | s-radio, s-serial-linux |
 | Pulsante Aggiorna le porte | Radio › Collegamento (solo Hamlib) | s-radio, s-serial-linux |

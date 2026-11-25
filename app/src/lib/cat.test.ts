@@ -96,6 +96,23 @@ describe('Cat4OM settings', () => {
   });
 });
 
+describe('Ham Radio Deluxe settings', () => {
+  it('show only the HRD fields, with the defaults and the checks', () => {
+    const c = visibleFields({ ...DEFAULT_CAT, backend: 'hrd' }, undefined);
+    expect([c.hrd, c.rig, c.port, c.ptt, c.poll, c.tci, c.cat4om]).toEqual([true, false, false, false, false, false, false]);
+    expect(visibleFields(DEFAULT_CAT, undefined).hrd).toBe(false);
+    expect([DEFAULT_CAT.hrd_host, DEFAULT_CAT.hrd_port, DEFAULT_CAT.hrd_radio]).toEqual(['127.0.0.1', 7809, '']);
+    const base = { ...DEFAULT_CAT, backend: 'hrd' as const };
+    expect(catIssue(base)).toBeNull();
+    expect(catIssue({ ...base, hrd_host: '192.168.1.20', hrd_radio: 'IC-7300' })).toBeNull();
+    expect(catIssue({ ...base, hrd_host: '127.0.0.1 x' })).toBe('bad_hrd_host');
+    expect(catIssue({ ...base, hrd_port: 0 })).toBe('bad_hrd_port');
+    expect(catIssue({ ...base, hrd_port: 70000 })).toBe('bad_hrd_port');
+    expect(catIssue({ ...base, hrd_radio: 'a	b' })).toBe('bad_hrd_radio');
+    expect(catIssue({ ...base, hrd_radio: 'x'.repeat(65) })).toBe('bad_hrd_radio');
+  });
+});
+
 describe('model search', () => {
   it('finds by words in any order, ignoring dashes and case', () => {
     expect(filterModels(models, 'yaesu 2000').map((m) => m.id)).toEqual([1029, 1040]);

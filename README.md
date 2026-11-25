@@ -123,7 +123,7 @@ During tests you can switch on **code-free access** (Settings › Access and sup
 
 ### CAT: the radio for every model
 
-In Settings › Station › Radio (CAT and PTT) you choose how to control the radio (frequency, mode, PTT, split): **Hamlib** through `rigctld` (over 300 models, the default) OmniRig (directly via COM) or the native Cat4OM; also TCI and FT-991 Link. Named profiles, radio detection and real-time status. User guide and tests with a real radio in `docs/cat-radio.md` (documentation in Italian).
+In Settings › Station › Radio (CAT and PTT) you choose how to control the radio (frequency, mode, PTT, split): **Hamlib** through `rigctld` (over 300 models, the default) OmniRig (directly via COM) or the native Cat4OM; also TCI, FT-991 Link and Ham Radio Deluxe (HRD Rig Control). Named profiles, radio detection and real-time status. User guide and tests with a real radio in `docs/cat-radio.md` (documentation in Italian).
 
 ## Configuration
 

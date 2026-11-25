@@ -123,7 +123,7 @@ Während der Tests kann der **Zugang ohne Code** eingeschaltet werden (Einstellu
 
 ### CAT: das Funkgerät für alle Modelle
 
-Unter Einstellungen › Station › Funkgerät (CAT und PTT) wählst du, wie das Funkgerät gesteuert wird (Frequenz, Modus, PTT, Split): **Hamlib** über `rigctld` (über 300 Modelle, die Standardwahl) OmniRig (direkt über COM) oder das native Cat4OM; auch TCI und FT-991 Link. Benannte Profile, Erkennung des Funkgeräts und Echtzeitstatus. Anleitung für Anwender und Tests mit echtem Funkgerät in `docs/cat-radio.md` (Dokumentation auf Italienisch).
+Unter Einstellungen › Station › Funkgerät (CAT und PTT) wählst du, wie das Funkgerät gesteuert wird (Frequenz, Modus, PTT, Split): **Hamlib** über `rigctld` (über 300 Modelle, die Standardwahl) OmniRig (direkt über COM) oder das native Cat4OM; auch TCI, FT-991 Link und Ham Radio Deluxe (HRD Rig Control). Benannte Profile, Erkennung des Funkgeräts und Echtzeitstatus. Anleitung für Anwender und Tests mit echtem Funkgerät in `docs/cat-radio.md` (Dokumentation auf Italienisch).
 
 ## Konfiguration
 

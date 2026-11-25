@@ -123,7 +123,7 @@ Durante le prove si può accendere l'**accesso senza codice** (Impostazioni › 
 
 ### CAT: la radio per tutti i modelli
 
-In Impostazioni › Stazione › Radio (CAT e PTT) si sceglie come comandare la radio (frequenza, modo, PTT, split): **Hamlib** tramite `rigctld` (oltre 300 modelli, la scelta di base) OmniRig (direttamente via COM) o Cat4OM nativo; anche TCI e FT-991 Link. Profili con nome, rilevamento della radio e stato in tempo reale. Guida per l'utente e prove con la radio vera in `docs/cat-radio.md`.
+In Impostazioni › Stazione › Radio (CAT e PTT) si sceglie come comandare la radio (frequenza, modo, PTT, split): **Hamlib** tramite `rigctld` (oltre 300 modelli, la scelta di base) OmniRig (direttamente via COM) o Cat4OM nativo; anche TCI, FT-991 Link e Ham Radio Deluxe (HRD Rig Control). Profili con nome, rilevamento della radio e stato in tempo reale. Guida per l'utente e prove con la radio vera in `docs/cat-radio.md`.
 
 ## Configurazione
 

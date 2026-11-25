@@ -750,7 +750,7 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'ft991link' | 'cat4om' | 'none';
+export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'ft991link' | 'cat4om' | 'hrd' | 'none';
 export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
 export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';
@@ -815,6 +815,12 @@ export interface CatConfig {
   cat4om_key?: string;
   /** La radio del gruppo di Cat4OM (radioId o nome); vuoto = la prima collegata. */
   cat4om_radio?: string;
+  /** Indirizzo del server di rete di Ham Radio Deluxe (HRD Rig Control), di base 127.0.0.1. */
+  hrd_host?: string;
+  /** Porta TCP del server di HRD (di base 7809). */
+  hrd_port?: number;
+  /** La radio di HRD (indice o nome); vuoto = la prima. */
+  hrd_radio?: string;
 }
 
 export interface RigExtras {

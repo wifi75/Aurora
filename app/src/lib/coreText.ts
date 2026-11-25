@@ -36,6 +36,7 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ["La radio e' spenta (PS0): accendila oppure spunta «Accendi» nella scheda Radio", 'core.ft991.off'],
   ['Collegamento con FT-991(A) Link perso: nuovo tentativo', 'core.ft991.lost'],
   ['radio Cat4OM non collegata', 'core.cat4om.notLinked'],
+  ['radio Ham Radio Deluxe non collegata', 'core.hrd.notLinked'],
   ['Nessuna radio nel gruppo Cat4OM: aggiungila in Cat4OM', 'core.cat4om.noRadios'],
   ['Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni › Stazione › Radio', 'core.cat4om.authRequired'],
   ["Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC", 'core.cat4om.authFailed'],
@@ -88,6 +89,8 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
   { re: /^La porta (\S+) e' occupata da (.+?): chiudi \2 e riavvia Aurora$/s, key: 'core.pttPortHeldBy', vars: ['port', 'who'] },
   // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
   { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
+  // Ham Radio Deluxe: HRD Rig Control non risponde (`hrd::not_answering`)
+  { re: /^Ham Radio Deluxe non risponde su (\S+): apri HRD Rig Control e collega la radio$/s, key: 'core.hrd.noAnswer', vars: ['address'] },
   // Cat4OM: servizio non raggiungibile, porta sbagliata, radio mancante, scollegata o presa dall'emulazione, collegamento perso, rifiuti
   {
     re: /^Cat4OM non raggiungibile su (\S+): avvia Cat4OM e controlla la porta Control del gruppo; da un altro PC abilita la rete in Settings → SERVER \((.*)\)$/s,

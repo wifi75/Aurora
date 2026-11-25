@@ -541,4 +541,20 @@ export const coreTextStrings = {
     'Conexión con FT-991(A) Link perdida: nuevo intento.',
     'Ligação ao FT-991(A) Link perdida: nova tentativa.',
   ],
+  'core.hrd.noAnswer': [
+    'Ham Radio Deluxe non risponde su {address}: apri HRD Rig Control e collega la radio.',
+    'Ham Radio Deluxe does not answer on {address}: open HRD Rig Control and connect the radio.',
+    'Ham Radio Deluxe antwortet nicht auf {address}: HRD Rig Control öffnen und das Funkgerät verbinden.',
+    'Ham Radio Deluxe ne répond pas sur {address} : ouvre HRD Rig Control et connecte la radio.',
+    'Ham Radio Deluxe no responde en {address}: abre HRD Rig Control y conecta la radio.',
+    'O Ham Radio Deluxe não responde em {address}: abre o HRD Rig Control e liga o rádio.',
+  ],
+  'core.hrd.notLinked': [
+    'Radio Ham Radio Deluxe non collegata.',
+    'Ham Radio Deluxe radio not connected.',
+    'Ham-Radio-Deluxe-Funkgerät nicht verbunden.',
+    'Radio Ham Radio Deluxe non connectée.',
+    'Radio de Ham Radio Deluxe no conectada.',
+    'Rádio do Ham Radio Deluxe não ligado.',
+  ],
 } as const;

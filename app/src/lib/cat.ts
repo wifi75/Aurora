@@ -32,6 +32,9 @@ export const DEFAULT_CAT: CatConfig = {
   cat4om_address: '',
   cat4om_key: '',
   cat4om_radio: '',
+  hrd_host: '127.0.0.1',
+  hrd_port: 7809,
+  hrd_radio: '',
 };
 
 // eslint-disable-next-line no-control-regex
@@ -62,6 +65,9 @@ export function catIssue(c: CatConfig): string | null {
   if (c.cat4om_address !== undefined && c.cat4om_address !== '' && !PORT.test(c.cat4om_address)) return 'bad_cat4om_address';
   if (c.cat4om_key !== undefined && ([...c.cat4om_key].length > 128 || CONTROL.test(c.cat4om_key))) return 'bad_cat4om_key';
   if (c.cat4om_radio !== undefined && ([...c.cat4om_radio].length > 64 || CONTROL.test(c.cat4om_radio))) return 'bad_cat4om_radio';
+  if (c.hrd_host !== undefined && c.hrd_host !== '' && !PORT.test(c.hrd_host)) return 'bad_hrd_host';
+  if (c.hrd_port !== undefined && (!Number.isInteger(c.hrd_port) || c.hrd_port < 1 || c.hrd_port > 65535)) return 'bad_hrd_port';
+  if (c.hrd_radio !== undefined && ([...c.hrd_radio].length > 64 || CONTROL.test(c.hrd_radio))) return 'bad_hrd_radio';
   if (c.baud !== 0 && !(BAUDS as readonly number[]).includes(c.baud)) return 'bad_baud';
   if (![0, 7, 8].includes(c.data_bits) || ![0, 1, 2].includes(c.stop_bits)) return 'bad_serial';
   if (!Number.isInteger(c.poll_secs) || c.poll_secs < 1 || c.poll_secs > 99) return 'bad_poll';
@@ -81,6 +87,7 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
     tci: c.backend === 'tci',
     ft991: c.backend === 'ft991link',
     cat4om: c.backend === 'cat4om',
+    hrd: c.backend === 'hrd',
     rig: hamlib,
     port: hamlib,
     baud: hamlib && !network,
