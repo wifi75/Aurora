@@ -638,6 +638,9 @@ pub(crate) fn set_agent_autostart(enabled: bool) {
         } else {
             reg.args(["delete", key, "/v", "AuroraAgente", "/f"]);
         }
+        // l'errore standard di `reg` («Impossibile trovare la chiave del Registro» quando il valore non c'e') finiva in `crash/stderr.log`, che al
+        // riavvio sembrava un arresto improvviso e mandava un pacchetto «crash» falso: niente deve uscire da questo comando
+        reg.stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
         let _ = reg.creation_flags(0x0800_0000).status();
     }
     #[cfg(not(windows))]

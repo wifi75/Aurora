@@ -133,10 +133,32 @@ pub fn parse_model_list(text: &str) -> Vec<RigModel> {
     models
 }
 
+/// `LD_LIBRARY_PATH` senza le cartelle dell'AppImage (`appdir`); `None` se non resta niente. Dentro l'AppImage `AppRun` mette le librerie incluse
+/// (Hamlib 4.4 di Ubuntu 22.04) in `LD_LIBRARY_PATH` e i programmi lanciati da Aurora la ereditano: un `rigctl` o `rigctld` del sistema, di un
+/// Hamlib piu' nuovo, caricava la `libhamlib` vecchia dell'AppImage e si fermava con «undefined symbol: rig_powerstat» (elenco delle radio vuoto,
+/// segnalazione #111, e rigctld che non parte nei rapporti degli errori).
+pub fn without_appdir_libs(value: &str, appdir: &str) -> Option<String> {
+    let kept: Vec<&str> = value.split(':').filter(|p| !p.is_empty() && !p.starts_with(appdir)).collect();
+    if kept.is_empty() { None } else { Some(kept.join(":")) }
+}
+
+/// Toglie dall'ambiente del programma di Hamlib lanciato le librerie dell'AppImage (vedi [`without_appdir_libs`]). Fuori dall'AppImage non fa niente.
+pub(crate) fn clean_loader_env(command: &mut Command) {
+    let (Ok(appdir), Ok(paths)) = (std::env::var("APPDIR"), std::env::var("LD_LIBRARY_PATH")) else { return };
+    if appdir.is_empty() {
+        return;
+    }
+    match without_appdir_libs(&paths, &appdir) {
+        Some(rest) => command.env("LD_LIBRARY_PATH", rest),
+        None => command.env_remove("LD_LIBRARY_PATH"),
+    };
+}
+
 /// L'elenco dei modelli che conosce l'Hamlib di `rigctl` (lo stesso che usa `rigctld`).
 pub fn list_models(rigctl: &Path) -> Result<Vec<RigModel>, RigError> {
     let mut command = Command::new(rigctl);
     command.arg("-l").stdin(Stdio::null()).stderr(Stdio::null());
+    clean_loader_env(&mut command);
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -669,6 +691,7 @@ impl Rigctld {
         let args = rigctld_args(config, tcp_port)?;
         let mut command = Command::new(&config.exe);
         command.args(&args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
+        clean_loader_env(&mut command);
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -843,6 +866,16 @@ pub fn is_vfo_name(text: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_appimage_library_folders_are_not_passed_to_the_system_hamlib() {
+        use super::without_appdir_libs as clean;
+        let dir = "/tmp/.mount_AuroraX";
+        assert_eq!(clean(&format!("{dir}/usr/lib:{dir}/usr/lib/Aurora/hamlib/libs"), dir), None);
+        assert_eq!(clean(&format!("/opt/mie:{dir}/usr/lib:/usr/local/lib"), dir).as_deref(), Some("/opt/mie:/usr/local/lib"));
+        assert_eq!(clean("/usr/lib", dir).as_deref(), Some("/usr/lib"));
+        assert_eq!(clean("", dir), None);
+    }
+
     use super::*;
     use std::{
         io::{BufRead, Write},

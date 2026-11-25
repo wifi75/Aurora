@@ -349,6 +349,7 @@ impl RotctldProcess {
         let args = rotctld_args(config, tcp_port)?;
         let mut command = Command::new(exe);
         command.args(&args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
+        crate::hamlib::clean_loader_env(&mut command);
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -432,6 +433,7 @@ pub fn rotctld_in_dir(dir: &Path) -> Option<PathBuf> {
 pub fn list_rotator_models(rotctld: &Path) -> Result<Vec<RigModel>, RigError> {
     let mut command = Command::new(rotctld);
     command.arg("-l").stdin(Stdio::null()).stderr(Stdio::null());
+    crate::hamlib::clean_loader_env(&mut command);
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
