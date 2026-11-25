@@ -1569,6 +1569,15 @@ impl HamlibRig {
         self.inner.connected_link()?.client().mode()
     }
 
+    /// Alla chiusura: la potenza RF che la radio aveva prima che Aurora rimettesse quella ricordata (vedi `extras::restore_original_power`).
+    pub fn restore_original_power(&self) {
+        if let Ok(link) = self.inner.connected_link()
+            && crate::extras::restore_original_power(link.client())
+        {
+            tracing::info!("chiusura: potenza RF riportata a quella di prima");
+        }
+    }
+
     pub fn set_radio_mode(&self, mode: &str) -> Result<(), RigError> {
         let link = self.inner.connected_link()?;
         self.inner.epoch.fetch_add(1, Ordering::SeqCst);

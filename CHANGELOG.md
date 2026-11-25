@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Potenza RF della radio, ripristino alla chiusura (Pascal F4LHL, IC-7610): Aurora rimette a ogni collegamento la potenza ricordata con i pulsanti PWR − e + (nel suo caso 70%, da 100 W a 65 W) e alla chiusura non riportava quella che la radio aveva. Ora, con «Alla chiusura riporta la radio com'era prima» (acceso), la chiusura riporta anche la potenza RF di prima (`extras::restore_original_power`, `HamlibRig::restore_original_power`, `CatService::restore_original_if_chosen`); prova `the_power_the_radio_had_comes_back_at_the_end`. Per non far toccare la potenza all'avvio: cancellare `potenza-rf.txt` nella cartella dati.
+
 ## 0.11.351 - 2026-11-25
 - Automazione e «Rispondi a tutti», QSO non registrati (#107, Ruben EA5BZ): quando Aurora chiama un'altra stazione, l'Automazione risponde a un nuovo CQ mentre il periodo si sta ancora decodificando; il comando `Reply` cambiava il DX prima che la sequenza elaborasse l'RR73 del QSO in corso, e quel QSO non si registrava mai (4 QSO su 40 risposte automatiche). Ora il motore tiene da parte `Reply` e `QueueReply` fino a dopo i decode del periodo (`engine-native/src/lib.rs`) e, se il DX in corso ha gia' chiuso il QSO (RRR, RR73 o 73), lo registra prima di cambiare stazione (`Sequencer::log_if_closed`, usato in `TxDriver::handle`). Prova `a_reply_deferred_after_the_rr73_logs_the_qso_and_then_calls_the_new_station`.
 

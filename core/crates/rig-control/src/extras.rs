@@ -12,6 +12,19 @@ use crate::RigError;
 /// alcune radio (FT-2000) ripartono con la loro potenza (es. 99%) e il proprietario la vuole come l'aveva lasciata.
 static POWER_FILE: std::sync::Mutex<Option<std::path::PathBuf>> = std::sync::Mutex::new(None);
 
+/// La potenza che la radio aveva quando Aurora l'ha trovata, prima di rimettere quella ricordata: «Alla chiusura riporta la radio com'era» la ridà
+/// (come frequenza e modo), cosi' chi usa anche altri programmi non si ritrova a fine sessione con la potenza abbassata (F4LHL, IC-7610: da 100 W a 65 W).
+static ORIGINAL_POWER: std::sync::Mutex<Option<f32>> = std::sync::Mutex::new(None);
+
+/// Alla chiusura rimette la potenza di prima; `true` se l'ha cambiata. Una volta sola: dopo non c'e' piu' niente da riportare.
+pub fn restore_original_power(client: &RigctldClient) -> bool {
+    let Some(original) = ORIGINAL_POWER.lock().ok().and_then(|mut o| o.take()) else { return false };
+    match client.level("RFPOWER") {
+        Ok(now) if (now - original).abs() >= 0.015 => client.set_level("RFPOWER", original).is_ok(),
+        _ => false,
+    }
+}
+
 /// Dove si ricorda la potenza scelta (lo chiama `CatService::open` con il file delle impostazioni della radio).
 pub fn set_power_file(radio_settings: &std::path::Path) {
     if let Ok(mut f) = POWER_FILE.lock() {
@@ -47,6 +60,12 @@ pub fn restore_power(client: &RigctldClient) {
     if let Err(e) = client.set_level("RFPOWER", wanted) {
         tracing::info!("potenza RF ricordata ({:.0}%) non rimessa: {e}", wanted * 100.0);
         return;
+    }
+    // la prima volta che Aurora cambia la potenza si ricorda quella di prima, per riportarla alla chiusura
+    if let Ok(mut original) = ORIGINAL_POWER.lock()
+        && original.is_none()
+    {
+        *original = Some(now);
     }
     let read = client.level("RFPOWER").unwrap_or(now);
     tracing::info!("potenza RF rimessa come scelta: era {:.0}%, chiesta {:.0}%, ora {:.0}%", now * 100.0, wanted * 100.0, read * 100.0);
@@ -462,6 +481,30 @@ mod tests {
         poll.apply(&client, ExtraItem::Tune).expect("accordatura avviata");
         assert_eq!(fake.ops(), vec!["TUNE".to_string()]);
         assert_eq!(ExtraItem::parse("tune"), Some(ExtraItem::Tune));
+    }
+
+    /// F4LHL, IC-7610: Aurora rimette la potenza ricordata (70%) a ogni collegamento, e alla chiusura deve riportare quella che la radio aveva (100%).
+    #[test]
+    fn the_power_the_radio_had_comes_back_at_the_end() {
+        let dir = std::env::temp_dir().join(format!("aurora-pw-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        set_power_file(&dir.join("radio.json"));
+        remember_power(0.70);
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_level("RFPOWER", "1.0");
+        let client = RigctldClient::connect(fake.addr, Duration::from_secs(2)).expect("collegato");
+        if let Ok(mut o) = ORIGINAL_POWER.lock() {
+            *o = None;
+        }
+        restore_power(&client);
+        assert!((client.level("RFPOWER").expect("letta") - 0.70).abs() < 0.001, "all'avvio la potenza ricordata");
+        assert!(restore_original_power(&client), "alla chiusura si riporta quella di prima");
+        assert!((client.level("RFPOWER").expect("letta") - 1.0).abs() < 0.001);
+        assert!(!restore_original_power(&client), "una volta sola");
+        if let Ok(mut f) = POWER_FILE.lock() {
+            *f = None;
+        }
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

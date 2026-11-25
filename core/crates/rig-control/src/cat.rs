@@ -757,6 +757,8 @@ impl CatService {
                 Err(e) => tracing::warn!("chiusura: modo di prima non impostato: {e}"),
             }
         }
+        // la potenza RF che aveva la radio, se Aurora ne ha rimessa un'altra all'avvio
+        rig.restore_original_power();
     }
 
     /// Chiusura del programma: la radio torna com'era (se scelto), il PTT si spegne, con «Spegni» la radio si spegne, e la radio si libera.
