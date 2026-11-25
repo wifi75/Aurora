@@ -63,7 +63,6 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [x] Panic `tao`: prima correzione sulla chiusura (0.11.308)
 - [x] Panic `tao` verificato sul pacchetto vero (F014CB6C, FTDX-101MP): i due panic sono di Aurora 0.11.179 (7/11) e 0.11.212 (9/11), nessuno nelle versioni dopo; niente altro da fare salvo nuove segnalazioni
 - [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
-- [ ] Antivirus: invio dei file per i falsi positivi (tuo)
 
 ## Scartato
 - VARA: a pagamento, non si integra
@@ -71,7 +70,6 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Contest da aggiungere come gli ARRL, in ordine di Luc (#88): ARRL CW/RTTY, CQ WW CW/RTTY (prossimo fine settimana: CQ WW CW, senza promessa), UBA, REF CW, EU DX, WAE RTTY/CW. Log da cui ricevere i QSO: Log4OM, HRD Logbook, OpsLog, N1MM+ (chiesta a Luc la porta UDP/ADIF).
 - [ ] Due radio collegate insieme (richiesta di Vladimir, #83): IC-820H per i satelliti su una porta COM e TS-570S per le onde corte su un'altra; oggi Aurora ne usa una per volta e si cambia con i profili (Impostazioni > Radio CAT).
 
-- [ ] Nome «Aurora» e FlexRadio (2026-11-22): FlexRadio chiama AURORA™ la sua serie di ricetrasmettitori (AU-510, AU-520, presentata a Hamvention 2025; i manuali dichiarano il marchio, ma nei registri americani consultabili da siti di terzi non risulta una registrazione a suo nome). Il progetto e' nato il 24/10/2026 (prima versione pubblica il 5/11/2026). Fatto: riga «non collegata a FlexRadio» nei sei README. Da fare: controllare i registri ufficiali (EUIPO eSearch, WIPO Global Brand Database, USPTO TSDR) per «AURORA» nelle classi 9 e 38 e per FlexRadio come titolare; riga analoga in «Informazioni»; eventualmente una consulenza breve di un avvocato di marchi. Il nome non si cambia senza decisione del proprietario.
 
 - [x] Gia' fatti e pubblicati (verificato il 2026-11-23): pulsante «Calibra la scheda audio» nel WEFAX, AFC del WEFAX che corregge la radio (soglia 30 Hz, spenta di base, `afc_radio`), Doppler dei satelliti che segue la manopola (`follow_knob`, 0.11.330). ALC di Pascal: fatta la lettura facoltativa dell'ALC in trasmissione (casella in Impostazioni › Radio, spenta di base; il pannello grande e' stato tolto), in commit locali non pubblicati. Resta: calibrazione con WWV/CHU (serve la scelta della pagina e una registrazione vera di WWV o CHU).
 
