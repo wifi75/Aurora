@@ -111,18 +111,22 @@ function appendTxEcho(raw: string): void {
 /** Dopo una pausa cosi' (ms) senza caratteri la ricezione va a capo da sola (le stazioni mandano il ritorno a capo all'inizio della
  * trasmissione, dove spesso si perde mentre il ricevitore si aggancia). */
 export const RX_GAP_MS = 1500;
+/** In CW il testo definitivo esce una parola alla volta, a pause normali di 1-2 secondi anche dentro la stessa chiamata: andare a capo dopo 1,5 s
+ * metteva ogni parola su una riga sua (segnalazione #110, registrazione di ON7KEC: pause di 1,0-1,7 s fra le parole, 5 s fra due chiamate). */
+export const RX_GAP_CW_MS = 5000;
+const rxGap = (mode: string | undefined): number => (mode === 'cw' ? RX_GAP_CW_MS : RX_GAP_MS);
 let lastRxAt = 0;
 const lastExtraAt = new Map<number, number>();
 
 /** I caratteri ricevuti in coda al testo: i ritorni a capo diventano '\n', le posizioni in `weakAt` (nel testo dell'evento) incerte. */
-function appendRx(raw: string, weakAt: readonly number[] | undefined): void {
+function appendRx(raw: string, weakAt: readonly number[] | undefined, mode?: string): void {
   const flags = new Set(weakAt ?? []);
   let add = '';
   let mask = '';
   // dopo una pausa si va a capo da soli: ogni chiamata e ogni risposta su una riga sua
   const now = Date.now();
   const before = getDigiText();
-  if (lastRxAt > 0 && now - lastRxAt > RX_GAP_MS && before !== '' && !before.endsWith('\n') && !/^[\r\n]/.test(raw)) {
+  if (lastRxAt > 0 && now - lastRxAt > rxGap(mode) && before !== '' && !before.endsWith('\n') && !/^[\r\n]/.test(raw)) {
     add += '\n';
     mask += '0';
   }
@@ -179,12 +183,12 @@ export function onExtraText(listener: () => void): () => void {
   };
 }
 
-function appendExtra(id: number, raw: string): void {
+function appendExtra(id: number, raw: string, mode?: string): void {
   const now = Date.now();
   const old = extraText.get(id) ?? '';
   const last = lastExtraAt.get(id) ?? 0;
   lastExtraAt.set(id, now);
-  const gap = last > 0 && now - last > RX_GAP_MS && old !== '' && !old.endsWith('\n') && !/^[\r\n]/.test(raw);
+  const gap = last > 0 && now - last > rxGap(mode) && old !== '' && !old.endsWith('\n') && !/^[\r\n]/.test(raw);
   const add = (gap ? '\n' : '') + raw.replace(/\r\n?/g, '\n');
   const next = old + add;
   extraText.set(id, next.length > EXTRA_MAX_CHARS ? next.slice(next.length - EXTRA_MAX_CHARS) : next);
@@ -218,11 +222,11 @@ export function emitDigi(event: DigiStreamEvent): void {
   }
   // il testo di una finestra RX in piu' va nella sua finestra, non in quella principale
   if (event.kind === 'rx_text' && event.text && event.rx_id != null) {
-    appendExtra(event.rx_id, event.text);
+    appendExtra(event.rx_id, event.text, event.mode);
     for (const l of listeners) l(event);
     return;
   }
-  if (event.kind === 'rx_text' && event.text) appendRx(event.text, event.weak);
+  if (event.kind === 'rx_text' && event.text) appendRx(event.text, event.weak, event.mode);
   if (event.kind === 'tx_sent' && event.text) appendTxEcho(event.text);
   if (event.kind === 'tx' && event.state && event.state !== 'sending' && echoOpen) {
     echoOpen = false;
