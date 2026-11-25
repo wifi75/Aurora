@@ -32,6 +32,8 @@
 
 📘 **Manual:** [manual PDF (inglês)](https://aurora.iu3wjq.com/manuals/aurora-manual-en.pdf) · [guias online](https://aurora.iu3wjq.com/en/docs/) · dentro do Aurora: menu **Guia** (`#/guida`).
 
+> 🙏 **Um agradecimento especial a ON7KEC (Luc)**: o seu empenho em testar a fundo cada versão, com as suas ideias, ajuda, conselhos e caça aos erros, é uma grande ajuda para levar o Aurora onde está hoje. Veja [SOSTENITORI.md](SOSTENITORI.md).
+
 > ### Baixar o Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--x86__64.AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--amd64.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Download](https://img.shields.io/badge/Download-Aurora--macOS.dmg-000000?logo=apple&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
