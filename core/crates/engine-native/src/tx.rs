@@ -689,6 +689,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             // il limite di Wait and Call vale per quel tentativo: uno STOP o un altro DX scelto a mano lo azzerano (altrimenti spegneva il QSO nuovo)
             self.wait_call_until = None;
         }
+        // il DX in corso ha gia' chiuso il QSO (RR73 o 73) ma il log arriva al periodo dopo: cambiando stazione ora si perderebbe (#107)
+        if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. }) && self.seq.log_if_closed(Slot::at(self.mode, now_s), now_s) {
+            log.push("QSO chiuso dal DX registrato prima di cambiare stazione".to_string());
+        }
         if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. } | TxCommand::SetDx { .. }) && self.controls.switch_on("pounce") {
             self.controls.set_switch("pounce", false);
             log.push("Wait and Pounce disarmato: DX scelto dall'operatore".to_string());
@@ -3577,6 +3581,69 @@ mod tests {
             all.extend(q);
         }
         all
+    }
+
+    /// Un QSO intero in cui rispondo io al CQ di un'altra stazione (Ruben EA5BZ, #107): locatore, rapporto del DX, mio R+rapporto, RR73 del DX.
+    /// Il QSO si deve registrare, anche se un'altra stazione aspetta in coda.
+    fn run_answer_qso(b: &mut Bench, queued_caller: bool) -> Vec<aurora_core::QsoRecord> {
+        let mut all = Vec::new();
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::QueueReply { decode_id: 7 }, SLOT_MS as f64 / 1000.0 + 14.0);
+        if queued_caller {
+            b.d.remember(8, "IU3ABC N5AAA -08", -12, 1800, SLOT_MS);
+            b.d.handle(TxCommand::QueueReply { decode_id: 8 }, SLOT_MS as f64 / 1000.0 + 14.1);
+        }
+        let steps: [(u64, &[(&str, i32)]); 5] = [
+            (SLOT_MS + 15_000, &[("IU3ABC K1ABC -07", -10)]),
+            (SLOT_MS + 30_000, &[]),
+            (SLOT_MS + 45_000, &[("IU3ABC K1ABC RR73", -10)]),
+            (SLOT_MS + 60_000, &[]),
+            (SLOT_MS + 75_000, &[]),
+        ];
+        for (slot, msgs) in steps {
+            let list: Vec<(String, i32, u32)> = msgs.iter().map(|(t, s)| (t.to_string(), *s, 1200)).collect();
+            let (q, _) = b.d.after_slot(slot, &list, slot as f64 / 1000.0 + 14.3, 14_074_000, "20m");
+            all.extend(q);
+        }
+        all
+    }
+
+    #[test]
+    fn answering_a_cq_the_qso_is_logged_at_the_dx_rr73_even_with_a_caller_waiting() {
+        for queued in [false, true] {
+            let mut b = Bench::new();
+            let qsos = run_answer_qso(&mut b, queued);
+            assert_eq!(qsos.len(), 1, "coda {queued}");
+            assert_eq!(qsos[0].call, "K1ABC", "coda {queued}");
+        }
+    }
+
+    /// Ruben EA5BZ (#107): l'Automazione risponde a un nuovo CQ (comando `Reply`) mentre si decodifica ancora il periodo in cui il DX attuale manda
+    /// l'RR73. Il motore (`lib.rs`) ora tiene da parte le risposte fino a dopo `after_slot`: prima il comando cambiava il DX e l'RR73 non contava piu'.
+    /// Qui si prova l'ordine nuovo: l'RR73 chiude e registra il QSO, poi la risposta rimandata parte verso il nuovo CQ.
+    #[test]
+    fn a_reply_deferred_after_the_rr73_logs_the_qso_and_then_calls_the_new_station() {
+        let mut b = Bench::new();
+        let mut all = Vec::new();
+        b.d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        b.d.handle(TxCommand::QueueReply { decode_id: 7 }, SLOT_MS as f64 / 1000.0 + 14.0);
+        let (q, _) = b.d.after_slot(SLOT_MS + 15_000, &[("IU3ABC K1ABC -07".to_string(), -10, 1200)], (SLOT_MS + 15_000) as f64 / 1000.0 + 14.3, 14_074_000, "20m");
+        all.extend(q);
+        let (q, _) = b.d.after_slot(SLOT_MS + 30_000, &[], (SLOT_MS + 30_000) as f64 / 1000.0 + 14.3, 14_074_000, "20m");
+        all.extend(q);
+        b.d.remember(9, "CQ N5AAA EM10", -12, 1500, SLOT_MS + 45_000);
+        let now = (SLOT_MS + 45_000) as f64 / 1000.0 + 14.2;
+        let (q, _) = b.d.after_slot(SLOT_MS + 45_000, &[("IU3ABC K1ABC RR73".to_string(), -10, 1200)], now, 14_074_000, "20m");
+        all.extend(q);
+        let at_rr73 = all.len();
+        b.d.handle(TxCommand::Reply { decode_id: 9 }, now + 0.1);
+        b.d.publish_view();
+        let dx_after = view_of(&b.controls).dx.clone();
+        for k in [60_000u64, 75_000] {
+            let (q, _) = b.d.after_slot(SLOT_MS + k, &[], (SLOT_MS + k) as f64 / 1000.0 + 14.3, 14_074_000, "20m");
+            all.extend(q);
+        }
+        assert!(all.iter().any(|r| r.call == "K1ABC"), "il QSO con K1ABC (RR73 ricevuto) non e' stato registrato (al RR73: {at_rr73}, DX dopo la risposta: {dx_after:?})");
     }
 
     #[test]

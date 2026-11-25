@@ -889,8 +889,16 @@ pub fn start_with_save(
                         let _ = message_events.send(Event::WsprCycle(wspr_cycle(mode, slot.start_unix_ms, dial, tx_df, tx_enabled, &decoded)));
                     }
                 }
-                // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
+                // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo;
+                // le risposte a un'altra stazione (`Reply`, `QueueReply`, anche quelle dell'Automazione, che reagisce ai decode man mano che escono)
+                // aspettano invece i decode di questo periodo: prima cambiavano il DX e l'RR73 del QSO in corso non contava piu', cosi' il QSO non si
+                // registrava (Ruben EA5BZ, #107)
+                let mut replies: Vec<TxCommand> = Vec::new();
                 while let Ok(command) = command_rx.try_recv() {
+                    if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. }) {
+                        replies.push(command);
+                        continue;
+                    }
                     if let Some(d) = driver.as_mut() {
                         for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
                             tracing::info!("trasmissione: {line}");
@@ -910,6 +918,14 @@ pub fn start_with_save(
                     for qso in qsos {
                         note_logged(&mut logged_due, &qso, now_unix_ms());
                         let _ = message_events.send(Event::QsoCompleted(qso));
+                    }
+                }
+                // le risposte rimandate: ora i decode di questo periodo sono passati dalla sequenza
+                if let Some(d) = driver.as_mut() {
+                    for command in replies {
+                        for line in d.handle(command, now_unix_ms() as f64 / 1000.0) {
+                            tracing::info!("trasmissione: {line}");
+                        }
                     }
                 }
                 // il confronto con JTDX e' fatto sui periodi FT8

@@ -1517,6 +1517,17 @@ impl Sequencer {
         self.log_qso_with(slot, now, true)
     }
 
+    /// Il DX attuale ha chiuso il QSO (RRR, RR73 o 73) e il QSO non e' ancora a log: lo registra adesso, con la regola della registrazione automatica.
+    /// Serve prima di cambiare stazione (risposta a un altro CQ): la registrazione normale arriva al periodo dopo e il cambio di DX la perdeva
+    /// (Ruben EA5BZ, #107). Restituisce se ha registrato.
+    pub fn log_if_closed(&mut self, slot: Slot, now: f64) -> bool {
+        if self.his_call.is_empty() {
+            return false;
+        }
+        let (status, ..) = self.hist.log_data(&self.his_call);
+        matches!(status, Status::Rrr | Status::Rrr73 | Status::R73) && self.log_qso_with(slot, now, false)
+    }
+
     /// Il rapporto da inviare scelto a mano (`rptSpinBox` di WSJT-X): vale da subito per i messaggi Tx2/Tx3, senza cambiare il messaggio in corso.
     pub fn set_report(&mut self, rpt: i32) {
         self.rpt = rpt.clamp(-50, 49);

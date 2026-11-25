@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Automazione e «Rispondi a tutti», QSO non registrati (#107, Ruben EA5BZ): quando Aurora chiama un'altra stazione, l'Automazione risponde a un nuovo CQ mentre il periodo si sta ancora decodificando; il comando `Reply` cambiava il DX prima che la sequenza elaborasse l'RR73 del QSO in corso, e quel QSO non si registrava mai (4 QSO su 40 risposte automatiche). Ora il motore tiene da parte `Reply` e `QueueReply` fino a dopo i decode del periodo (`engine-native/src/lib.rs`) e, se il DX in corso ha gia' chiuso il QSO (RRR, RR73 o 73), lo registra prima di cambiare stazione (`Sequencer::log_if_closed`, usato in `TxDriver::handle`). Prova `a_reply_deferred_after_the_rr73_logs_the_qso_and_then_calls_the_new_station`.
+
 ## 0.11.350 - 2026-11-25
 - macOS, interfaccia che non partiva su Monterey (#108, Rob): il Safari del sistema (prima del 16.4) non capisce le espressioni regolari con lookbehind `(?<=` e `(?<!` e bloccava il caricamento («L'interfaccia di Aurora non e' partita»). Tolte da `spotSplit.ts` e `UpdatePoster.tsx`, traguardo di compilazione `safari14` in `vite.config.ts`, prova `safariSyntax.test.ts` che vieta di rimetterle. Non provato su un Mac vero.
 - Linux, AppImage (#111): elenco radio Hamlib vuoto e «rigctld si e' fermato: symbol lookup error, undefined symbol rig_powerstat» sui rapporti: dentro l'AppImage `AppRun` mette le librerie incluse (Hamlib 4.4) in `LD_LIBRARY_PATH` e un `rigctl`/`rigctld` di sistema piu' nuovo le ereditava. Ora per i programmi di Hamlib (`rigctl`, `rigctld`, `rotctl`, `rotctld`) si tolgono le cartelle dell'AppImage dall'ambiente (`without_appdir_libs`, `clean_loader_env` in `hamlib.rs`, prova `the_appimage_library_folders_are_not_passed_to_the_system_hamlib`).
