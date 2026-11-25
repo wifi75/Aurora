@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.353 - 2026-11-25
 - Nuovo sistema di controllo radio: Ham Radio Deluxe (HRD Rig Control), sulla porta di rete 7809, richiesto da un utente; non ancora provato con HRD vero. In Impostazioni › Stazione › Radio: Indirizzo, Porta e Radio (facoltativo); il PTT usa il pulsante TX di HRD, senza misuratori e senza accensione e spegnimento. Testi in tutte le lingue, Guida e `docs/cat-radio.md`.
 - SSTV in ricezione, scheda e schermo come in trasmissione (richiesta del proprietario, 2026-11-25): lo schermo dell'immagine ha la stessa larghezza della tavola di «Componi e trasmetti» (`--sstv-art-w`), la scheda laterale ha le stesse misure del suo pannello (320-440 px) ed e' alta quanto il suo contenuto (`align-self: start`), non piu' fino in fondo (`sstv.css`, prova `sstvLayout.test.ts`). Da guardare a schermo nei due temi.
 - SSTV, bollino «Ricezione in corso» con la radio spenta: se il livello d'ingresso e' al minimo (-95 dB o meno, silenzio digitale) il bollino non dice piu' «Ricezione in corso» e resta «In ascolto» (`SstvPage.tsx`, `SILENT_LEVEL_DB`). Con rumore a livelli minimi il decodificatore non parte da solo (prova `a_silent_input_does_not_start_an_image`); se capita ancora, serve il pacchetto subito dopo.

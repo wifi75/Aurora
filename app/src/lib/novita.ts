@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.353',
+    released: '2026-11-25T22:31:49Z',
+    kind: 'new',
+    title: [
+      'Nuovo: controllo della radio con Ham Radio Deluxe',
+      'New: radio control with Ham Radio Deluxe',
+      'Neu: Funkgerätesteuerung mit Ham Radio Deluxe',
+      'Nouveau : contrôle de la radio avec Ham Radio Deluxe',
+      'Nuevo: control de la radio con Ham Radio Deluxe',
+      'Novo: controlo do rádio com o Ham Radio Deluxe',
+    ],
+    text: [
+      'In Impostazioni › Stazione › Radio c’è ora «Ham Radio Deluxe (HRD Rig Control)»: Aurora si collega via rete al programma HRD Rig Control già aperto (indirizzo 127.0.0.1 e porta 7809 di base, radio facoltativa) e comanda frequenza, modo e PTT; il PTT usa il pulsante TX di HRD. Non è ancora provato con un HRD vero: se lo usi, fammi sapere come va. Inoltre: SSTV in ricezione con la scheda e lo schermo come in trasmissione, e il bollino «In ascolto» con l’ingresso muto; in CW e RTTY, dopo RX/TX con la casella vuota il cursore passa alla casella e si può scrivere a mano.',
+      'In Settings › Station › Radio there is now “Ham Radio Deluxe (HRD Rig Control)”: Aurora connects over the network to the HRD Rig Control program already running (address 127.0.0.1 and port 7809 by default, radio optional) and controls frequency, mode and PTT; PTT uses HRD’s TX button. It is not yet tested with a real HRD: if you use it, please tell me how it goes. Also: SSTV receive with the side card and the screen like in transmit, and the “Listening” badge with a muted input; in CW and RTTY, after RX/TX with an empty box the cursor moves to the box and you can type by hand.',
+      'Unter Einstellungen › Station › Funkgerät gibt es jetzt „Ham Radio Deluxe (HRD Rig Control)“: Aurora verbindet sich über das Netzwerk mit dem bereits laufenden Programm HRD Rig Control (Adresse 127.0.0.1 und Port 7809 standardmäßig, Funkgerät optional) und steuert Frequenz, Betriebsart und PTT; das PTT nutzt die TX-Taste von HRD. Noch nicht mit einem echten HRD getestet: Wenn du es nutzt, sag mir bitte Bescheid. Außerdem: SSTV-Empfang mit Seitenkarte und Bildschirm wie beim Senden und die Anzeige „Hört zu“ bei stummem Eingang; in CW und RTTY springt der Cursor nach RX/TX mit leerem Feld in das Feld, und man kann von Hand schreiben.',
+      'Dans Réglages › Station › Radio il y a maintenant « Ham Radio Deluxe (HRD Rig Control) » : Aurora se connecte par le réseau au programme HRD Rig Control déjà ouvert (adresse 127.0.0.1 et port 7809 par défaut, radio facultative) et commande fréquence, mode et PTT ; le PTT utilise le bouton TX de HRD. Pas encore testé avec un vrai HRD : si vous l’utilisez, dites-moi comment ça se passe. En plus : SSTV en réception avec la fiche latérale et l’écran comme en émission, et le voyant « À l’écoute » avec l’entrée muette ; en CW et RTTY, après RX/TX avec la zone vide le curseur passe dans la zone et on peut écrire à la main.',
+      'En Ajustes › Estación › Radio ahora está «Ham Radio Deluxe (HRD Rig Control)»: Aurora se conecta por red al programa HRD Rig Control ya abierto (dirección 127.0.0.1 y puerto 7809 por defecto, radio opcional) y controla frecuencia, modo y PTT; el PTT usa el botón TX de HRD. Todavía no está probado con un HRD real: si lo usas, cuéntame cómo va. Además: SSTV en recepción con la ficha lateral y la pantalla como en transmisión, y el indicador «Escuchando» con la entrada muda; en CW y RTTY, tras RX/TX con la casilla vacía el cursor pasa a la casilla y se puede escribir a mano.',
+      'Em Definições › Estação › Rádio há agora «Ham Radio Deluxe (HRD Rig Control)»: o Aurora liga-se pela rede ao programa HRD Rig Control já aberto (endereço 127.0.0.1 e porta 7809 por omissão, rádio opcional) e controla frequência, modo e PTT; o PTT usa o botão TX do HRD. Ainda não foi testado com um HRD real: se o usares, diz-me como corre. Além disso: SSTV na receção com a ficha lateral e o ecrã como na transmissão, e o indicador «À escuta» com a entrada muda; em CW e RTTY, depois de RX/TX com a caixa vazia o cursor passa para a caixa e pode escrever-se à mão.',
+    ],
+  },
+  {
     version: '0.11.352',
     released: '2026-11-25T20:44:06Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Satellites, WEFAX, SSTV, Propagation et Statistiques ont maintenant les mêmes cadres que la Station (FT8) : même contour, mêmes coins et même barre de titre, dans les deux thèmes. SSTV a maintenant la barre « Réception ».',
       'Satélites, WEFAX, SSTV, Propagación y Estadísticas tienen ahora los mismos recuadros que la Estación (FT8): mismo borde, esquinas y barra de título, en los dos temas. SSTV tiene ahora la barra «Recepción».',
       'Satélites, WEFAX, SSTV, Propagação e Estatísticas têm agora os mesmos quadros da Estação (FT8): mesmo contorno, cantos e barra de título, nos dois temas. O SSTV tem agora a barra «Receção».',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'fixed',
-    title: [
-      'Menu a tendina leggibili e barra del WEFAX senza tagli',
-      'Readable drop-down menus and WEFAX bar without clipping',
-      'Lesbare Auswahlmenüs und WEFAX-Leiste ohne Abschneiden',
-      'Menus déroulants lisibles et barre WEFAX sans coupures',
-      'Menús desplegables legibles y barra de WEFAX sin cortes',
-      'Menus suspensos legíveis e barra do WEFAX sem cortes',
-    ],
-    text: [
-      'Le voci dei menu a tendina hanno sempre sfondo e testo a contrasto (prima nel menu dei modi SSTV non si leggeva niente). Nella barra del WEFAX il misuratore e il nome della stazione non sono più tagliati, e «RX» è un riquadro verde ben visibile.',
-      'Drop-down menu entries always have contrasting background and text (before, nothing was readable in the SSTV mode menu). In the WEFAX bar the meter and the station name are no longer cut off, and “RX” is a clearly visible green box.',
-      'Die Einträge der Auswahlmenüs haben immer kontrastreichen Hintergrund und Text (vorher war im SSTV-Betriebsartenmenü nichts lesbar). In der WEFAX-Leiste sind Anzeige und Stationsname nicht mehr abgeschnitten, und „RX“ ist ein gut sichtbares grünes Feld.',
-      'Les entrées des menus déroulants ont toujours un fond et un texte contrastés (avant, rien ne se lisait dans le menu des modes SSTV). Dans la barre WEFAX, l’indicateur et le nom de la station ne sont plus coupés, et « RX » est un cadre vert bien visible.',
-      'Las entradas de los menús desplegables tienen siempre fondo y texto con contraste (antes en el menú de modos de SSTV no se leía nada). En la barra de WEFAX el medidor y el nombre de la estación ya no se cortan, y «RX» es un recuadro verde bien visible.',
-      'As entradas dos menus suspensos têm sempre fundo e texto com contraste (antes, no menu de modos do SSTV não se lia nada). Na barra do WEFAX o medidor e o nome da estação já não ficam cortados, e «RX» é um quadro verde bem visível.',
     ],
   },
 ];
