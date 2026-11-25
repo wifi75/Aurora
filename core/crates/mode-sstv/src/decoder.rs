@@ -878,4 +878,24 @@ mod tests {
         assert!((mean_between(&buf, 0.5, 1.5).unwrap_or(0.0) - 1800.0).abs() < 0.5);
         assert!((mean_between(&buf, 0.0, 1.0).unwrap_or(0.0) - 1900.0).abs() < 0.5);
     }
+
+    /// Radio spenta (scheda USB muta o quasi): il fruscio a livelli minimi non deve far partire un'immagine («Ricezione in corso» con la radio spenta).
+    #[test]
+    fn a_silent_input_does_not_start_an_image() {
+        for amplitude in [0.0f32, 1e-6, 1e-5, 1e-4] {
+            let mut d = Decoder::new(DecoderConfig::default());
+            // rumore deterministico (congruenziale), 60 s a 12 kHz in blocchi da 100 ms
+            let mut x: u32 = 12345;
+            for _ in 0..600 {
+                let block: Vec<f32> = (0..1200)
+                    .map(|_| {
+                        x = x.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                        ((x >> 8) as f32 / 8_388_608.0 - 1.0) * amplitude
+                    })
+                    .collect();
+                d.push(&block);
+            }
+            assert!(!d.is_receiving(), "e' partita un'immagine con rumore di ampiezza {amplitude}");
+        }
+    }
 }

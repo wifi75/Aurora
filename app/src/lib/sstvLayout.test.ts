@@ -13,13 +13,14 @@ describe('SSTV in ricezione: disposizione delle colonne', () => {
   });
 
   it('la colonna fissa e\' la prima, quella dell\'immagine prende il resto', () => {
-    expect(css).toMatch(/\.sstv-rx \{ display: grid; grid-template-columns: minmax\(300px, 420px\) minmax\(0, 1fr\);/);
-    expect(css).toMatch(/\.sstv-rx--log \{ grid-template-columns: minmax\(290px, 380px\) minmax\(0, 46rem\) minmax\(200px, 240px\);/);
+    expect(css).toMatch(/\.sstv-rx \{ --sstv-art-w: [^;]+; display: grid; grid-template-columns: minmax\(320px, 440px\) minmax\(0, var\(--sstv-art-w\)\);/);
+    expect(css).toMatch(/\.sstv-rx--log \{ grid-template-columns: minmax\(320px, 440px\) minmax\(0, var\(--sstv-art-w\)\) minmax\(200px, 240px\);/);
   });
 
   // la finestra dell'immagine non si allunga su tutta la colonna: resta a 4:3 con una larghezza massima (segnalazione del proprietario, 2026-11-24)
-  it("lo schermo dell'immagine e' 4:3 e non piu' largo di 46rem", () => {
-    expect(css).toMatch(/\.sstv-rx \.sstv-screen \{[^}]*max-width: 46rem;[^}]*aspect-ratio: 4 \/ 3 !important;/);
+  it("lo schermo dell'immagine e' 4:3 e largo come la tavola del compositore, la scheda laterale alta quanto il suo contenuto", () => {
+    expect(css).toMatch(/\.sstv-rx \.sstv-screen \{[^}]*max-width: var\(--sstv-art-w\);[^}]*aspect-ratio: 4 \/ 3 !important;/);
+    expect(css).toMatch(/\.sstv-rx > \.sstv-side \{ align-self: start; \}/);
   });
 
   // le frecce di scorrimento spente non tengono occupato il lato sinistro: le miniature partono dal bordo (richiesta del proprietario)

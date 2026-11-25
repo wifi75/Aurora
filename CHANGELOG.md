@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- SSTV in ricezione, scheda e schermo come in trasmissione (richiesta del proprietario, 2026-11-25): lo schermo dell'immagine ha la stessa larghezza della tavola di «Componi e trasmetti» (`--sstv-art-w`), la scheda laterale ha le stesse misure del suo pannello (320-440 px) ed e' alta quanto il suo contenuto (`align-self: start`), non piu' fino in fondo (`sstv.css`, prova `sstvLayout.test.ts`). Da guardare a schermo nei due temi.
+- SSTV, bollino «Ricezione in corso» con la radio spenta: se il livello d'ingresso e' al minimo (-95 dB o meno, silenzio digitale) il bollino non dice piu' «Ricezione in corso» e resta «In ascolto» (`SstvPage.tsx`, `SILENT_LEVEL_DB`). Con rumore a livelli minimi il decodificatore non parte da solo (prova `a_silent_input_does_not_start_an_image`); se capita ancora, serve il pacchetto subito dopo.
+
 ## 0.11.352 - 2026-11-25
 - Contest, elenchi dei domini `.dom` dagli elenchi ufficiali: UBA DX CW e SSB (83 sezioni UBA, `dati/sezioni.dom`), EUDX (275 regioni UE, `dati/regioni.dom`) e REF Contest CW (dipartimenti francesi e prefissi d'oltremare, `dati/dipartimenti.dom`; il regolamento chiede il numero ma non lo elenca: dipartimenti standard francesi). Dichiarati in `contest.toml` con `elenco` e `dominio`. SP DX RTTY (powiat) non fatto: l'elenco ufficiale del PKRVG risponde 404. Gli altri contest della cartella non hanno un dominio nello scambio.
 

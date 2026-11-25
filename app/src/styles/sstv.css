@@ -44,7 +44,7 @@
 
 /* ricezione */
 /* ricezione: le informazioni (modo, righe, sincronismo, livello, sintonia) a sinistra e l'immagine ricevuta grande al centro (richiesta di Luc, #102) */
-.sstv-rx { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 1.4rem; align-items: start; justify-content: start; }
+.sstv-rx { --sstv-art-w: min(520px, calc(38vh / var(--ui-zoom, 1) * 4 / 3)); display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, var(--sstv-art-w)); gap: 1.4rem; align-items: start; justify-content: start; }
 .sstv-rx > .sstv-side { order: -1; }
 .sstv-stage { display: flex; flex-direction: column; gap: 0.5rem; }
 .sstv-screen { position: relative; width: 100%; max-width: 620px; max-height: calc(46vh / var(--ui-zoom, 1)); margin: 0 auto 0 0; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
@@ -195,7 +195,9 @@ html[data-theme='light'] .sstv-modesel { background: #ffffff; color: #0b1322; bo
 /* ===== la scheda del modo alta come la finestra di ricezione; l'immagine resta intera dentro lo schermo nero ===== */
 .sstv-rx { align-items: stretch; }
 .sstv-rx .sstv-stage { height: 100%; min-height: 0; }
-.sstv-rx .sstv-screen { flex: 0 0 auto; width: 100%; height: auto; min-height: 0; max-height: none; max-width: 46rem; margin: 0; aspect-ratio: 4 / 3 !important; }
+.sstv-rx .sstv-screen { flex: 0 0 auto; width: 100%; height: auto; min-height: 0; max-height: none; max-width: var(--sstv-art-w); margin: 0; aspect-ratio: 4 / 3 !important; }
+/* la scheda laterale e' alta quanto il suo contenuto (non si allunga fino in fondo): richiesta del proprietario, 2026-11-25 */
+.sstv-rx > .sstv-side { align-self: start; }
 .sstv-rx .sstv-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .sstv-head h1 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -272,7 +274,7 @@ html[data-theme='light'] .sstv-photo { border-color: #7d8bb0; }
 .sstv-main { min-height: 28rem; flex: 1 0 auto; }
 
 /* ===== ricezione: sintonia sotto il visore (stessa colonna, stessi bordi del visore), log del QSO piccolo a destra della scheda del modo ===== */
-.sstv-rx--log { grid-template-columns: minmax(290px, 380px) minmax(0, 46rem) minmax(200px, 240px); gap: 0.9rem; }
+.sstv-rx--log { grid-template-columns: minmax(320px, 440px) minmax(0, var(--sstv-art-w)) minmax(200px, 240px); gap: 0.9rem; }
 /* sintonia: istogramma dei livelli (blocco pieno) con tre lineette, cursore della correzione e una riga di consiglio */
 .sstv-tune { --sstv-hist-ink: #0d1424; --sstv-hist-mark: #e0343b; flex: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 400px; padding: 2px 4px 3px; border: 1px solid #2f4279; border-radius: 6px; background: var(--panel); }
 .sstv-tune-hist { display: block; width: 100%; height: 28px; border-radius: 3px; background: #e8edf6; border: 1px solid #9fb0d4; box-sizing: border-box; cursor: crosshair; }

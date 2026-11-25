@@ -27,6 +27,9 @@ import { onSstv } from '../lib/sstvBus';
 import '../styles/sstv.css';
 
 /** La pagina SSTV: ricezione o compositore nell'area principale, sotto le cronologie delle ricevute e delle trasmesse. */
+/** Sotto questo livello (dB sul fondo scala) l'ingresso e' muto: radio spenta o scheda audio senza segnale. */
+const SILENT_LEVEL_DB = -95;
+
 export function SstvPage({ solo = false }: { solo?: boolean } = {}) {
   const t = useT();
   const groups = useGroups();
@@ -122,7 +125,10 @@ function SstvBody({ solo }: { solo: boolean }) {
     lastDial.current = dialHz;
     if (before > 0 && dialHz > 0 && before !== dialHz && tuneHz !== 0) void sstvTune(0).then(refresh, refresh);
   }, [dialHz, tuneHz, refresh]);
-  const badge = sending ? 'sending' : rx?.receiving ? 'receiving' : rx?.listening ? 'listening' : 'off';
+  // «Ricezione in corso» solo se arriva davvero un segnale: con la radio spenta il livello e' al minimo (silenzio digitale, -100 dB) e il bollino verde
+  // diceva il falso; in quel caso resta «in ascolto»
+  const silentInput = (rx?.level_db ?? 0) <= SILENT_LEVEL_DB;
+  const badge = sending ? 'sending' : rx?.receiving && !silentInput ? 'receiving' : rx?.receiving || rx?.listening ? 'listening' : 'off';
 
   return (
     <div className={`sstv-page${solo ? ' sstv-page--solo' : ''}`}>
