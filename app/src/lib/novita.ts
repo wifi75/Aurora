@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.350',
+    released: '2026-11-25T12:43:26Z',
+    kind: 'fixed',
+    title: [
+      'CW in ricezione senza una parola per riga, righe Tx più chiare',
+      'CW receive without one word per line, clearer Tx rows',
+      'CW-Empfang ohne ein Wort pro Zeile, klarere Tx-Zeilen',
+      'Réception CW sans un mot par ligne, lignes Tx plus claires',
+      'Recepción CW sin una palabra por línea, líneas Tx más claras',
+      'Receção CW sem uma palavra por linha, linhas Tx mais claras',
+    ],
+    text: [
+      'In CW il testo ricevuto non va più a capo dopo ogni parola: la finestra comincia una riga nuova solo dopo 5 secondi di pausa (negli altri modi resta 1,5 s). Nella finestra di ricezione le mie trasmissioni uguali (×2, ×4) non si raggruppano più quando fra l’una e l’altra c’è una risposta del corrispondente: prima il R-18 prima dell’RRR del DX spariva e sembrava che il DX rispondesse prima di ricevere.',
+      'In CW the received text no longer goes to a new line after every word: the window starts a new line only after a 5-second pause (other modes keep 1.5 s). In the receive window, my identical transmissions (×2, ×4) are no longer grouped when the other station replied between them: before, the R-18 sent before the DX’s RRR disappeared and it looked as if the DX answered before receiving.',
+      'In CW geht der empfangene Text nicht mehr nach jedem Wort in eine neue Zeile: Das Fenster beginnt erst nach 5 Sekunden Pause eine neue Zeile (andere Modi bleiben bei 1,5 s). Im Empfangsfenster werden meine gleichen Aussendungen (×2, ×4) nicht mehr zusammengefasst, wenn dazwischen die Gegenstation geantwortet hat: Vorher verschwand das R-18 vor dem RRR des DX und es sah aus, als antworte der DX vor dem Empfang.',
+      'En CW le texte reçu ne passe plus à la ligne après chaque mot : la fenêtre ne commence une nouvelle ligne qu’après 5 secondes de pause (les autres modes gardent 1,5 s). Dans la fenêtre de réception, mes émissions identiques (×2, ×4) ne sont plus regroupées quand le correspondant a répondu entre elles : avant, le R-18 envoyé avant le RRR du DX disparaissait et on aurait dit que le DX répondait avant de recevoir.',
+      'En CW el texto recibido ya no pasa a una línea nueva tras cada palabra: la ventana empieza una línea nueva solo tras 5 segundos de pausa (los otros modos mantienen 1,5 s). En la ventana de recepción, mis transmisiones iguales (×2, ×4) ya no se agrupan cuando el corresponsal respondió entre ellas: antes el R-18 enviado antes del RRR del DX desaparecía y parecía que el DX contestaba antes de recibir.',
+      'Em CW o texto recebido já não passa a uma linha nova depois de cada palavra: a janela só começa uma linha nova após 5 segundos de pausa (os outros modos mantêm 1,5 s). Na janela de receção, as minhas transmissões iguais (×2, ×4) já não se agrupam quando o correspondente respondeu entre elas: antes o R-18 enviado antes do RRR do DX desaparecia e parecia que o DX respondia antes de receber.',
+    ],
+  },
+  {
     version: '0.11.349',
     released: '2026-11-25T08:31:33Z',
     kind: 'new',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Le bouton « Étalonner la carte son » reporte l’erreur apprise dans l’inclinaison fixe, comme en SSTV. La nouvelle case « L’AFC corrige aussi la radio » est désactivée par défaut : entre deux cartes, l’écart de l’AFC est appliqué à la fréquence de la radio, au maximum toutes les 20 secondes.',
       'El botón «Calibrar la tarjeta de sonido» lleva el error aprendido a la inclinación fija, como en SSTV. La nueva casilla «El AFC corrige también la radio» está desactivada de base: entre un mapa y otro el desvío del AFC pasa a la frecuencia de la radio, como máximo cada 20 segundos.',
       'O botão «Calibrar a placa de som» leva o erro aprendido para a inclinação fixa, como no SSTV. A nova caixa «O AFC corrige também o rádio» vem desligada por defeito: entre uma carta e outra o desvio do AFC passa para a frequência do rádio, no máximo de 20 em 20 segundos.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'fixed',
-    title: [
-      'WEFAX: fasatura corta senza tono d’inizio',
-      'WEFAX: short phasing without a start tone',
-      'WEFAX: kurze Phasung ohne Starton',
-      'WEFAX : phasage court sans tonalité de début',
-      'WEFAX: fasado corto sin tono de inicio',
-      'WEFAX: fasagem curta sem tom de início',
-    ],
-    text: [
-      'La fasatura corta senza tono d’inizio non resta più bloccata in attesa: la cartina parte regolarmente.',
-      'Short phasing without a start tone no longer gets stuck waiting: the chart starts normally.',
-      'Eine kurze Phasung ohne Starton bleibt nicht mehr im Wartezustand hängen: die Karte startet normal.',
-      'Le phasage court sans tonalité de début ne reste plus bloqué en attente : la carte démarre normalement.',
-      'El fasado corto sin tono de inicio ya no se queda bloqueado esperando: el mapa arranca con normalidad.',
-      'A fasagem curta sem tom de início já não fica presa à espera: a carta arranca normalmente.',
     ],
   },
 ];

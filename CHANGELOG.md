@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.350 - 2026-11-25
 - Ricezione CW (#110, ON7KEC): la finestra del testo non va piu' a capo dopo 1,5 s di pausa (ogni parola finiva su una riga sua) ma dopo 5 s; negli altri modi resta 1,5 s. Dalla sua registrazione: il testo definitivo esce una parola alla volta con pause di 1,0-1,7 s e 5 s fra due chiamate (`RX_GAP_CW_MS` in `lib/digiBus.ts`, prova in `digiBus.test.ts`).
 - Finestra di ricezione, righe Tx raggruppate (#92, Pere EA3CUU): le mie trasmissioni uguali si raggruppano in «×N» solo se fra una e l'altra non c'e' una risposta a me; prima, con un R-18 prima e uno dopo l'RRR del DX, restava visibile solo il secondo (l'ora faceva sembrare che il DX rispondesse prima di ricevere). Il motore era giusto: la ritrasmissione dopo la decodifica tardiva c'e' gia' (`tx.rs`, `port.replace`). Prova in `DecodeList.test.tsx`.
 
