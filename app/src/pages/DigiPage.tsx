@@ -867,6 +867,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         setTx(box);
         txLiveRef.current.txLive.queue(box.length);
         onChanged();
+        // dopo il clic sul pulsante RX/TX il fuoco resta sul pulsante: i tasti non arriverebbero alla casella
+        txBox.current?.focus();
       },
       (e: unknown) => {
         const code = e instanceof ApiError ? e.code : '';
