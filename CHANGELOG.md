@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+## 0.11.351 - 2026-11-25
 - Automazione e «Rispondi a tutti», QSO non registrati (#107, Ruben EA5BZ): quando Aurora chiama un'altra stazione, l'Automazione risponde a un nuovo CQ mentre il periodo si sta ancora decodificando; il comando `Reply` cambiava il DX prima che la sequenza elaborasse l'RR73 del QSO in corso, e quel QSO non si registrava mai (4 QSO su 40 risposte automatiche). Ora il motore tiene da parte `Reply` e `QueueReply` fino a dopo i decode del periodo (`engine-native/src/lib.rs`) e, se il DX in corso ha gia' chiuso il QSO (RRR, RR73 o 73), lo registra prima di cambiare stazione (`Sequencer::log_if_closed`, usato in `TxDriver::handle`). Prova `a_reply_deferred_after_the_rr73_logs_the_qso_and_then_calls_the_new_station`.
 
 ## 0.11.350 - 2026-11-25

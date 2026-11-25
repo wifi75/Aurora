@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.351',
+    released: '2026-11-25T17:42:56Z',
+    kind: 'fixed',
+    title: [
+      'L’Automazione non perde più i QSO',
+      'Automation no longer loses QSOs',
+      'Die Automatik verliert keine QSOs mehr',
+      'L’Automatisation ne perd plus de QSO',
+      'La Automatización ya no pierde QSOs',
+      'A Automação já não perde QSOs',
+    ],
+    text: [
+      'Quando Aurora chiama un’altra stazione, l’Automazione poteva rispondere a un nuovo CQ mentre il periodo si stava ancora decodificando, prima che la sequenza elaborasse l’RR73 del QSO in corso: quel QSO non finiva nel log (circa 4 QSO registrati su 40 risposte automatiche). Ora le risposte aspettano i decode del periodo e, se il DX ha già chiuso il QSO (RRR, RR73 o 73), il QSO si registra subito, prima di cambiare stazione.',
+      'When Aurora calls another station, Automation could answer a new CQ while the period was still being decoded, before the sequence had processed the RR73 of the QSO in progress: that QSO never reached the log (about 4 QSOs logged out of 40 automatic replies). Now the replies wait for the period’s decodes and, if the DX has already closed the QSO (RRR, RR73 or 73), the QSO is logged at once, before changing station.',
+      'Wenn Aurora eine andere Station ruft, konnte die Automatik auf ein neues CQ antworten, während die Periode noch dekodiert wurde, bevor die Sequenz das RR73 des laufenden QSOs verarbeitet hatte: Dieses QSO kam nie ins Log (etwa 4 geloggte QSOs bei 40 automatischen Antworten). Jetzt warten die Antworten auf die Dekodierungen der Periode, und hat das DX das QSO schon beendet (RRR, RR73 oder 73), wird es sofort geloggt, bevor die Station gewechselt wird.',
+      'Quand Aurora appelle une autre station, l’Automatisation pouvait répondre à un nouveau CQ pendant que la période se décodait encore, avant que la séquence ait traité le RR73 du QSO en cours : ce QSO n’arrivait jamais au journal (environ 4 QSO enregistrés sur 40 réponses automatiques). Désormais les réponses attendent les décodages de la période et, si le DX a déjà clos le QSO (RRR, RR73 ou 73), le QSO est enregistré tout de suite, avant de changer de station.',
+      'Cuando Aurora llama a otra estación, la Automatización podía responder a un CQ nuevo mientras el periodo se seguía decodificando, antes de que la secuencia procesara el RR73 del QSO en curso: ese QSO no llegaba al log (unos 4 QSO registrados de 40 respuestas automáticas). Ahora las respuestas esperan las decodificaciones del periodo y, si el DX ya cerró el QSO (RRR, RR73 o 73), el QSO se registra al instante, antes de cambiar de estación.',
+      'Quando o Aurora chama outra estação, a Automação podia responder a um CQ novo enquanto o período ainda estava a ser descodificado, antes de a sequência processar o RR73 do QSO em curso: esse QSO nunca chegava ao log (cerca de 4 QSO registados em 40 respostas automáticas). Agora as respostas esperam as descodificações do período e, se o DX já fechou o QSO (RRR, RR73 ou 73), o QSO é registado logo, antes de mudar de estação.',
+    ],
+  },
+  {
     version: '0.11.350',
     released: '2026-11-25T12:43:26Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec « Définir le début de ligne », un seul clic sur le vrai bord gauche de la carte (par exemple le cadre) suffit : la carte en cours de réception et les lignes suivantes s’alignent là. Sur les cartes enregistrées, cela crée une copie décalée ou remplace l’original. Utile pour des stations comme DDK3.',
       'Con «Fijar el inicio de línea» basta un clic en el borde izquierdo verdadero del mapa (por ejemplo el marco): el mapa que llega y las líneas siguientes se alinean ahí. En los mapas guardados crea una copia desplazada, o sustituye el original. Útil para estaciones como DDK3.',
       'Com «Definir o início da linha» basta um clique na verdadeira margem esquerda da carta (por exemplo a moldura): a carta em chegada e as linhas seguintes alinham-se aí. Nas cartas guardadas cria uma cópia deslocada, ou substitui a original. Útil para estações como a DDK3.',
-    ],
-  },
-  {
-    version: '0.11.331',
-    released: '2026-11-22T11:47:33Z',
-    kind: 'new',
-    title: [
-      'WEFAX: Calibra la scheda audio e AFC sulla radio',
-      'WEFAX: Calibrate the sound card and AFC on the radio',
-      'WEFAX: Soundkarte kalibrieren und AFC auf das Funkgerät',
-      'WEFAX : Étalonner la carte son et AFC sur la radio',
-      'WEFAX: Calibrar la tarjeta de sonido y AFC en la radio',
-      'WEFAX: Calibrar a placa de som e AFC no rádio',
-    ],
-    text: [
-      'Il pulsante «Calibra la scheda audio» porta l’errore appreso nell’inclinazione fissa, come in SSTV. La nuova casella «L’AFC corregge anche la radio» è spenta di fabbrica: tra una cartina e l’altra lo scarto dell’AFC va sulla frequenza della radio, al massimo ogni 20 secondi.',
-      'The “Calibrate the sound card” button moves the learned error into the fixed slant, as in SSTV. The new “AFC also corrects the radio” checkbox is off by default: between one chart and the next the AFC offset is applied to the radio’s frequency, at most every 20 seconds.',
-      'Die Schaltfläche „Soundkarte kalibrieren“ übernimmt den gelernten Fehler in die feste Neigung, wie bei SSTV. Das neue Kästchen „AFC korrigiert auch das Funkgerät“ ist standardmäßig aus: zwischen zwei Karten wird die AFC-Abweichung auf die Frequenz des Funkgeräts angewendet, höchstens alle 20 Sekunden.',
-      'Le bouton « Étalonner la carte son » reporte l’erreur apprise dans l’inclinaison fixe, comme en SSTV. La nouvelle case « L’AFC corrige aussi la radio » est désactivée par défaut : entre deux cartes, l’écart de l’AFC est appliqué à la fréquence de la radio, au maximum toutes les 20 secondes.',
-      'El botón «Calibrar la tarjeta de sonido» lleva el error aprendido a la inclinación fija, como en SSTV. La nueva casilla «El AFC corrige también la radio» está desactivada de base: entre un mapa y otro el desvío del AFC pasa a la frecuencia de la radio, como máximo cada 20 segundos.',
-      'O botão «Calibrar a placa de som» leva o erro aprendido para a inclinação fixa, como no SSTV. A nova caixa «O AFC corrige também o rádio» vem desligada por defeito: entre uma carta e outra o desvio do AFC passa para a frequência do rádio, no máximo de 20 em 20 segundos.',
     ],
   },
 ];
