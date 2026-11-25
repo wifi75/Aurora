@@ -2,6 +2,8 @@
 
 [Italiano](linux.md) · [English](linux.en.md) · [Deutsch](linux.de.md) · [Français](linux.fr.md) · [Español](linux.es.md) · **Português**
 
+Tem um Raspberry Pi (ARM de 64 bits)? Veja o [guia para Raspberry Pi](raspberry.pt.md).
+
 Versão Linux **não testada pelo autor e sem suporte oficial**. O GitHub compila-a automaticamente a partir do mesmo código da versão para Windows, por isso cada novidade chega também ao Linux; o autor, porém, desenvolve e testa o Aurora apenas no Windows.
 
 ## Transferi-la já pronta

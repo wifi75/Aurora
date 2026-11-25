@@ -4,7 +4,7 @@
 [![Virenfrei](https://img.shields.io/badge/Virenfrei-0%20Treffer-2ea44f?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)
 ![Visite](https://visitor-badge.laobi.icu/badge?page_id=wifi75.Aurora&left_text=Visite&left_color=%23555&right_color=%238e7bff)
 [![Spenden](https://img.shields.io/badge/Spenden-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
-[![Piattaforma](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20Linux%20%7C%20macOS-0078D4?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.md)
+[![Piattaforma](https://img.shields.io/badge/Piattaforma-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi%20%7C%20macOS-0078D4?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.md)
 [![Linux](https://github.com/wifi75/Aurora/actions/workflows/linux.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/linux.yml)
 [![macOS](https://github.com/wifi75/Aurora/actions/workflows/macos.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/macos.yml)
 [![Windows](https://github.com/wifi75/Aurora/actions/workflows/windows.yml/badge.svg)](https://github.com/wifi75/Aurora/actions/workflows/windows.yml)
@@ -42,6 +42,8 @@
 > [![Linux](https://img.shields.io/badge/Anleitung-Linux-E95420?logo=ubuntu&logoColor=white)](https://github.com/wifi75/Aurora/blob/main/docs/linux.de.md)
 >
 > 🐧 **[Linux (vom Autor nicht getestet, ohne Support): AppImage, .deb oder Bauen mit einem Befehl](https://github.com/wifi75/Aurora/blob/main/docs/linux.de.md)**
+>
+> 🍓 **[Raspberry Pi / ARM 64-Bit: Aurora-Linux-aarch64.AppImage und Aurora-Linux-arm64.deb](https://github.com/wifi75/Aurora/blob/main/docs/raspberry.de.md)** — empfohlen: Raspberry Pi 5 mit 4 GB oder mehr; der Pi 4 ist am Limit; 64-Bit-System erforderlich. Noch nicht auf einem echten Raspberry Pi getestet.
 >
 > 🍎 **[macOS (vom Autor nicht getestet, ohne Support): Aurora-macOS.dmg für Apple Silicon und Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — nicht von Apple signiert: beim ersten Start Rechtsklick › Öffnen (oder `xattr -cr /Applications/Aurora.app`). Für CAT Hamlib mit `brew install hamlib` installieren. Updates werden wie unter Windows in der App installiert („Installieren und neu starten“): Aurora in Programme lassen, nicht aus dem .dmg öffnen; beim ersten Start nach einem Update kann macOS erneut nachfragen, weil Aurora nicht von Apple signiert ist.
 

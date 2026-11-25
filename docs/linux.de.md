@@ -2,6 +2,8 @@
 
 [Italiano](linux.md) · [English](linux.en.md) · **Deutsch** · [Français](linux.fr.md) · [Español](linux.es.md) · [Português](linux.pt.md)
 
+Du hast einen Raspberry Pi (64-Bit-ARM)? Siehe die [Anleitung für den Raspberry Pi](raspberry.de.md).
+
 Linux-Version, **vom Autor nicht getestet und ohne offiziellen Support**. GitHub baut sie automatisch aus demselben Code wie die Windows-Version, daher kommt jede Neuerung auch unter Linux an; der Autor entwickelt und testet Aurora jedoch nur unter Windows.
 
 ## Fertig herunterladen

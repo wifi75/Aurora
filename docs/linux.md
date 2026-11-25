@@ -2,6 +2,8 @@
 
 **Italiano** · [English](linux.en.md) · [Deutsch](linux.de.md) · [Français](linux.fr.md) · [Español](linux.es.md) · [Português](linux.pt.md)
 
+Hai una Raspberry Pi (ARM a 64 bit)? Vedi la [guida per Raspberry Pi](raspberry.md).
+
 Versione Linux **non provata dall'autore e senza assistenza ufficiale**. È compilata in automatico da GitHub dallo stesso codice della versione per Windows, quindi ogni novità arriva anche su Linux; l'autore però sviluppa e prova Aurora solo su Windows.
 
 ## Scaricarla già pronta
