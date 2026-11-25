@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.351',
-    released: '2026-11-25T17:42:56Z',
+    released: '2026-11-25T18:11:39Z',
     kind: 'fixed',
     title: [
       'L’Automazione non perde più i QSO',
