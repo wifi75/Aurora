@@ -64,6 +64,7 @@ etichetta_it = "Dipartimento"
 etichetta_en = "Department"
 tipo = "testo"
 quando = "dxcc:F,TK,FG,FH,FJ,FK,FM,FO,FP,FR,FS,FW,FY"
+elenco = "dati/dipartimenti.dom"
 nota = "Numero del dipartimento (01-95, Corsica 2A o 2B), 00 per F6REF; l'oltremare manda il prefisso (FM, FR...)."
 
 [[scambio.ricevuto]]
@@ -120,6 +121,7 @@ tipo = "moltiplicatori"
 titolo = { it = "Dipartimenti e oltremare per banda", en = "Departments and overseas by band" }
 ordine = 1
 moltiplicatore = "sezione"
+dominio = "dati/dipartimenti.dom"
 per_banda = true
 per_modo = false
 

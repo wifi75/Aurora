@@ -70,6 +70,7 @@ etichetta_it = "Sezione UBA"
 etichetta_en = "UBA section"
 tipo = "testo"
 quando = "dxcc:ON"
+elenco = "dati/sezioni.dom"
 nota = "Tre lettere (ACC, ANT...); XXX per chi non e' socio UBA (non e' moltiplicatore), UBA per ON4UBA, ON4DIG e ON4YLC."
 
 [[scambio.inviato]]
@@ -116,6 +117,7 @@ tipo = "moltiplicatori"
 titolo = { it = "Sezioni UBA per banda", en = "UBA sections by band" }
 ordine = 1
 moltiplicatore = "sezione"
+dominio = "dati/sezioni.dom"
 per_banda = true
 per_modo = false
 

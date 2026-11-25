@@ -47,6 +47,7 @@ etichetta_it = "Regione UE"
 etichetta_en = "EU region"
 tipo = "testo"
 quando = "any"
+elenco = "dati/regioni.dom"
 nota = "Le stazioni dell'UE mandano la regione (due lettere e due cifre, IT03, DE16: elenco nella sezione 7 del regolamento)."
 
 [[scambio.ricevuto]]
@@ -97,6 +98,7 @@ tipo = "moltiplicatori"
 titolo = { it = "Regioni UE per banda", en = "EU regions by band" }
 ordine = 1
 moltiplicatore = "sezione"
+dominio = "dati/regioni.dom"
 per_banda = true
 per_modo = false
 

@@ -52,7 +52,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 ## Poi
 - [ ] WEFAX: ogni 6 mesi rileggere l'elenco NOAA (rfax.pdf) e gli orari DWD e aggiornare `app/src/lib/wefaxStations.ts`
 - [x] Contest: Cabrillo dal log, finestra scaduta, date (0.11.308)
-- [ ] Contest: schede mancanti, altri contest in cartella; ricontrollare le date delle regole nuove. (Il `.dom` del JIDX c'e' gia': `contest/Japan International DX Contest */dati/prefetture.dom`, prefetture 01-50 dall'elenco ufficiale jidx.org del 2026-11-24; nella copia dei dati dell'altro programma non c'e' un `.dom` del JIDX, le sue statistiche stanno in un plugin.)
+- [ ] Contest: `.dom` di SP DX RTTY (powiat: l'elenco ufficiale PKRVG `POWIATY_OZNAKOWANIO.pdf` risponde 404, serve l'URL giusto); schede mancanti; ricontrollare le date delle regole nuove (fatti il 2026-11-25: UBA DX, EUDX, REF CW). (Il `.dom` del JIDX c'e' gia': `contest/Japan International DX Contest */dati/prefetture.dom`, prefetture 01-50 dall'elenco ufficiale jidx.org del 2026-11-24; nella copia dei dati dell'altro programma non c'e' un `.dom` del JIDX, le sue statistiche stanno in un plugin.)
 - [x] Satelliti: preavviso rotore, suoni, schede (0.11.308; spazi vuoti da guardare a schermo)
 - [ ] Stazione stretta (0.11.308): guardarla a schermo con radio e dati veri
 - [x] Satelliti: parcheggio del rotore a fine passaggio fatto (0.11.309, opzionale: resta, parcheggio, prossimo passaggio)
