@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.349',
-    released: '2026-11-25T07:36:58Z',
+    released: '2026-11-25T08:31:33Z',
     kind: 'new',
     title: [
       'RTTY: diddle a scelta, CW dal CWX della radio via TCI',
