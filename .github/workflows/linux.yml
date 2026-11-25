@@ -1,5 +1,7 @@
 # Versione Linux di Aurora (non provata dall'autore, senza assistenza): a ogni push controlla che compili anche su Linux; a ogni release pubblicata
 # prepara l'AppImage e il .deb e li allega alla release con nomi fissi (cosi' i link "latest/download" della pagina restano validi).
+# Due architetture: x86_64 (PC) e ARM a 64 bit (aarch64: Raspberry Pi 4 e 5 con sistema a 64 bit). Quella ARM e' nuova e non provata su una
+# Raspberry vera; se la sua compilazione fallisce non ferma quella x86_64 (fail-fast spento).
 name: Linux
 
 on:
@@ -20,8 +22,23 @@ concurrency:
 
 jobs:
   linux:
+    name: linux (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+            appimage_arch: x86_64
+            deb_arch: amd64
+            sums: SHA256SUMS-linux.txt
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+            appimage_arch: aarch64
+            deb_arch: arm64
+            sums: SHA256SUMS-linux-arm64.txt
     # Ubuntu 22.04: l'AppImage compilata qui gira anche sulle distribuzioni meno recenti
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
     steps:
@@ -90,7 +107,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/tauri
-          key: tauri-appimage-tools-v1
+          key: tauri-appimage-tools-v1-${{ matrix.arch }}
 
       - name: Hamlib dentro l'AppImage e il .deb (rigctld, rigctl e librerie)
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
@@ -123,12 +140,12 @@ jobs:
             echo "compilazione non riuscita (tentativo $i), riprovo tra 60 s"; sleep 60
           done
           mkdir -p ../dist-linux
-          cp src-tauri/target/release/bundle/appimage/*.AppImage ../dist-linux/Aurora-Linux-x86_64.AppImage
-          cp src-tauri/target/release/bundle/deb/*.deb ../dist-linux/Aurora-Linux-amd64.deb
+          cp src-tauri/target/release/bundle/appimage/*.AppImage ../dist-linux/Aurora-Linux-${{ matrix.appimage_arch }}.AppImage
+          cp src-tauri/target/release/bundle/deb/*.deb ../dist-linux/Aurora-Linux-${{ matrix.deb_arch }}.deb
           # il pacchetto si chiama «aurora-multimode»: «aurora» e' anche il programma degli inverter solari dei repository (Linux Mint, issue #99), e il gestore
           # dei pacchetti scambiava i due. Solo il nome del pacchetto cambia (le cartelle in /usr/lib/Aurora restano: Hamlib le cerca li'); Conflicts e
           # Replaces fanno togliere il vecchio pacchetto «aurora» all'aggiornamento. Se qualcosa non va si lascia il .deb com'era.
-          D=../dist-linux/Aurora-Linux-amd64.deb
+          D=../dist-linux/Aurora-Linux-${{ matrix.deb_arch }}.deb
           W=$(mktemp -d)
           if dpkg-deb -R "$D" "$W/pkg" \
             && grep -qi '^Package: aurora$' "$W/pkg/DEBIAN/control" \
@@ -142,7 +159,7 @@ jobs:
           else
             echo 'nome del pacchetto non cambiato: resta il .deb originale'
           fi
-          cd ../dist-linux && sha256sum * > SHA256SUMS-linux.txt
+          cd ../dist-linux && sha256sum * > ${{ matrix.sums }}
 
       - name: Prova dell'AppImage (Hamlib dentro e che parta da solo)
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
@@ -150,7 +167,7 @@ jobs:
           # si toglie l'Hamlib del sistema: rigctld deve partire con le sue librerie dentro l'AppImage, come sul PC di chi non lo installa
           sudo apt-get remove -y --purge libhamlib-utils 'libhamlib4*' || true
           cd "$(mktemp -d)"
-          cp "$GITHUB_WORKSPACE/dist-linux/Aurora-Linux-x86_64.AppImage" aurora.AppImage
+          cp "$GITHUB_WORKSPACE/dist-linux/Aurora-Linux-${{ matrix.appimage_arch }}.AppImage" aurora.AppImage
           chmod +x aurora.AppImage
           ./aurora.AppImage --appimage-extract > /dev/null
           # Aurora lo cerca in <programma>/../lib/Aurora/hamlib
@@ -171,5 +188,5 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: aurora-linux
+          name: aurora-linux-${{ matrix.arch }}
           path: dist-linux/
