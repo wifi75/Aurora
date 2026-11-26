@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.356',
-    released: '2026-11-26T19:27:15Z',
+    released: '2026-11-26T19:33:48Z',
     kind: 'changed',
     title: [
       'Più stabile e più leggero',
