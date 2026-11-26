@@ -678,7 +678,31 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     }
 
     /// Un comando. Restituisce le righe da scrivere nel registro (cosa e' successo e perche' non e' partito). `now_s` sono i secondi UTC attuali.
+    /// Se il DX cambia, una riga dice da chi e perche' (l'operatore, una risposta, la sequenza automatica).
     pub fn handle(&mut self, command: TxCommand, now_s: f64) -> Vec<String> {
+        let before = self.seq.dx().map(str::to_string);
+        let cause = match &command {
+            TxCommand::Reply { .. } => "doppio clic o risposta a una riga",
+            TxCommand::QueueReply { .. } => "stazione messa in coda",
+            TxCommand::SetDx { .. } => "DX scritto o scelto a mano",
+            TxCommand::ClearDx => "Canc DX",
+            TxCommand::CallCq { .. } => "CQ",
+            _ => "comando",
+        };
+        let mut log = self.handle_inner(command, now_s);
+        self.note_dx_change(before.as_deref(), cause, &mut log);
+        log
+    }
+
+    /// Scrive nel registro il cambio del DX con la causa; niente se non e' cambiato.
+    fn note_dx_change(&self, before: Option<&str>, cause: &str, log: &mut Vec<String>) {
+        let after = self.seq.dx();
+        if before != after {
+            log.push(format!("DX cambiato: {} -> {} ({cause})", before.unwrap_or("nessuno"), after.unwrap_or("nessuno")));
+        }
+    }
+
+    fn handle_inner(&mut self, command: TxCommand, now_s: f64) -> Vec<String> {
         let mut log = Vec::new();
         // ogni intervento dell'operatore azzera il watchdog (`eventFilter`/`txwatchdog(false)` di JTDX)
         self.seq.user_activity();
@@ -763,7 +787,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         // corso (2026-11-07: R7OQ, G0BQB, 2E0UMF, EA7FU sostituiti uno dopo l'altro)
                         Some(call) if self.seq.dx().is_none() => {
                             log.push(format!("{call}: nessun QSO in corso, si risponde subito"));
-                            log.extend(self.handle(TxCommand::Reply { decode_id }, now_s));
+                            log.extend(self.handle_inner(TxCommand::Reply { decode_id }, now_s));
                         }
                         Some(_) if self.queue.len() >= QUEUE_MAX => log.push(format!("coda piena ({QUEUE_MAX} stazioni)")),
                         Some(call) => {
@@ -1275,6 +1299,13 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Un periodo e' stato decodificato (o saltato: elenco vuoto). `slot_start_ms` e' l'inizio di quel periodo. Fa avanzare la sequenza e,
     /// se serve, prepara (o sostituisce) la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
+        let before = self.seq.dx().map(str::to_string);
+        let (qsos, mut log) = self.after_slot_inner(slot_start_ms, decoded, now_s, dial_hz, band);
+        self.note_dx_change(before.as_deref(), "sequenza automatica dopo le decodifiche (chiamata a noi, QSO chiuso, coda, Wait and Reply/Call)", &mut log);
+        (qsos, log)
+    }
+
+    fn after_slot_inner(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         self.decode_now_s = now_s;
         self.last_dial_hz = dial_hz;
@@ -2343,6 +2374,16 @@ mod tests {
     fn last_text(port: &FakePort) -> Vec<String> {
         let requests = port.requests.lock().expect("richieste");
         requests.last().map(decode_request).unwrap_or_default()
+    }
+
+    #[test]
+    fn a_dx_change_is_written_in_the_log_with_its_cause() {
+        let (mut d, _port, _) = driver();
+        d.remember(7, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        let log = d.handle(TxCommand::Reply { decode_id: 7 }, BASE + 14.0);
+        assert!(log.iter().any(|l| l.contains("DX cambiato: nessuno -> K1ABC") && l.contains("doppio clic")), "{log:?}");
+        let log = d.handle(TxCommand::ClearDx, BASE + 15.0);
+        assert!(log.iter().any(|l| l.contains("DX cambiato: K1ABC -> nessuno") && l.contains("Canc DX")), "{log:?}");
     }
 
     #[test]
