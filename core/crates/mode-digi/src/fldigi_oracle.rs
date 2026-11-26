@@ -276,3 +276,48 @@ impl Drop for FldigiThrob {
         unsafe { aurora_fldigi_throb_free(self.rx) };
     }
 }
+
+unsafe extern "C" {
+    fn aurora_fldigi_sitorb_new(samplerate: f64, centre: f64) -> *mut c_void;
+    fn aurora_fldigi_sitorb_process(rx: *mut c_void, samples: *const f32, len: usize);
+    fn aurora_fldigi_sitorb_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
+    fn aurora_fldigi_sitorb_free(rx: *mut c_void);
+    fn aurora_fldigi_sitorb_tx(samplerate: f64, centre: f64, text: *const std::ffi::c_char, out: *mut f32, cap: usize) -> usize;
+}
+
+/// Il ricevitore SITOR-B (Amtor FEC) di fldigi, in USB senza Rev e con l'AFC spento; `centre_hz` e' il centro fra i due toni.
+pub struct FldigiSitorb {
+    rx: *mut c_void,
+}
+
+impl FldigiSitorb {
+    pub fn new(samplerate: f64, centre_hz: f64) -> Self {
+        // SAFETY: crea un oggetto C++ posseduto da questa struttura e liberato in `drop`.
+        let rx = unsafe { aurora_fldigi_sitorb_new(samplerate, centre_hz) };
+        Self { rx }
+    }
+
+    pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
+        // SAFETY: `rx` e' valido finche' vive la struttura; il puntatore e la lunghezza vengono dalla stessa fetta.
+        unsafe { aurora_fldigi_sitorb_process(self.rx, samples.as_ptr(), samples.len()) };
+        take_all(self.rx, aurora_fldigi_sitorb_take)
+    }
+
+    /// Il trasmettitore SITOR-B di fldigi: il testo con le due coppie di fasatura e le due di coda.
+    pub fn transmit(samplerate: f64, centre_hz: f64, text: &str) -> Vec<f32> {
+        let Ok(c) = std::ffi::CString::new(text) else { return Vec::new() };
+        // SAFETY: con `out` nullo la funzione dice solo quanti campioni servono.
+        let n = unsafe { aurora_fldigi_sitorb_tx(samplerate, centre_hz, c.as_ptr(), std::ptr::null_mut(), 0) };
+        let mut out = vec![0.0_f32; n];
+        // SAFETY: `out` e' lungo `n` campioni e la funzione ne scrive al massimo tanti.
+        unsafe { aurora_fldigi_sitorb_tx(samplerate, centre_hz, c.as_ptr(), out.as_mut_ptr(), n) };
+        out
+    }
+}
+
+impl Drop for FldigiSitorb {
+    fn drop(&mut self) {
+        // SAFETY: `rx` viene da `aurora_fldigi_sitorb_new` e si libera una volta sola.
+        unsafe { aurora_fldigi_sitorb_free(self.rx) };
+    }
+}

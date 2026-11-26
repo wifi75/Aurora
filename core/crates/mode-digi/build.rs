@@ -1,4 +1,4 @@
-//! Con la feature `fldigi-oracle` (solo per le prove, mai nell'installatore) compila i ricevitori RTTY, PSK, CW, Olivia e Throb di fldigi presi da
+//! Con la feature `fldigi-oracle` (solo per le prove, mai nell'installatore) compila i ricevitori RTTY, PSK, CW, Olivia, Throb e SITOR-B di fldigi presi da
 //! `terze-parti/fldigi` (sottomodulo) piu' i nostri `oracle/fldigi_rtty_rx.cpp`, `fldigi_psk_rx.cpp` e `fldigi_cw_rx.cpp`. Con `mmtty-oracle`
 //! compila il ricevitore RTTY di MMTTY 1.70L (`oracle/mmtty_rtty_rx.cpp` con le classi copiate in `oracle/mmtty/mmtty_dsp.inc`, LGPL).
 //! Senza le feature non fa niente.
@@ -50,7 +50,7 @@ mod oracle {
                 fftfilt.display()
             );
         }
-        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp"), manifest.join("oracle/fldigi_olivia.cpp"), manifest.join("oracle/fldigi_olivia_rx.cpp"), manifest.join("oracle/fldigi_throb.cpp")];
+        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp"), manifest.join("oracle/fldigi_olivia.cpp"), manifest.join("oracle/fldigi_olivia_rx.cpp"), manifest.join("oracle/fldigi_throb.cpp"), manifest.join("oracle/fldigi_sitorb.cpp")];
         // dai sorgenti di fldigi, compilati cosi' come sono: filtro FFT (RTTY), filtro FIR e media mobile (PSK, CW), varicode (PSK), Viterbi (QPSK)
         let theirs = [fftfilt, fldigi.join("filters/filters.cxx"), fldigi.join("psk/pskvaricode.cxx"), fldigi.join("filters/viterbi.cxx")];
         for f in ours.iter().chain(theirs.iter()) {
