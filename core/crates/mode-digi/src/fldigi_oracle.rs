@@ -226,3 +226,53 @@ impl Drop for FldigiCw {
         unsafe { aurora_fldigi_cw_free(self.rx) };
     }
 }
+
+unsafe extern "C" {
+    fn aurora_fldigi_throb_new(variant: i32, freq: f64, reverse: i32) -> *mut c_void;
+    fn aurora_fldigi_throb_process(rx: *mut c_void, samples: *const f32, len: usize);
+    fn aurora_fldigi_throb_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
+    fn aurora_fldigi_throb_free(rx: *mut c_void);
+    fn aurora_fldigi_throb_tx(variant: i32, freq: f64, reverse: i32, text: *const std::ffi::c_char, out: *mut f32, cap: usize) -> usize;
+}
+
+/// L'indice della variante come lo vuole `oracle/fldigi_throb.cpp` (l'ordine di [`ThrobVariant::ALL`]).
+fn throb_index(v: crate::throb::ThrobVariant) -> i32 {
+    crate::throb::ThrobVariant::ALL.iter().position(|&x| x == v).map_or(0, |i| i as i32)
+}
+
+/// Il ricevitore Throb/ThrobX di fldigi (squelch e AFC spenti), audio a 8000 Hz; `freq_hz` e' il centro.
+pub struct FldigiThrob {
+    rx: *mut c_void,
+}
+
+impl FldigiThrob {
+    pub fn new(v: crate::throb::ThrobVariant, freq_hz: f64, reverse: bool) -> Self {
+        // SAFETY: crea un oggetto C++ posseduto da questa struttura e liberato in `drop`.
+        let rx = unsafe { aurora_fldigi_throb_new(throb_index(v), freq_hz, i32::from(reverse)) };
+        Self { rx }
+    }
+
+    pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
+        // SAFETY: `rx` e' valido finche' vive la struttura; il puntatore e la lunghezza vengono dalla stessa fetta.
+        unsafe { aurora_fldigi_throb_process(self.rx, samples.as_ptr(), samples.len()) };
+        take_all(self.rx, aurora_fldigi_throb_take)
+    }
+
+    /// Il trasmettitore di fldigi: il testo in audio a 8 kHz (quattro simboli di attesa, i caratteri, un'attesa alla fine).
+    pub fn transmit(v: crate::throb::ThrobVariant, freq_hz: f64, reverse: bool, text: &str) -> Vec<f32> {
+        let Ok(c) = std::ffi::CString::new(text) else { return Vec::new() };
+        // SAFETY: con `out` nullo la funzione dice solo quanti campioni servono.
+        let n = unsafe { aurora_fldigi_throb_tx(throb_index(v), freq_hz, i32::from(reverse), c.as_ptr(), std::ptr::null_mut(), 0) };
+        let mut out = vec![0.0_f32; n];
+        // SAFETY: `out` e' lungo `n` campioni e la funzione ne scrive al massimo tanti.
+        unsafe { aurora_fldigi_throb_tx(throb_index(v), freq_hz, i32::from(reverse), c.as_ptr(), out.as_mut_ptr(), n) };
+        out
+    }
+}
+
+impl Drop for FldigiThrob {
+    fn drop(&mut self) {
+        // SAFETY: `rx` viene da `aurora_fldigi_throb_new` e si libera una volta sola.
+        unsafe { aurora_fldigi_throb_free(self.rx) };
+    }
+}
