@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Prestazioni (revisione del 26/11): la lista delle decodifiche e' in `memo` (il telefono non la ricalcola piu' a ogni lettura dello S-meter) e la cascata WebGL2/WebGPU smette di ridisegnare a 60 fotogrammi al secondo quando non arrivano righe nuove (`DecodeList.tsx`, `render/webgl2.ts`, `render/webgpu.ts`).
 - SSTV, scheda Componi e trasmetti: il pannello a schede (Foto, Ritocchi, Livelli, Modelli) sta a sinistra e l'anteprima a destra (richiesta del proprietario; `sstv.css`, solo sopra gli 820 px). Non visto sullo schermo nei due temi.
 - Registro: ogni volta che il DX cambia (doppio clic, DX scritto a mano, Canc DX, coda, sequenza automatica dopo le decodifiche) una riga `DX cambiato: A -> B (causa)` in `aurora.log` (`engine-native/src/tx.rs`, `note_dx_change`), per capire come arriva un DX che l'operatore non ha scelto (caso SV5AZK).
 - Finestra RX con decodifica Profonda (Pere EA3CUU, #113): se il messaggio Tx viene sostituito a meta' della stessa trasmissione (decodifica tardiva) resta una riga Tx sola, quella nuova, e non due nello stesso periodo (`state/station.ts`, prova in `station.test.ts`).

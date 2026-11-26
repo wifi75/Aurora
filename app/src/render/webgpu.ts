@@ -192,10 +192,11 @@ export class WebGpuWaterfall implements WaterfallBackend {
 
   private draw(): void {
     if (!this.alive) return;
+    const frac = this.clock.fraction(performance.now());
     this.device.queue.writeBuffer(this.uniforms, 0, new Float32Array([
       this.ring.head,
       WATERFALL_HEIGHT,
-      this.clock.fraction(performance.now()),
+      frac,
       rowsPerPixel(this.canvas.height),
       this.canvas.width,
       this.canvas.height,
@@ -218,7 +219,7 @@ export class WebGpuWaterfall implements WaterfallBackend {
     pass.draw(3);
     pass.end();
     this.device.queue.submit([encoder.finish()]);
-    // la cascata scende di continuo: si ridisegna a ogni fotogramma
-    this.schedule();
+    // si ridisegna finche' l'ultima riga non e' scorsa tutta; da ferma niente fotogrammi inutili (pushRow, resize, setTone e setPalette riavviano il ciclo)
+    if (frac < 1) this.schedule();
   }
 }

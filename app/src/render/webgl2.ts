@@ -230,12 +230,14 @@ export class WebGl2Waterfall implements WaterfallBackend {
     gl.useProgram(this.program);
     gl.uniform1f(this.uHead, this.ring.head);
     gl.uniform1f(this.uH, WATERFALL_HEIGHT);
-    gl.uniform1f(this.uFrac, this.clock.fraction(performance.now()));
+    const frac = this.clock.fraction(performance.now());
+    gl.uniform1f(this.uFrac, frac);
     gl.uniform1f(this.uRpp, rowsPerPixel(this.canvas.height));
     gl.uniform2f(this.uPx, this.canvas.width, this.canvas.height);
     gl.uniform2f(this.uTone, this.tone[0], this.tone[1]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    // la cascata scende di continuo: si ridisegna a ogni fotogramma
-    this.schedule();
+    // la cascata scende finche' l'ultima riga non e' scorsa tutta; da ferma (nessuna riga nuova, p. es. in trasmissione) niente fotogrammi inutili:
+    // pushRow, resize, setTone e setPalette riavviano il ciclo
+    if (frac < 1) this.schedule();
   }
 }

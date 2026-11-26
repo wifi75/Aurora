@@ -1,6 +1,6 @@
 import { foxCalls, lineSender } from '../lib/fox';
 import { periodSecs } from '../lib/period';
-import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, memo, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -251,7 +251,7 @@ function AgeCell({ time, shownAt }: { time: number; shownAt: number }) {
     </span>
   );
 }
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey, allColumns = false, noDistance = false }: Props) {
+function DecodeListView({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey, allColumns = false, noDistance = false }: Props) {
   const [firstPaint, setFirstPaint] = useState(true);
   useEffect(() => {
     const id = window.setTimeout(() => setFirstPaint(false), 60);
@@ -752,3 +752,5 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   );
 }
 
+/** In `memo`: sul telefono la pagina si ridisegna a ogni lettura dello S-meter, la lista (fino a 200 righe) solo se cambiano le sue proprieta'. */
+export const DecodeList = memo(DecodeListView);
