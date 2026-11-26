@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.355',
+    released: '2026-11-26T16:54:28Z',
+    kind: 'changed',
+    title: [
+      'Guida e manuali aggiornati',
+      'Guide and manuals updated',
+      'Anleitung und Handbücher aktualisiert',
+      'Guide et manuels mis à jour',
+      'Guía y manuales actualizados',
+      'Guia e manuais atualizados',
+    ],
+    text: [
+      'La Guida dell’applicazione e i manuali PDF sono stati rivisti e aggiornati nelle nove lingue: Split in pile-up (con Split acceso la trasmissione non si ferma se il DX risponde a un altro), SSTV Componi e trasmetti (pannello a schede a sinistra, anteprima a destra), controllo della radio con Ham Radio Deluxe e la riga «DX cambiato» nel registro. Nessun cambiamento al funzionamento del programma.',
+      'The in-app Guide and the PDF manuals have been reviewed and updated in all nine languages: Split in a pile-up (with Split on, transmission does not stop when the DX answers someone else), SSTV Compose and transmit (tabbed panel on the left, preview on the right), radio control with Ham Radio Deluxe and the “DX changed” log line. The program itself works exactly as before.',
+      'Die Anleitung in der Anwendung und die PDF-Handbücher wurden überarbeitet und in allen neun Sprachen aktualisiert: Split im Pile-up (bei eingeschaltetem Split stoppt das Senden nicht, wenn der DX einem anderen antwortet), SSTV Erstellen und senden (Registerfeld links, Vorschau rechts), Funkgerätesteuerung mit Ham Radio Deluxe und die Protokollzeile „DX geändert“. Das Programm selbst arbeitet unverändert.',
+      'Le guide de l’application et les manuels PDF ont été revus et mis à jour dans les neuf langues : Split en pile-up (avec Split activé, l’émission ne s’arrête pas quand le DX répond à un autre), SSTV Composer et émettre (panneau à onglets à gauche, aperçu à droite), contrôle de la radio avec Ham Radio Deluxe et la ligne « DX changé » du journal. Le programme fonctionne exactement comme avant.',
+      'La Guía de la aplicación y los manuales PDF se han revisado y actualizado en los nueve idiomas: Split en pile-up (con Split activado la transmisión no se detiene si el DX responde a otro), SSTV Componer y transmitir (panel de fichas a la izquierda, vista previa a la derecha), control de la radio con Ham Radio Deluxe y la línea «DX cambiado» del registro. El programa funciona exactamente como antes.',
+      'O Guia da aplicação e os manuais PDF foram revistos e atualizados nas nove línguas: Split em pile-up (com o Split ligado a transmissão não pára se o DX responde a outro), SSTV Compor e transmitir (painel de separadores à esquerda, pré-visualização à direita), controlo do rádio com o Ham Radio Deluxe e a linha «DX alterado» do registo. O programa funciona exatamente como antes.',
+    ],
+  },
+  {
     version: '0.11.354',
     released: '2026-11-26T11:43:10Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouveau style d’affichage : grands VFO A et VFO B et, au milieu, ROS, ALC et puissance en émission. Se choisit dans Réglages › Radio › Style d’affichage ; les autres styles ne changent pas.',
       'Nuevo estilo de pantalla: VFO A y VFO B grandes y, en medio, ROE, ALC y potencia en transmisión. Se elige en Ajustes › Radio › Estilo de pantalla; los demás estilos no cambian.',
       'Novo estilo de mostrador: VFO A e VFO B grandes e, no meio, ROE, ALC e potência em transmissão. Escolhe-se em Definições › Rádio › Estilo do mostrador; os outros estilos não mudam.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'changed',
-    title: [
-      '«Rimanda i QSO persi» senza doppioni',
-      '“Resend lost QSOs” without duplicates',
-      '„Verlorene QSOs erneut senden“ ohne Doppelte',
-      '« Renvoyer les QSO perdus » sans doublons',
-      '«Reenviar los QSO perdidos» sin duplicados',
-      '«Reenviar os QSO perdidos» sem duplicados',
-    ],
-    text: [
-      'Aurora guarda nel log di Log4OM e rimanda solo i QSO che mancano davvero (stesso nominativo, banda e modo entro un quarto d’ora = c’è già). Niente doppioni se i QSO erano già arrivati per altra via.',
-      'Aurora looks in the Log4OM log and resends only the QSOs that are really missing (same callsign, band and mode within a quarter of an hour = already there). No duplicates if the QSOs had already arrived another way.',
-      'Aurora sieht im Log von Log4OM nach und sendet nur die wirklich fehlenden QSOs erneut (gleiches Rufzeichen, Band und Betriebsart innerhalb einer Viertelstunde = schon vorhanden). Keine Doppelten, wenn die QSOs schon auf anderem Weg angekommen waren.',
-      'Aurora consulte le log de Log4OM et ne renvoie que les QSO qui manquent vraiment (même indicatif, bande et mode à un quart d’heure près = déjà présent). Pas de doublons si les QSO étaient déjà arrivés autrement.',
-      'Aurora mira en el log de Log4OM y reenvía solo los QSO que faltan de verdad (mismo indicativo, banda y modo en un cuarto de hora = ya está). Sin duplicados si los QSO ya habían llegado por otra vía.',
-      'A Aurora consulta o log do Log4OM e reenvia só os QSO que faltam mesmo (mesmo indicativo, banda e modo num quarto de hora = já existe). Sem duplicados se os QSO já tinham chegado por outra via.',
     ],
   },
 ];

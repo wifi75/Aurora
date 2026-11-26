@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.355 - 2026-11-26
+- Guida e documentazione riviste: Split in pile-up (regola dell’arresto per risposta ad altri), SSTV Componi e trasmetti (pannello a sinistra, anteprima a destra), riga «DX cambiato» nel registro, prestazioni; nessun cambiamento al programma.
+
 ## 0.11.354 - 2026-11-26
 - Prestazioni (revisione del 26/11, segue): ricampionatore del motore a fasi precalcolate anche a 44,1 kHz (`resample.rs`, niente seno e coseno per campione); il rivelatore di click dell'analizzatore lavora solo con l'anti-click acceso (`analyzer.rs`); storico delle decodifiche con WAL e `synchronous = NORMAL` (`decode-history`); filtro SSTV calcolato solo nei punti che servono (`mode-sstv/resample.rs`, stessi bit); buffer dei periodi lunghi ridotto a blocchi di un secondo (`slots.rs`). Non fatta la FFT della cascata a 44,1 kHz: sposterebbe le frequenze dei canali.
 - Prestazioni (revisione del 26/11): la lista delle decodifiche e' in `memo` (il telefono non la ricalcola piu' a ogni lettura dello S-meter) e la cascata WebGL2/WebGPU smette di ridisegnare a 60 fotogrammi al secondo quando non arrivano righe nuove (`DecodeList.tsx`, `render/webgl2.ts`, `render/webgpu.ts`).

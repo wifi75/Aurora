@@ -14,6 +14,7 @@ I minidump, il log dei QSO e `ALL.TXT` restano sul PC. Qui sotto non si legge ma
 |---|---|
 | `info.json` | Versione, sistema, antivirus, motore, radio, PTT, CAT, audio; l'elenco dei file di diagnostica; quanti minidump sono rimasti sul PC |
 | `logs/aurora.log` | Il registro di Aurora, ripulito (avvisi, errori e le righe che non parlano di nominativi) |
+|  | Dalla 0.11.355 ogni cambio del DX scrive `DX cambiato: A -> B (causa)` (doppio clic, DX scritto a mano, Canc DX, coda, sequenza automatica dopo le decodifiche): serve a capire come arriva un DX che l'operatore non ha scelto |
 | `installazione.log` | Come e' stato installato (WebView2, file non copiati, antivirus), se c'e' |
 | `crash/*.txt` | I rapporti dei guasti e dei blocchi (non i `.dmp`) |
 | `diagnostica/problemi.txt` | Il registro **riassunto**: avvisi ed errori che si ripetono (quante volte, da quando a quando), riavvii di Aurora, tempi di decodifica |

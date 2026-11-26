@@ -302,3 +302,7 @@ i thread dedicati (LoTW, dati delle orbite, forme dei nominativi) usano la porta
 - Il rallentamento dei timer di WebView2 a finestra ridotta a icona: il battito ogni 20 s e la scadenza a 90 s lasciano margine anche
   con i timer a uno al minuto, ma non e' stato misurato.
 - Un PC lento vero (2 processori): la modalita' si accende da sola, ma i numeri sono quelli della simulazione.
+
+## Revisione del 2026-11-26 (letta dal codice, non misurata)
+
+Corretti: lista delle decodifiche in `memo` (telefono: niente ricalcolo a ogni lettura dello S-meter); cascata WebGL2/WebGPU che si ferma quando non arrivano righe (`frac < 1`); ricampionatore del motore con tabella a fasi per i rapporti non interi (44,1 kHz: 40 fasi, scarto massimo dalla formula sotto 1e-5; rapporti interi con gli stessi bit di prima); rivelatore di click acceso solo con l'anti-click; storico delle decodifiche con WAL e `synchronous = NORMAL`; filtro SSTV calcolato solo nei punti che servono (stessi bit); buffer dei periodi lunghi svuotato a blocchi di un secondo. **Non fatto** (scelta del proprietario): FFT della cascata a 44,1 kHz, perche' decimare a 12 kHz richiede di riportare a monte l'anti-click e una lunghezza FFT diversa sposterebbe i canali dello 0,3%.
