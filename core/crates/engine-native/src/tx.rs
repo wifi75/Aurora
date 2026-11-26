@@ -683,7 +683,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let before = self.seq.dx().map(str::to_string);
         let cause = match &command {
             TxCommand::Reply { .. } => "doppio clic o risposta a una riga",
-            TxCommand::QueueReply { .. } => "stazione messa in coda",
+            TxCommand::QueueReply { .. } => "clic sulla coda (senza QSO in corso risponde subito)",
             TxCommand::SetDx { .. } => "DX scritto o scelto a mano",
             TxCommand::ClearDx => "Canc DX",
             TxCommand::CallCq { .. } => "CQ",
