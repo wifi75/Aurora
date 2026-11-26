@@ -23,6 +23,9 @@ use std::f64::consts::PI;
 pub const BAUD: f64 = 100.0;
 pub const DEVIATION_HZ: f64 = 85.0;
 
+/// Salita e discesa all'inizio e alla fine della trasmissione (s).
+const RAMP_S: f64 = 0.005;
+
 const CODE_LTRS: u8 = 0x5a;
 const CODE_FIGS: u8 = 0x36;
 const CODE_ALPHA: u8 = 0x0f;
@@ -138,6 +141,11 @@ impl AmtorTx {
         }
         self.figs = false;
         self.pair(CODE_LTRS, CODE_LTRS, &mut out);
+        // salita a coseno di 5 ms: niente click all'apertura
+        let n = ((RAMP_S * self.rate) as usize).min(out.len());
+        for (i, v) in out.iter_mut().take(n).enumerate() {
+            *v *= (0.5 - 0.5 * (PI * i as f64 / n as f64).cos()) as f32;
+        }
         out
     }
 
@@ -164,6 +172,12 @@ impl AmtorTx {
         }
         for _ in 0..3 {
             self.pair(CODE_ALPHA, CODE_ALPHA, &mut out);
+        }
+        // discesa a coseno di 5 ms: torna al silenzio senza click
+        let n = ((RAMP_S * self.rate) as usize).min(out.len());
+        let start = out.len() - n;
+        for (i, v) in out[start..].iter_mut().enumerate() {
+            *v *= (0.5 + 0.5 * (PI * i as f64 / n as f64).cos()) as f32;
         }
         out
     }
@@ -623,6 +637,15 @@ mod tests {
             })
             .collect();
         assert_eq!(rx(&b, 1500.0 / k, false, false), TESTO);
+    }
+
+    /// Inizio e fine senza scalino: il primo e l'ultimo campione sono (quasi) zero.
+    #[test]
+    fn inizio_e_fine_senza_click() {
+        let a = AmtorTx::new(RATE, 1500.0, 0.9, false).transmit(b"IU3ABC");
+        assert!(a[0].abs() < 1e-6 && a[a.len() - 1].abs() < 0.01, "{} {}", a[0], a[a.len() - 1]);
+        let peak = a.iter().fold(0.0_f32, |m, v| m.max(v.abs()));
+        assert!(peak > 0.85);
     }
 
     /// L'attesa in mezzo (fasatura) non perde le ripetizioni in coda e non stampa niente.
