@@ -1030,14 +1030,14 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modifica › Pulisci la finestra di ricezione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Pulisci la finestra di trasmissione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Copia il testo ricevuto | PRC › Modifica | t-digi-menu-fe |
-| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia, QPSK31 (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia, t-digi-qpsk31 |
+| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia, QPSK31, Throb (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia, t-digi-qpsk31, t-digi-throb |
 | Modo › SSTV | PRC › Modo | t-digi-menu-mode |
 | Modo › Spostamento (Hz) e Velocità (baud) (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Inverti mark/space (Rev) e UOS (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Banda del filtro CW (solo CW) | PRC › Modo | t-digi-menu-mode, t-digi-cw |
 | Modo › TX alla velocità ricevuta (solo CW) | PRC › Modo | t-digi-menu-mode, digicw |
 | Modo › Toni e Banda (solo Olivia e Contestia) | PRC › Modo, barra di stato | t-digi-olivia |
-| Modo › modi «in arrivo» (QPSK31, FSK31, MFSK, MT63, Throb, Hellschreiber, Packet, Pactor, Amtor) | PRC › Modo | t-digi-menu-mode |
+| Modo › modi «in arrivo» (FSK31, MFSK, MT63, Hellschreiber, Packet, Pactor, Amtor) | PRC › Modo | t-digi-menu-mode |
 | Modo › Impostazioni del modo… (apre le Impostazioni) | PRC › Modo | t-digi-menu-mode |
 | Modo › Soglia dello squelch… (apre la finestra Impostazioni del modo) | PRC › Modo | t-digi-menu-mode, t-digi-modeset |
 | Opzioni › Ascolto | PRC › Opzioni | t-digi-menu-opt |

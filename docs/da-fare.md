@@ -59,7 +59,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [x] Satelliti: intervallo e soglia dell'uplink configurabili (Impostazioni dei satelliti, solo col ripiego a due VFO, sperimentale)
 - [ ] IC-820H con SAT acceso: nel pacchetto 7A547090 (AO-7) la lettura `f` del VFO principale salta tra 145,95 e 445,95 MHz e Aurora la prende per cambi di banda (azzera la TX); `F` sul VFO secondario accettato (RPRT 0) ma una volta rifiutato (-9) e il ripiego si spegne; attende il test a mano di Vladimir
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
-- [ ] Modi in grigio: Olivia/Contestia (collegati al programma dalla 0.11.334: menu, RX, TX, Guida, «Informazioni»; manca la prova in onda con la radio vera), QPSK31 (collegato, non pubblicato: manca la prova in onda in USB e LSB), FSK31 (fermo: manca una specifica pubblica dei toni), MT63, Hell, WEFAX fatto, Packet
+- [ ] Modi in grigio: Olivia/Contestia (collegati al programma dalla 0.11.334: menu, RX, TX, Guida, «Informazioni»; manca la prova in onda con la radio vera), QPSK31 e Throb (collegati, non pubblicati: manca la prova in onda in USB e LSB), FSK31 (fermo: manca una specifica pubblica dei toni), MT63, Hell, WEFAX fatto, Packet
 - [x] Panic `tao`: prima correzione sulla chiusura (0.11.308)
 - [x] Panic `tao` verificato sul pacchetto vero (F014CB6C, FTDX-101MP): i due panic sono di Aurora 0.11.179 (7/11) e 0.11.212 (9/11), nessuno nelle versioni dopo; niente altro da fare salvo nuove segnalazioni
 - [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
