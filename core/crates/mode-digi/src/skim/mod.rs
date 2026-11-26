@@ -28,6 +28,38 @@ const HOP: usize = 1024;
 /// Quanto sopra il fondo deve stare una riga per essere un tono (dB) e per quanti spettri di fila.
 const PEAK_DB: f32 = 10.0;
 const STABLE_FRAMES: u32 = 3;
+
+/// La sensibilita' di BIGScan: di quanti dB si abbassa o si alza la soglia che apre un canale (CW: riga sopra il fondo; PSK: energia
+/// sopra il fondo). Media = 0 dB, cioe' le soglie di sempre: a parita' di audio gli stessi canali di prima.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Sensitivity {
+    /// Soglia 2 dB piu' bassa: piu' stazioni deboli, piu' canali falsi.
+    High,
+    #[default]
+    Medium,
+    /// Soglia 3 dB piu' alta: meno canali falsi, le stazioni deboli si perdono.
+    Low,
+}
+
+impl Sensitivity {
+    pub fn from_id(id: &str) -> Option<Sensitivity> {
+        match id {
+            "high" => Some(Sensitivity::High),
+            "medium" => Some(Sensitivity::Medium),
+            "low" => Some(Sensitivity::Low),
+            _ => None,
+        }
+    }
+
+    /// Quanto si sposta la soglia (dB).
+    pub fn offset_db(self) -> f32 {
+        match self {
+            Sensitivity::High => -2.0,
+            Sensitivity::Medium => 0.0,
+            Sensitivity::Low => 3.0,
+        }
+    }
+}
 /// Distanza minima fra due canali (Hz).
 const CHANNEL_SPACING_HZ: f32 = 25.0;
 /// Un canale che non stampa niente da tanto si chiude (s).
@@ -167,6 +199,10 @@ pub trait BandDecoder: Send {
     fn clear(&mut self);
     /// Il livello di convalida dei nominativi.
     fn set_validation(&mut self, v: Validation);
+    /// La sensibilita' (soglia che apre un canale). Chi non ha una soglia regolabile (RTTY) la ignora.
+    fn set_sensitivity(&mut self, s: Sensitivity) {
+        let _ = s;
+    }
     /// La radio si e' spostata di poco nella stessa banda: ogni segnale cambia tono audio di `audio_hz` (con la radio in USB e' meno lo
     /// spostamento della radio). I canali seguono il loro segnale con lo storico e i nominativi; quelli fuori da `SHIFT_LO_HZ`-`SHIFT_HI_HZ`
     /// si chiudono. Chi non sa spostarsi ricomincia da capo.
@@ -315,6 +351,8 @@ pub struct CwBandDecoder {
     next_id: u32,
     t: f64,
     validation: Validation,
+    /// Soglia che apre un canale (dB sopra il fondo): `PEAK_DB` piu' la sensibilita'.
+    peak_db: f32,
     dxcc: Option<CallCheckFn>,
     spotter: Spotter,
     cache: CallCache,
@@ -339,6 +377,7 @@ impl CwBandDecoder {
             next_id: 1,
             t: 0.0,
             validation: Validation::Normal,
+            peak_db: PEAK_DB,
             dxcc: None,
             spotter: Spotter::default(),
             cache: CallCache::default(),
@@ -348,6 +387,11 @@ impl CwBandDecoder {
     /// Il livello di convalida dei nominativi (di base Normale).
     pub fn set_validation(&mut self, v: Validation) {
         self.validation = v;
+    }
+
+    /// La sensibilita' (di base Media, la soglia di sempre); vale dallo spettro successivo.
+    pub fn set_sensitivity(&mut self, s: Sensitivity) {
+        self.peak_db = PEAK_DB + s.offset_db();
     }
 
     /// Chi dice cosa si sa di un nominativo (paese DXCC, forma).
@@ -428,7 +472,7 @@ impl CwBandDecoder {
         let mut sorted = band.to_vec();
         sorted.sort_by(f32::total_cmp);
         let floor = sorted[sorted.len() / 2].max(1e-20);
-        let thr = floor * 10f32.powf(PEAK_DB / 10.0);
+        let thr = floor * 10f32.powf(self.peak_db / 10.0);
         let mut seen = Vec::new();
         for k in self.lo_bin + 4..self.hi_bin - 4 {
             let p = self.power[k];
@@ -578,6 +622,9 @@ impl BandDecoder for CwBandDecoder {
     fn set_validation(&mut self, v: Validation) {
         CwBandDecoder::set_validation(self, v);
     }
+    fn set_sensitivity(&mut self, s: Sensitivity) {
+        CwBandDecoder::set_sensitivity(self, s);
+    }
     fn shift(&mut self, audio_hz: f32) {
         CwBandDecoder::shift(self, audio_hz);
     }
@@ -639,6 +686,44 @@ pub(crate) mod tests {
         // meno canali: restano i più forti
         sk.set_max_channels(2);
         assert_eq!(sk.channel_count(), 2);
+    }
+
+    /// Sensibilita' di BIGScan: Media da' esattamente quello che dava il decodificatore senza la regolazione (stessi canali, stesso
+    /// testo, stessi nominativi, stessi spot); Alta trova almeno i canali di Media e Bassa al piu' quelli di Media.
+    #[test]
+    fn bigscan_sensitivity_medium_is_unchanged() {
+        let stations = [(600.0_f32, 0.2_f32, "IU3ABC"), (1_000.0, 0.03, "K1ABC"), (1_400.0, 0.02, "DL1ABC"), (1_900.0, 0.015, "F1ABC")];
+        let mut band = vec![0.0_f32; 12_000 * 30];
+        for (hz, amp, call) in stations {
+            let wave = modulate(format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K").as_bytes(), hz, 20.0, amp);
+            for (s, w) in band.iter_mut().skip(6_000).zip(wave) {
+                *s += w;
+            }
+        }
+        for (s, n) in band.iter_mut().zip(noise(12_000 * 30, 0.05, 21)) {
+            *s += n;
+        }
+        let run = |sens: Option<Sensitivity>| {
+            let mut sk = CwBandDecoder::new(300.0, 2_500.0, 16);
+            if let Some(v) = sens {
+                sk.set_sensitivity(v);
+            }
+            for block in band.chunks(4_800) {
+                sk.process(block);
+            }
+            let chans = sk.channels();
+            (format!("{chans:?}"), format!("{:?}", sk.take_spots()), chans.len())
+        };
+        let (base, base_spots, base_n) = run(None);
+        let (medium, medium_spots, _) = run(Some(Sensitivity::Medium));
+        assert_eq!(base, medium);
+        assert_eq!(base_spots, medium_spots);
+        let (_, _, high_n) = run(Some(Sensitivity::High));
+        let (_, _, low_n) = run(Some(Sensitivity::Low));
+        assert!(high_n >= base_n && low_n <= base_n, "alta {high_n}, media {base_n}, bassa {low_n}");
+        assert_eq!(Sensitivity::from_id("medium"), Some(Sensitivity::default()));
+        assert_eq!(Sensitivity::default().offset_db(), 0.0);
+        assert_eq!(PEAK_DB + Sensitivity::Medium.offset_db(), PEAK_DB);
     }
 
     /// La radio si sposta di poco: i canali seguono il tono nuovo con i loro nominativi, quelli che escono dalla banda audio si chiudono,

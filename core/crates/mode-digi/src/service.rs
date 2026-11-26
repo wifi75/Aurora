@@ -400,6 +400,8 @@ pub struct DigiSettings {
     pub band_spots_cq_only: bool,
     /// Tutta la banda: livello di convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`).
     pub band_validation: String,
+    /// Tutta la banda (Aurora BIGScan): sensibilita' della soglia che apre i canali (`high`, `medium`, `low`; `medium` = come prima).
+    pub band_sensitivity: String,
     /// Passabanda «a coltello» intorno alla frequenza di ricezione, davanti al ricevitore (non a tutta la banda).
     pub passband_on: bool,
     /// Larghezza del passabanda (Hz, 20-1000); 0 = quella di base del modo (`notch::default_passband`).
@@ -500,6 +502,7 @@ impl Default for DigiSettings {
             local_spots: false,
             band_spots_cq_only: false,
             band_validation: "normal".into(),
+            band_sensitivity: "medium".into(),
             passband_on: false,
             passband_hz: 0.0,
             olivia: OliviaSettings::olivia(),
@@ -613,6 +616,9 @@ impl DigiSettings {
         if crate::skim::calls::Validation::from_id(&self.band_validation).is_none() {
             return Err(DigiError::BadValue("convalida dei nominativi non fra minimal, normal, strict e maximum".into()));
         }
+        if crate::skim::Sensitivity::from_id(&self.band_sensitivity).is_none() {
+            return Err(DigiError::BadValue("sensibilita' di BIGScan non fra high, medium e low".into()));
+        }
         if self.mode_macros.keys().any(|k| DigiMode::from_id(k).is_none()) {
             return Err(DigiError::BadValue("insieme di macro per un modo sconosciuto".into()));
         }
@@ -665,6 +671,9 @@ impl DigiSettings {
         }
         if crate::skim::calls::Validation::from_id(&self.band_validation).is_none() {
             self.band_validation = base.band_validation.clone();
+        }
+        if crate::skim::Sensitivity::from_id(&self.band_sensitivity).is_none() {
+            self.band_sensitivity = base.band_sensitivity.clone();
         }
         if !passband_ok(self.passband_hz) {
             self.passband_hz = base.passband_hz;
@@ -1987,6 +1996,15 @@ mod tests {
         for m in ["USB", "PKTUSB", "DATA-U", "DIGU", "RTTY", "CW", "FM", ""] {
             assert!(!is_lower_sideband(m), "{m}");
         }
+    }
+
+    #[test]
+    fn la_sensibilita_di_bigscan_manca_nei_file_vecchi_e_vale_media() {
+        let s: DigiSettings = serde_json::from_str(r#"{"mode":"cw"}"#).expect("json");
+        assert_eq!(s.band_sensitivity, "medium");
+        assert!(s.validate().is_ok());
+        let bad = DigiSettings { band_sensitivity: "max".into(), ..DigiSettings::default() };
+        assert!(bad.validate().is_err());
     }
 
     #[test]

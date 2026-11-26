@@ -68,6 +68,8 @@ pub struct PskBandDecoder {
     next_id: u32,
     t: f64,
     validation: Validation,
+    /// Soglia dell'energia che apre un canale (dB sopra il fondo): `ENERGY_DB` piu' la sensibilita'.
+    energy_db: f32,
     dxcc: Option<CallCheckFn>,
     spotter: Spotter,
 }
@@ -92,6 +94,7 @@ impl PskBandDecoder {
             next_id: 1,
             t: 0.0,
             validation: Validation::Normal,
+            energy_db: ENERGY_DB,
             dxcc: None,
             spotter: Spotter::default(),
         }
@@ -137,7 +140,7 @@ impl PskBandDecoder {
         let mut sorted = energy[lo..hi].to_vec();
         sorted.sort_by(f32::total_cmp);
         let floor = sorted[sorted.len() / 2].max(1e-20);
-        let thr = floor * 10f32.powf(ENERGY_DB / 10.0);
+        let thr = floor * 10f32.powf(self.energy_db / 10.0);
         let mut seen = Vec::new();
         for k in lo + 1..hi - 1 {
             let e = energy[k];
@@ -287,6 +290,9 @@ impl BandDecoder for PskBandDecoder {
     fn set_validation(&mut self, v: Validation) {
         self.validation = v;
     }
+    fn set_sensitivity(&mut self, s: super::Sensitivity) {
+        self.energy_db = ENERGY_DB + s.offset_db();
+    }
 }
 
 #[cfg(test)]
@@ -347,6 +353,23 @@ mod tests {
         let chans = b.channels();
         assert_eq!(chans.len(), 1, "{chans:#?}");
         assert!(chans[0].text.contains("de IU3ABC"), "{chans:?}");
+    }
+
+    /// Sensibilita' Media = il decodificatore di prima (stessi canali e stessi spot), sullo stesso audio.
+    #[test]
+    fn bigscan_sensitivity_medium_is_unchanged() {
+        let audio = band(&[(700.0, "IU3ABC"), (1210.0, "K1ABC")], PskMode::Psk31, 0.05, 25);
+        let run = |sens: Option<crate::skim::Sensitivity>| {
+            let mut b = PskBandDecoder::new(PskMode::Psk31, 300.0, 2_500.0, 16);
+            if let Some(v) = sens {
+                BandDecoder::set_sensitivity(&mut b, v);
+            }
+            for block in audio.chunks(4_800) {
+                b.process(block);
+            }
+            (format!("{:?}", b.channels()), format!("{:?}", b.take_spots()))
+        };
+        assert_eq!(run(None), run(Some(crate::skim::Sensitivity::Medium)));
     }
 
     #[test]

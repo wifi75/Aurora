@@ -23,7 +23,7 @@ use crate::skim::calls::{CallCheck, Role, Validation};
 use crate::skim::forms::FormTable;
 use crate::psk::PskMode;
 use crate::skim::psk::PskBandDecoder;
-use crate::skim::{BandDecoder, ChannelInfo, CwBandDecoder};
+use crate::skim::{BandDecoder, ChannelInfo, CwBandDecoder, Sensitivity};
 
 /// Quanta CPU puo' usare il thread (frazione di un core).
 const BUDGET: f64 = 0.25;
@@ -114,6 +114,7 @@ struct Options {
     spots: bool,
     cq_only: bool,
     validation: Validation,
+    sensitivity: Sensitivity,
 }
 
 /// Chi riceve gli spot locali.
@@ -231,7 +232,8 @@ impl BandLink {
         let kind = Kind::of(s, self.lsb.load(Ordering::Relaxed));
         self.active.store(kind.is_some(), Ordering::Relaxed);
         let validation = Validation::from_id(&s.band_validation).unwrap_or_default();
-        let _ = self.queue.send(Msg::Config(kind, Options { spots: s.local_spots, cq_only: s.band_spots_cq_only, validation }));
+        let sensitivity = Sensitivity::from_id(&s.band_sensitivity).unwrap_or_default();
+        let _ = self.queue.send(Msg::Config(kind, Options { spots: s.local_spots, cq_only: s.band_spots_cq_only, validation, sensitivity }));
     }
 
     /// La radio passata in LSB o in USB: in RTTY mark e space dei canali si scambiano come nel ricevitore principale.
@@ -328,7 +330,7 @@ fn check_call(hooks: &Hooks, call: &str) -> CallCheck {
 
 fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
     let mut kind: Option<Kind> = None;
-    let mut opts = Options { spots: true, cq_only: false, validation: Validation::Normal };
+    let mut opts = Options { spots: true, cq_only: false, validation: Validation::Normal, sensitivity: Sensitivity::Medium };
     let mut decoder: Option<Box<dyn BandDecoder>> = None;
     let mut max_channels = MAX_CHANNELS;
     let (mut spent, mut heard) = (Duration::ZERO, 0.0_f64);
@@ -355,6 +357,7 @@ fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
                     let mut d = k.decoder();
                     d.set_max_channels(max_channels);
                     d.set_validation(opts.validation);
+                    d.set_sensitivity(opts.sensitivity);
                     let slot = Arc::clone(hooks);
                     d.set_call_check(Box::new(move |c: &str| check_call(&slot, c)));
                     d
@@ -379,6 +382,11 @@ fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
                     && let Some(d) = decoder.as_mut()
                 {
                     d.set_validation(o.validation);
+                }
+                if o.sensitivity != opts.sensitivity
+                    && let Some(d) = decoder.as_mut()
+                {
+                    d.set_sensitivity(o.sensitivity);
                 }
                 opts = o;
                 if k != kind {
