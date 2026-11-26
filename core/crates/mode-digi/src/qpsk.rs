@@ -7,7 +7,7 @@
 //! - il simbolo `s` (0-3) fa girare la fase di 180° − 90°·s in banda laterale superiore e di 180° + 90°·s con l'inversione (LSB); la fase
 //!   e' quella del complesso I + jQ trasmesso come I·cos + Q·sin. Lo zero ripetuto (registro vuoto) da' le inversioni di 180°: il
 //!   preambolo e la coda sono inversioni come nel PSK31;
-//! - un carattere e' il suo varicode seguito da due zeri; la coda manda 32 zeri per svuotare il codificatore.
+//! - un carattere e' il suo varicode seguito da due zeri; la coda manda zeri per svuotare il codificatore ([`TAIL_ZEROS`]).
 //!
 //! La ricezione usa il ricevitore del PSK31 (`psk.rs`) fino al simbolo; qui ci sono il codificatore, la decisione «soft» dei quattro
 //! simboli e il decodificatore di Viterbi (16 stati, nostro).
@@ -142,6 +142,10 @@ impl ConvViterbi {
         bits
     }
 }
+
+/// Zeri della coda: fldigi ne manda 32, ma il suo decodificatore di Viterbi decide un bit 60 simboli dopo (a gruppi di 8): con 32 l'ultimo
+/// carattere resta nel decodificatore di chi riceve con fldigi (prova `qpsk_oracolo`). 72 zeri lo fanno uscire.
+pub const TAIL_ZEROS: usize = 72;
 
 /// Il trasmettitore QPSK31 a pezzi (preambolo, caratteri, attesa, coda) a 12 kHz: transizioni a coseno rialzato fra un simbolo complesso
 /// e il successivo, come fldigi (`psk::tx_symbol`).

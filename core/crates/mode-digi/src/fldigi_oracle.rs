@@ -53,6 +53,7 @@ unsafe extern "C" {
     fn aurora_fldigi_psk_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
     fn aurora_fldigi_psk_frequency(rx: *mut c_void) -> f64;
     fn aurora_fldigi_psk_free(rx: *mut c_void);
+    fn aurora_fldigi_qpsk_new(freq: f64, samplerate: f64, reverse: i32) -> *mut c_void;
     fn aurora_fldigi_cw_new(freq: f64, wpm: f64, bandwidth: f64, samplerate: f64, squelch: i32, squelch_value: f64) -> *mut c_void;
     fn aurora_fldigi_cw_process(rx: *mut c_void, samples: *const f32, len: usize);
     fn aurora_fldigi_cw_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
@@ -170,6 +171,13 @@ impl FldigiPsk {
         // SAFETY: `rx` e' valido finche' vive la struttura; il puntatore e la lunghezza vengono dalla stessa fetta.
         unsafe { aurora_fldigi_psk_process(self.rx, samples.as_ptr(), samples.len()) };
         take_all(self.rx, aurora_fldigi_psk_take)
+    }
+
+    /// Il ricevitore QPSK31 di fldigi (squelch e AFC spenti); `reverse`: inversione di banda laterale come l'opzione di fldigi.
+    pub fn qpsk31(freq_hz: f64, samplerate: f64, reverse: bool) -> Self {
+        // SAFETY: crea un oggetto C++ posseduto da questa struttura e liberato in `drop` (con `aurora_fldigi_psk_free`).
+        let rx = unsafe { aurora_fldigi_qpsk_new(freq_hz, samplerate, i32::from(reverse)) };
+        Self { rx }
     }
 
     /// La frequenza raggiunta dall'AFC.

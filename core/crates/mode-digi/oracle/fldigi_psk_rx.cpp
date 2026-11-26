@@ -11,7 +11,9 @@
 // Autori: Dave Freese W1HKJ e i contributori di fldigi (il ricevitore deriva da gmfsk di Tomi Manninen OH2BNS e dal PSK31 di Peter
 // Martinez G3PLX); licenza GPL 3 o successiva, come Aurora.
 //
-// Tolti perche' non servono a decidere i caratteri: modi QPSK/8PSK/PSKR/multiportante, oscilloscopi, S/N e IMD, visore, FLTK. Il
+// QPSK31 (per le prove del nostro trasmettitore QPSK31): psk::rx_symbol ramo _qpsk (fase in quattro, niente DCD) e psk::rx_qpsk, con
+// src/filters/viterbi.cxx compilato cosi' com'e'.
+// Tolti perche' non servono a decidere i caratteri: modi 8PSK/PSKR/multiportante, oscilloscopi, S/N e IMD, visore, FLTK. Il
 // percorso dal campione al carattere e' quello di fldigi; AFC e squelch si scelgono alla creazione (di base in fldigi: AFC acceso).
 
 #include <cmath>
@@ -24,6 +26,7 @@
 #include "filters.h"
 #include "misc.h"
 #include "pskvaricode.h"
+#include "viterbi.h"
 
 namespace {
 
@@ -74,6 +77,11 @@ struct FldigiPsk {
 	unsigned int shreg;
 	double sc_bw;
 	std::string out;
+	// QPSK31: decodificatore di Viterbi (K 5, POLY1 0x17, POLY2 0x19) e inversione di banda laterale
+	viterbi *dec = nullptr;
+	bool reverse = false;
+
+	~FldigiPsk() { delete dec; }
 
 	FldigiPsk(double baud, double freq, double sr, bool afc, bool squelch, double squelch_value)
 		: samplerate(sr), frequency(freq), afconoff(afc), sqlonoff(squelch), sqlvalue(squelch_value), phaseacc(0), bitclk(0),
@@ -117,12 +125,25 @@ struct FldigiPsk {
 		if (dcd == true || acquire) phaseafc();
 	}
 
+	// psk::rx_qpsk
+	void rx_qpsk(int b) {
+		unsigned char sym[2];
+		if (!reverse) b = (4 - b) & 3;
+		sym[0] = (b & 1) ? 255 : 0;
+		sym[1] = (b & 2) ? 0 : 255;
+		int c = dec->decode(sym, NULL);
+		if (c != -1) {
+			for (int m = 0x80; m; m >>= 1) rx_bit(c & m);
+		}
+	}
+
 	void rx_symbol(cmplx symbol) {
-		const int n = 2;
+		const int n = dec ? 4 : 2;
 		phase = arg(conj(prevsymbol) * symbol);
 		prevsymbol = symbol;
 		if (phase < 0) phase += TWOPI;
-		bits = (((int)(phase / M_PI + 0.5)) & (n - 1)) << 1;
+		if (dec) bits = ((int)(phase / M_PI_2 + 0.5)) & (n - 1);
+		else bits = (((int)(phase / M_PI + 0.5)) & (n - 1)) << 1;
 
 		double cval = cos(n * phase);
 		double sval = sin(n * phase);
@@ -133,6 +154,12 @@ struct FldigiPsk {
 		if (metric > 100) metric = 100;
 		afcmetric = decayavg(afcmetric, norm(quality), 50);
 
+		if (dec) {
+			// fldigi: il QPSK non usa il DCD (preambolo e coda sono uguali), decide lo squelch
+			dcd = (metric > sqlvalue || sqlonoff == false);
+			if (dcd) rx_qpsk(bits);
+			return;
+		}
 		dcdshreg = (dcdshreg << 2) | bits;
 		int set_dcd = -1;
 		switch (dcdshreg) {
@@ -197,10 +224,24 @@ struct FldigiPsk {
 
 } // namespace
 
+// misc.cxx: parity (serve a viterbi.cxx; il resto di misc.cxx non serve)
+int parity(unsigned long w) {
+	int p = 0;
+	for (; w; w >>= 1) p ^= (int)(w & 1);
+	return p;
+}
+
 extern "C" {
 
 void *aurora_fldigi_psk_new(double baud, double freq, double samplerate, int afc, int squelch, double squelch_value) {
 	return new FldigiPsk(baud, freq, samplerate, afc != 0, squelch != 0, squelch_value);
+}
+
+void *aurora_fldigi_qpsk_new(double freq, double samplerate, int reverse) {
+	FldigiPsk *rx = new FldigiPsk(31.25, freq, samplerate, false, false, 0.0);
+	rx->dec = new viterbi(5, 0x17, 0x19);
+	rx->reverse = reverse != 0;
+	return rx;
 }
 
 void aurora_fldigi_psk_process(void *rx, const float *samples, size_t len) {

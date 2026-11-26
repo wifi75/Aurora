@@ -138,7 +138,7 @@ pub fn modulate_qpsk(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32, reverse
     for &c in text {
         out.extend(tx.char(c));
     }
-    out.extend(tx.postamble(mode.dcd_bits()));
+    out.extend(tx.postamble(crate::qpsk::TAIL_ZEROS));
     out
 }
 
