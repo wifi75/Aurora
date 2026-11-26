@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../../i18n';
-import { formatKhz, type WefaxPreset } from '../../lib/wefaxStations';
+import { formatKhz, type WefaxGroup, type WefaxPreset } from '../../lib/wefaxStations';
 
 interface Props {
-  groups: { band: number; presets: WefaxPreset[] }[];
+  /** Gruppi per banda: quella in MHz o l'etichetta scelta dall'utente (Impostazioni › WEFAX › Frequenze). */
+  groups: WefaxGroup[];
   /** La stazione su cui si e' (o l'ultima scelta): evidenziata e portata in vista all'apertura. */
   value: string;
   onSelect(p: WefaxPreset): void;
@@ -25,6 +26,7 @@ export function FreqPicker({ groups, value, onSelect }: Props) {
   const list = useRef<HTMLDivElement | null>(null);
   const flat = groups.flatMap((g) => g.presets);
   const current = flat.find((p) => p.id === value);
+  const groupName = (g: WefaxGroup) => g.label ?? (g.band < 1 ? '< 1 MHz' : t('wefax.freq.band', { mhz: String(g.band) }));
 
   // all'apertura: la voce attiva e' quella impostata e si porta al centro dell'elenco
   useEffect(() => {
@@ -89,8 +91,8 @@ export function FreqPicker({ groups, value, onSelect }: Props) {
       {open ? (
         <div className="wefax-picker-list" role="listbox" aria-label={t('wefax.freq.label')} ref={list}>
           {groups.map((g) => (
-            <div key={g.band} role="group" aria-label={t('wefax.freq.band', { mhz: String(g.band) })}>
-              <div className="wefax-picker-band">{t('wefax.freq.band', { mhz: String(g.band) })}</div>
+            <div key={g.label ? `l-${g.label}` : `b-${g.band}`} role="group" aria-label={groupName(g)}>
+              <div className="wefax-picker-band">{groupName(g)}</div>
               {g.presets.map((p) => (
                 <div
                   key={p.id}

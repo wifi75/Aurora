@@ -49,6 +49,8 @@ export interface WefaxPreset {
   dialHz: number;
   /** Banda: la parte intera dei MHz (4 = «4 MHz», da 4,0 a 4,99). */
   band: number;
+  /** Etichetta di banda scelta dall'utente (Impostazioni › WEFAX › Frequenze): se c'e' raggruppa al posto della banda in MHz. */
+  bandLabel?: string;
   /** IOC e righe al minuto da impostare al ricevitore scegliendo questa frequenza. */
   ioc: number;
   lpm: number;
@@ -72,15 +74,27 @@ export function wefaxPresets(): WefaxPreset[] {
   return out.sort((a, b) => a.khz - b.khz || a.call.localeCompare(b.call));
 }
 
-/** Le frequenze raggruppate per banda (dalla piu' bassa), ognuna gia' ordinata per frequenza. */
-export function wefaxGroups(): { band: number; presets: WefaxPreset[] }[] {
-  const groups: { band: number; presets: WefaxPreset[] }[] = [];
-  for (const p of wefaxPresets()) {
-    const last = groups[groups.length - 1];
-    if (last && last.band === p.band) last.presets.push(p);
-    else groups.push({ band: p.band, presets: [p] });
+export interface WefaxGroup {
+  band: number;
+  /** Etichetta scelta dall'utente; senza, il gruppo si chiama «<band> MHz». */
+  label?: string;
+  presets: WefaxPreset[];
+}
+
+/**
+ * Le frequenze raggruppate per banda (dalla piu' bassa), ognuna gia' ordinata per frequenza. Di base l'elenco di fabbrica; le voci con
+ * un'etichetta di banda dell'utente finiscono nel loro gruppo, messo nell'ordine della sua frequenza piu' bassa.
+ */
+export function wefaxGroups(presets: readonly WefaxPreset[] = wefaxPresets()): WefaxGroup[] {
+  const sorted = [...presets].sort((a, b) => a.khz - b.khz || a.call.localeCompare(b.call));
+  const byKey = new Map<string, WefaxGroup>();
+  for (const p of sorted) {
+    const key = p.bandLabel ? `L:${p.bandLabel.toLowerCase()}` : `B:${p.band}`;
+    const g = byKey.get(key);
+    if (g) g.presets.push(p);
+    else byKey.set(key, p.bandLabel ? { band: p.band, label: p.bandLabel, presets: [p] } : { band: p.band, presets: [p] });
   }
-  return groups;
+  return [...byKey.values()];
 }
 
 /** La frequenza come si legge: «3 855» kHz o «13 882,5» kHz (virgola decimale solo se serve). */
@@ -91,7 +105,7 @@ export function formatKhz(khz: number): string {
 }
 
 /** Il preset su cui e' la radio ora (entro 150 Hz), se c'e'. */
-export function presetAt(dialHz: number): WefaxPreset | null {
+export function presetAt(dialHz: number, presets: readonly WefaxPreset[] = wefaxPresets()): WefaxPreset | null {
   if (dialHz <= 0) return null;
-  return wefaxPresets().find((p) => Math.abs(p.dialHz - dialHz) <= 150) ?? null;
+  return presets.find((p) => Math.abs(p.dialHz - dialHz) <= 150) ?? null;
 }

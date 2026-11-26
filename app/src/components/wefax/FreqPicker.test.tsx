@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectivePresets, saveEntry, EMPTY_STATE } from '../../lib/wefaxFreqs';
 import { wefaxGroups, wefaxPresets } from '../../lib/wefaxStations';
 import { FreqPicker } from './FreqPicker';
 
@@ -34,5 +35,13 @@ describe('FreqPicker', () => {
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('mostra le frequenze dell utente raggruppate anche sotto una banda nuova', () => {
+    const presets = effectivePresets(saveEntry(EMPTY_STATE, null, { call: 'IU3ABC', place: 'Test', khz: 6000, band: 'Mie' }));
+    render(<FreqPicker groups={wefaxGroups(presets)} value="" onSelect={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Stazione e frequenza' }));
+    const group = screen.getByRole('group', { name: 'Mie' });
+    expect(group).toHaveTextContent('IU3ABC Test');
   });
 });

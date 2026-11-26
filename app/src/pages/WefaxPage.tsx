@@ -17,6 +17,7 @@ import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
 import { rememberDialBeforeReceiveOnly } from '../lib/modeRetune';
+import { effectivePresets, useWefaxFreq } from '../lib/wefaxFreqs';
 import { presetAt, wefaxGroups, type WefaxPreset } from '../lib/wefaxStations';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
@@ -120,8 +121,10 @@ function WefaxBody({ solo }: { solo: boolean }) {
   const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
   // la scelta resta visibile anche se la radio non ha ancora (o non puo') cambiare frequenza
   const [chosen, setChosen] = useState(() => lastWefaxId());
-  const current = presetAt(dialHz);
-  const groups = wefaxGroups();
+  // le frequenze sono quelle dell'utente (Impostazioni › WEFAX › Frequenze), di base quelle di fabbrica
+  const presets = effectivePresets(useWefaxFreq());
+  const current = presetAt(dialHz, presets);
+  const groups = wefaxGroups(presets);
 
   // scegliendo una stazione si impostano anche IOC e righe al minuto di quella stazione: il ricevitore non riconosce l'IOC da solo
   // (con IOC sbagliato l'immagine ha la larghezza e il tono di avvio sbagliati) e le righe al minuto di partenza sono quelle dell'IOC
