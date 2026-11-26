@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.357',
+    released: '2026-11-26T21:18:43Z',
+    kind: 'new',
+    title: [
+      'Frequenze WEFAX tue, BIGScan regolabile e altro',
+      'Your own WEFAX frequencies, adjustable BIGScan and more',
+      'Eigene WEFAX-Frequenzen, einstellbares BIGScan und mehr',
+      'Tes fréquences WEFAX, BIGScan réglable et plus',
+      'Tus frecuencias WEFAX, BIGScan ajustable y más',
+      'As tuas frequências WEFAX, BIGScan ajustável e mais',
+    ],
+    text: [
+      'WEFAX: in Impostazioni › Modi › WEFAX › Frequenze c’è una tabella per cambiare, cancellare e aggiungere le frequenze (anche bande nuove) che compaiono nel menu della pagina. BIGScan: sensibilità Alta, Media o Bassa nelle impostazioni del modo (CW e PSK), e tasto destro sulla cascata › «Che modo è?» per un suggerimento del modo. ARRL 10 Meter: i moltiplicatori contati per modo (CW e fonia). Radio: con «Nessuno» un pulsante imposta il solo PTT su RTS o DTR (Hamlib Dummy), e l’avviso sulla velocità delle Icom è meno categorico. WebView2: messaggi anche in olandese e russo.',
+      'WEFAX: Settings › Modes › WEFAX › Frequencies has a table to change, delete and add the frequencies (new bands too) that appear in the page menu. BIGScan: High, Medium or Low sensitivity in the mode settings (CW and PSK), and right click on the waterfall › “What mode is this?” for a mode suggestion. ARRL 10 Meter: multipliers counted per mode (CW and phone). Radio: with “None” a button sets PTT only on RTS or DTR (Hamlib Dummy), and the Icom speed notice is less strict. WebView2: messages also in Dutch and Russian.',
+      'WEFAX: Unter Einstellungen › Modi › WEFAX › Frequenzen gibt es eine Tabelle zum Ändern, Löschen und Hinzufügen der Frequenzen (auch neue Bänder), die im Menü der Seite erscheinen. BIGScan: Empfindlichkeit Hoch, Mittel oder Niedrig in den Moduseinstellungen (CW und PSK) und Rechtsklick im Wasserfall › „Welcher Modus ist das?“ für einen Modusvorschlag. ARRL 10 Meter: Multiplikatoren nach Betriebsart gezählt (CW und Fonie). Funkgerät: Bei „Keins“ stellt eine Schaltfläche nur das PTT über RTS oder DTR ein (Hamlib Dummy), und der Hinweis zur Icom-Geschwindigkeit ist weniger streng. WebView2: Meldungen auch auf Niederländisch und Russisch.',
+      'WEFAX : dans Réglages › Modes › WEFAX › Fréquences il y a un tableau pour changer, supprimer et ajouter les fréquences (même de nouvelles bandes) qui apparaissent dans le menu de la page. BIGScan : sensibilité Haute, Moyenne ou Basse dans les réglages du mode (CW et PSK), et clic droit sur la cascade › « Quel mode est-ce ? » pour une suggestion de mode. ARRL 10 Meter : multiplicateurs comptés par mode (CW et phonie). Radio : avec « Aucun » un bouton règle seulement le PTT sur RTS ou DTR (Hamlib Dummy), et l’avis sur la vitesse des Icom est moins catégorique. WebView2 : messages aussi en néerlandais et en russe.',
+      'WEFAX: en Ajustes › Modos › WEFAX › Frecuencias hay una tabla para cambiar, borrar y añadir las frecuencias (también bandas nuevas) que aparecen en el menú de la página. BIGScan: sensibilidad Alta, Media o Baja en los ajustes del modo (CW y PSK), y clic derecho en la cascada › «¿Qué modo es?» para una sugerencia de modo. ARRL 10 Meter: multiplicadores contados por modo (CW y fonía). Radio: con «Ninguno» un botón configura solo el PTT en RTS o DTR (Hamlib Dummy), y el aviso sobre la velocidad de los Icom es menos tajante. WebView2: mensajes también en neerlandés y ruso.',
+      'WEFAX: em Definições › Modos › WEFAX › Frequências há uma tabela para alterar, apagar e acrescentar as frequências (também bandas novas) que aparecem no menu da página. BIGScan: sensibilidade Alta, Média ou Baixa nas definições do modo (CW e PSK), e clique direito na cascata › «Que modo é este?» para uma sugestão de modo. ARRL 10 Meter: multiplicadores contados por modo (CW e fonia). Rádio: com «Nenhum» um botão configura só o PTT em RTS ou DTR (Hamlib Dummy), e o aviso sobre a velocidade dos Icom é menos categórico. WebView2: mensagens também em neerlandês e russo.',
+    ],
+  },
+  {
     version: '0.11.356',
     released: '2026-11-26T19:33:48Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Dès que arrive le signal d’une nouvelle carte, la carte précédente disparaît de la vue. En regardant les cartes enregistrées en grand, un petit repère vert « Réception en cours » montre que la réception continue.',
       'En cuanto llega la señal de un mapa nuevo, el mapa anterior desaparece de la vista. Al mirar los mapas guardados en grande, una marca verde «Recepción en curso» muestra que la recepción continúa.',
       'Assim que chega o sinal de uma carta nova, a carta anterior desaparece da vista. Ao ver as cartas guardadas em grande, um sinal verde «Receção em curso» mostra que a receção continua.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'fixed',
-    title: [
-      'Pagina Log sempre aggiornata',
-      'Log page always up to date',
-      'Log-Seite immer aktuell',
-      'Page Log toujours à jour',
-      'Página Log siempre actualizada',
-      'Página Log sempre atualizada',
-    ],
-    text: [
-      'La pagina Log si aggiorna da sola quando arriva un QSO da un altro log (Log4OM, OpsLog, HRD…) o ne registri uno. Dopo una cancellazione le righe rimaste non restano più spente.',
-      'The Log page now refreshes by itself when a QSO arrives from another log (Log4OM, OpsLog, HRD…) or when you log one. After a deletion the remaining rows no longer stay dimmed.',
-      'Die Log-Seite aktualisiert sich jetzt von selbst, wenn ein QSO aus einem anderen Log (Log4OM, OpsLog, HRD…) ankommt oder du eines einträgst. Nach einem Löschen bleiben die übrigen Zeilen nicht mehr abgedunkelt.',
-      'La page Log se met à jour toute seule quand un QSO arrive d’un autre log (Log4OM, OpsLog, HRD…) ou quand vous en enregistrez un. Après une suppression, les lignes restantes ne restent plus grisées.',
-      'La página Log se actualiza sola cuando llega un QSO de otro log (Log4OM, OpsLog, HRD…) o registras uno. Tras un borrado, las filas restantes ya no quedan apagadas.',
-      'A página Log atualiza-se sozinha quando chega um QSO de outro log (Log4OM, OpsLog, HRD…) ou registas um. Depois de uma eliminação, as linhas restantes já não ficam apagadas.',
     ],
   },
 ];
