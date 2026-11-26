@@ -283,7 +283,10 @@ export const useStation = create<StationState>((set) => ({
             text: message,
             tag: null,
           };
-          return { status, ...session, txLog: [row, ...s.txLog].slice(0, MAX_TX_LOG), ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
+          // messaggio sostituito a meta' della stessa trasmissione (decodifica tardiva, Pere #113): resta una riga sola, quella nuova
+          const replaced = !!s.status?.transmitting && typeof status.tx_slot_ms === 'number' && s.txLog[0]?.time_ms === status.tx_slot_ms;
+          const txLog = replaced ? [row, ...s.txLog.slice(1)] : [row, ...s.txLog].slice(0, MAX_TX_LOG);
+          return { status, ...session, txLog, ...keep, ...settledPending(s, status.dx_call), ...(Object.keys(cleared).length > 0 ? { decodes: [], txLog: [row] } : {}) };
         });
         break;
       }

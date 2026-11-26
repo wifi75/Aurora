@@ -60,6 +60,17 @@ describe('useStation', () => {
     expect(useStation.getState().txLog[0]?.time_ms).toBe(slot);
   });
 
+  it("a message replaced during the same transmission leaves one Tx row (late decode, #113)", () => {
+    const { apply } = useStation.getState();
+    const slot = (18 * 3600 + 8 * 60) * 1000;
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'LY7T EA3CUU JN12', tx_slot_ms: slot });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'LY7T EA3CUU R-04', tx_slot_ms: slot });
+    expect(useStation.getState().txLog.map((d) => d.text)).toEqual(['LY7T EA3CUU R-04']);
+    apply({ type: 'status', ...status, transmitting: false, tx_message: 'LY7T EA3CUU R-04' });
+    apply({ type: 'status', ...status, transmitting: true, tx_message: 'LY7T EA3CUU 73', tx_slot_ms: slot + 30_000 });
+    expect(useStation.getState().txLog).toHaveLength(2);
+  });
+
   it("without the engine time (old engine) the Tx row falls back to the browser clock", () => {
     const { apply } = useStation.getState();
     const spy = vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 10, 24, 14, 16, 16));

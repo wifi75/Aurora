@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Finestra RX con decodifica Profonda (Pere EA3CUU, #113): se il messaggio Tx viene sostituito a meta' della stessa trasmissione (decodifica tardiva) resta una riga Tx sola, quella nuova, e non due nello stesso periodo (`state/station.ts`, prova in `station.test.ts`).
 - Split acceso (pile-up), il DX che risponde a un altro non ferma piu' la trasmissione (Pere EA3CUU, #113, pacchetto 6CBCB1BA, OH0K): `SeqHaltTxReplyOther` e banda di guardia valgono solo con Split spento; opzione `split_active` in `qso-native` aggiornata dal motore a ogni periodo (`engine-native/src/tx.rs`), prova `dx_answers_someone_else_with_split_keeps_calling`.
 
 ## 0.11.353 - 2026-11-25
