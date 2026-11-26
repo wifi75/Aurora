@@ -411,8 +411,7 @@ impl ThrobRx {
             })
             .collect();
         let tones = v.tones();
-        // l'AFC recupera fino a mezzo passo fra i toni piu' 4 Hz
-        let afc_limit_hz = (tones[1] - tones[0]) / 2.0 + 4.0;
+        let afc_limit_hz = afc_limit_hz(v);
         ThrobRx {
             v,
             reverse,
@@ -574,6 +573,57 @@ impl ThrobRx {
     /// La soglia dello squelch in dB.
     pub fn threshold_db() -> f32 {
         (20.0 * SQUELCH_RATIO.log10()) as f32
+    }
+}
+
+impl ThrobRx {
+    /// Porta l'ascolto su `hz` (centro scelto e centro dell'AFC).
+    pub fn steer(&mut self, hz: f64) {
+        self.base_hz = hz;
+        self.centre_hz = hz;
+    }
+}
+
+/// Di quanto l'AFC di una variante puo' allontanarsi dal centro: mezzo passo fra i toni piu' 4 Hz (oltre, la decisione sbaglia tono).
+pub fn afc_limit_hz(v: ThrobVariant) -> f64 {
+    let t = v.tones();
+    (t[1] - t[0]) / 2.0 + 4.0
+}
+
+/// Il ricevitore ad audio a 12 kHz (decimatore 3:2 davanti a [`ThrobRx`]), per il servizio dei modi testuali.
+pub struct ThrobLink {
+    rx: ThrobRx,
+    decimator: crate::resample_8k::Decimator,
+    buf: Vec<f32>,
+}
+
+impl ThrobLink {
+    pub fn new(v: ThrobVariant, centre_hz: f32, reverse: bool, afc: bool) -> Self {
+        ThrobLink { rx: ThrobRx::new(v, f64::from(centre_hz), reverse, afc), decimator: crate::resample_8k::Decimator::new(), buf: Vec::new() }
+    }
+
+    /// Audio a 12 kHz in, i caratteri nuovi in uscita.
+    pub fn process(&mut self, audio: &[f32]) -> String {
+        self.buf.clear();
+        self.decimator.process(audio, &mut self.buf);
+        self.rx.process(&self.buf);
+        self.rx.take().into_iter().map(char::from).collect()
+    }
+
+    pub fn frequency(&self) -> f32 {
+        self.rx.frequency() as f32
+    }
+
+    pub fn snr_db(&self) -> f32 {
+        self.rx.snr_db()
+    }
+
+    pub fn signal(&self) -> (f32, bool) {
+        self.rx.signal()
+    }
+
+    pub fn steer(&mut self, hz: f32) {
+        self.rx.steer(f64::from(hz));
     }
 }
 

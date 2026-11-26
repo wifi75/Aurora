@@ -160,11 +160,13 @@ fn jtdx_field(out: &mut String, name: &str, value: &str) {
 }
 
 /// Il modo ADIF dei modi che la specifica tratta come sottomodi (`AdifQso.cpp` di WSJT-X 3.3.0-beta6): FT4, Q65, FST4, FST4W in `MFSK`, PSK31, PSK63 e QPSK31
-/// in `PSK`. `None` per i modi che sono gia' un modo ADIF (FT8, JT65, JT9, MSK144, RTTY, CW, SSTV...).
+/// in `PSK`, THROB1-4 e THRBX1-4 in `THRB`. `None` per i modi che sono gia' un modo ADIF (FT8, JT65, JT9, MSK144, RTTY, CW, SSTV...).
 pub fn adif_parent_mode(mode: &str) -> Option<&'static str> {
     match mode {
         "FT4" | "Q65" | "FST4" | "FST4W" | "JTTY" => Some("MFSK"),
         "PSK31" | "PSK63" | "PSK125" | "QPSK31" => Some("PSK"),
+        // Throb e ThrobX: sottomodi di THRB (ADIF 3.1.4)
+        "THROB1" | "THROB2" | "THROB4" | "THRBX" | "THRBX1" | "THRBX2" | "THRBX4" => Some("THRB"),
         _ => None,
     }
 }

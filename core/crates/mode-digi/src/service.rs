@@ -123,11 +123,22 @@ pub enum DigiMode {
     Contestia,
     /// QPSK31: PSK a quattro fasi con codice convoluzionale (vedi `qpsk`); in LSB le fasi girano al contrario.
     Qpsk31,
+    /// Throb e ThrobX (coppie di toni lentissime, vedi `throb`): la variante in [`DigiSettings::throb`]; in LSB i toni si rovesciano.
+    Throb,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 8] =
-        [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb, DigiMode::Olivia, DigiMode::Contestia, DigiMode::Qpsk31];
+    pub const ALL: [DigiMode; 9] = [
+        DigiMode::Psk31,
+        DigiMode::Psk63,
+        DigiMode::Rtty,
+        DigiMode::Cw,
+        DigiMode::Ssb,
+        DigiMode::Olivia,
+        DigiMode::Contestia,
+        DigiMode::Qpsk31,
+        DigiMode::Throb,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -139,6 +150,7 @@ impl DigiMode {
             DigiMode::Olivia => "olivia",
             DigiMode::Contestia => "contestia",
             DigiMode::Qpsk31 => "qpsk31",
+            DigiMode::Throb => "throb",
         }
     }
 
@@ -152,6 +164,7 @@ impl DigiMode {
             DigiMode::Olivia => "Olivia",
             DigiMode::Contestia => "Contestia",
             DigiMode::Qpsk31 => "QPSK31",
+            DigiMode::Throb => "Throb",
         }
     }
 
@@ -164,7 +177,7 @@ impl DigiMode {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
             DigiMode::Qpsk31 => Some(PskMode::Qpsk31),
-            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia => None,
+            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia | DigiMode::Throb => None,
         }
     }
 
@@ -416,6 +429,8 @@ pub struct DigiSettings {
     pub olivia: OliviaSettings,
     /// Contestia: toni, banda, sincronismo e squelch.
     pub contestia: OliviaSettings,
+    /// Throb: la variante (Throb a 1, 2, 4 simboli al secondo o ThrobX).
+    pub throb: crate::throb::ThrobVariant,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -513,6 +528,7 @@ impl Default for DigiSettings {
             passband_hz: 0.0,
             olivia: OliviaSettings::olivia(),
             contestia: OliviaSettings::contestia(),
+            throb: crate::throb::ThrobVariant::default(),
         }
     }
 }
@@ -717,6 +733,8 @@ impl DigiSettings {
             (true, _) => self.passband_hz,
             // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo
             (false, Some((_, o))) => o.bandwidth_hz as f32 * 1.2,
+            // Throb: dal primo all'ultimo tono piu' il margine dell'AFC
+            (false, None) if self.mode == DigiMode::Throb => (self.throb.bandwidth_hz() + 2.0 * crate::throb::afc_limit_hz(self.throb) + 20.0) as f32,
             (false, None) => crate::notch::default_passband(self.mode, self.rtty_shift_hz, self.rtty_baud),
         };
         Some((self.rx_freq_hz - w / 2.0, self.rx_freq_hz + w / 2.0))
@@ -732,6 +750,7 @@ impl DigiSettings {
             DigiMode::Ssb => 0.0,
             // il ricevitore cerca da solo il segnale entro il margine di sincronismo: l'AFC non lo sposta
             DigiMode::Olivia | DigiMode::Contestia => 0.0,
+            DigiMode::Throb => crate::throb::afc_limit_hz(self.throb) as f32,
         }
     }
 
@@ -1318,7 +1337,7 @@ impl DigiService {
     /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
     /// Olivia e Contestia con toni e banda fuori dalla banda audio danno un'onda vuota.
     pub fn wave_of(text: &str, s: &DigiSettings, lsb: bool) -> Vec<f32> {
-        if s.olivia_settings().is_some() {
+        if s.olivia_settings().is_some() || s.mode == DigiMode::Throb {
             return live::modulator(s, lsb).map(|mut m| crate::tx_stream::whole(&mut m, text)).unwrap_or_default();
         }
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
@@ -1486,6 +1505,8 @@ enum Demod {
     CwFast(Box<CwHybrid>, Option<String>),
     /// Olivia e Contestia (ricevitore a 8 kHz dietro il decimatore).
     Olivia(Box<crate::olivia_link::OliviaRx>),
+    /// Throb e ThrobX (ricevitore a 8 kHz dietro il decimatore).
+    Throb(Box<crate::throb::ThrobLink>),
     /// SSB: nessuna decodifica, solo la frequenza scelta.
     Off(f32),
 }
@@ -1505,6 +1526,10 @@ impl Demod {
                     Demod::Off(s.rx_freq_hz)
                 }
             };
+        }
+        if s.mode == DigiMode::Throb {
+            // in LSB i toni arrivano rovesciati; lo squelch e' sempre acceso (nel rumore il ricevitore sceglierebbe comunque due toni)
+            return Demod::Throb(Box::new(crate::throb::ThrobLink::new(s.throb, s.rx_freq_hz, lsb, s.afc_on)));
         }
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
@@ -1555,6 +1580,7 @@ impl Demod {
             Demod::Cw(d) => d.frequency(),
             Demod::CwFast(h, _) => h.fine().frequency(),
             Demod::Olivia(d) => d.frequency(),
+            Demod::Throb(d) => d.frequency(),
             Demod::Off(hz) => *hz,
         }
     }
@@ -1567,6 +1593,7 @@ impl Demod {
             Demod::Cw(d) => Some(d.snr_db()),
             Demod::CwFast(h, _) => Some(h.fine().snr_db()),
             Demod::Olivia(d) => Some(d.snr_db()),
+            Demod::Throb(d) => Some(d.snr_db()),
             Demod::Off(_) => None,
         }
     }
@@ -1577,7 +1604,7 @@ impl Demod {
             Demod::Psk(d) => (d.imd_db(), Some(d.metric()), None),
             Demod::Cw(d) => (None, None, Some(d.wpm())),
             Demod::CwFast(h, _) => (None, None, Some(h.fine().wpm())),
-            Demod::Rtty(_) | Demod::Olivia(_) | Demod::Off(_) => (None, None, None),
+            Demod::Rtty(_) | Demod::Olivia(_) | Demod::Throb(_) | Demod::Off(_) => (None, None, None),
         }
     }
 
@@ -1598,6 +1625,7 @@ impl Demod {
             Demod::CwFast(h, _) => h.steer(hz),
             // il sincronismo cerca da solo il segnale entro il suo margine
             Demod::Olivia(_) => {}
+            Demod::Throb(d) => d.steer(hz),
             Demod::Off(f) => *f = hz,
         }
     }
@@ -1611,6 +1639,7 @@ impl Demod {
             Demod::Cw(d) => (Some(d.snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
             Demod::CwFast(h, _) => (Some(h.fine().snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
             Demod::Olivia(d) => (Some(d.snr_db()), (d.threshold_db(), d.threshold_db() - 3.0)),
+            Demod::Throb(d) => (Some(d.snr_db()), (crate::throb::ThrobRx::threshold_db(), crate::throb::ThrobRx::threshold_db() - 3.0)),
             Demod::Off(_) => (None, (0.0, 0.0)),
         }
     }
@@ -1623,6 +1652,7 @@ impl Demod {
             Demod::Cw(d) => d.signal(),
             Demod::CwFast(h, _) => h.fine().signal(),
             Demod::Olivia(d) => d.signal(),
+            Demod::Throb(d) => d.signal(),
             Demod::Off(_) => (-90.0, false),
         }
     }
@@ -1654,6 +1684,7 @@ impl Demod {
                 (out.fixed.iter().map(|s| char::from(s.ch)).collect(), Vec::new())
             }
             Demod::Olivia(d) => (d.process(audio), Vec::new()),
+            Demod::Throb(d) => (d.process(audio), Vec::new()),
             Demod::Off(_) => (String::new(), Vec::new()),
         }
     }
@@ -1998,6 +2029,29 @@ mod tests {
             let mut wrong = Demod::new(&s, !lsb);
             let bad = wrong.process(&wave).0;
             assert!(!bad.contains("IU3ABC"), "lsb {lsb}, banda sbagliata: {bad:?}");
+        }
+    }
+
+    /// Throb (ThrobX2 e Throb4) dal servizio in USB e in LSB; le impostazioni di prima senza il campo valgono Throb2.
+    #[test]
+    fn throb_trasmesso_e_ricevuto_dal_servizio_in_usb_e_in_lsb() {
+        let old: DigiSettings = serde_json::from_str(r#"{"mode":"psk31"}"#).expect("json");
+        assert_eq!((old.mode, old.throb), (DigiMode::Psk31, crate::throb::ThrobVariant::Throb2));
+        let t: DigiSettings = serde_json::from_str(r#"{"mode":"throb","throb":"throbx2"}"#).expect("json");
+        assert_eq!((t.mode, t.throb), (DigiMode::Throb, crate::throb::ThrobVariant::ThrobX2));
+        for v in [crate::throb::ThrobVariant::ThrobX2, crate::throb::ThrobVariant::Throb4] {
+            let s = DigiSettings { mode: DigiMode::Throb, throb: v, rx_freq_hz: 1200.0, tx_freq_hz: 1200.0, ..DigiSettings::default() };
+            for lsb in [false, true] {
+                let mut d = Demod::new(&s, lsb);
+                assert!(matches!(d, Demod::Throb(..)));
+                let mut wave = vec![0.0; 6000];
+                wave.extend(DigiService::wave_of("CQ DE IU3ABC K", &s, lsb));
+                wave.extend(vec![0.0; 24_000]);
+                let out: String = wave.chunks(1200).map(|b| d.process(b).0).collect();
+                assert_eq!(out.trim(), "CQ DE IU3ABC K", "{v:?} lsb {lsb}");
+                let bad = Demod::new(&s, !lsb).process(&wave).0;
+                assert!(!bad.contains("IU3ABC"), "{v:?} lsb {lsb}, banda sbagliata: {bad:?}");
+            }
         }
     }
 

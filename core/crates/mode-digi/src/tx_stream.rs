@@ -25,6 +25,7 @@ pub enum TxModulator {
     Psk(PskTx),
     Cw(CwTx),
     Olivia(Box<OliviaTx>),
+    Throb(Box<ThrobStream>),
 }
 
 impl TxModulator {
@@ -54,9 +55,15 @@ impl TxModulator {
         OliviaTx::new(params).map(|m| TxModulator::Olivia(Box::new(m)))
     }
 
+    /// Throb o ThrobX centrato a `freq_hz`; `reverse`: la radio in LSB (toni rovesciati).
+    pub fn throb(v: crate::throb::ThrobVariant, freq_hz: f32, reverse: bool) -> Self {
+        TxModulator::Throb(Box::new(ThrobStream::new(v, freq_hz, reverse)))
+    }
+
     /// L'inizio della trasmissione.
     pub fn preamble(&mut self) -> Vec<f32> {
         match self {
+            TxModulator::Throb(m) => m.preamble(),
             TxModulator::Rtty(m) => m.preamble(),
             TxModulator::Psk(m) => m.preamble(),
             TxModulator::Cw(m) => m.preamble(),
@@ -71,6 +78,7 @@ impl TxModulator {
             TxModulator::Psk(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Cw(m) => m.token(token),
             TxModulator::Olivia(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
+            TxModulator::Throb(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
         }
     }
 
@@ -90,6 +98,7 @@ impl TxModulator {
             TxModulator::Psk(m) => m.idle(),
             TxModulator::Cw(m) => m.idle(),
             TxModulator::Olivia(m) => m.idle(),
+            TxModulator::Throb(m) => m.idle(),
         }
     }
 
@@ -100,6 +109,7 @@ impl TxModulator {
             TxModulator::Psk(m) => m.postamble(),
             TxModulator::Cw(m) => m.postamble(),
             TxModulator::Olivia(m) => m.postamble(),
+            TxModulator::Throb(m) => m.postamble(),
         }
     }
 
@@ -361,6 +371,52 @@ impl CwTx {
     }
 }
 
+/// Throb e ThrobX a flusso: ogni carattere (o attesa) e' uno o due simboli a 8 kHz che l'interpolatore 2:3 porta a 12 kHz; alla fine
+/// esce anche la coda del filtro. Attesa e spazio di ThrobX restano nello stato del trasmettitore fra un pezzo e l'altro.
+pub struct ThrobStream {
+    tx: crate::throb::ThrobTx,
+    interp: Interpolator,
+}
+
+impl ThrobStream {
+    fn new(v: crate::throb::ThrobVariant, freq_hz: f32, reverse: bool) -> Self {
+        Self { tx: crate::throb::ThrobTx::new(v, f64::from(freq_hz), 1.0, reverse), interp: Interpolator::new() }
+    }
+
+    fn to_12k(&mut self, audio: &[f32]) -> Vec<f32> {
+        let mut out = Vec::with_capacity(audio.len() * 3 / 2 + 2);
+        self.interp.process(audio, &mut out);
+        for v in &mut out {
+            *v *= AMP;
+        }
+        out
+    }
+
+    fn preamble(&mut self) -> Vec<f32> {
+        let a = self.tx.preamble();
+        self.to_12k(&a)
+    }
+
+    fn char(&mut self, c: u8) -> Vec<f32> {
+        let a = self.tx.char(c);
+        self.to_12k(&a)
+    }
+
+    fn idle(&mut self) -> Vec<f32> {
+        let a = self.tx.idle();
+        self.to_12k(&a)
+    }
+
+    fn postamble(&mut self) -> Vec<f32> {
+        let a = self.tx.postamble();
+        let mut out = self.to_12k(&a);
+        let mut rest = Vec::new();
+        self.interp.flush(&mut rest);
+        out.extend(rest.into_iter().map(|v| v * AMP));
+        out
+    }
+}
+
 /// Olivia e Contestia a flusso: i caratteri si raccolgono finche' non riempiono un blocco FEC (uno per bit del simbolo), poi il blocco
 /// diventa audio a 8 kHz e l'interpolatore 2:3 lo porta a 12 kHz. Finche' il blocco non e' pieno un carattere non da' audio. In attesa
 /// (nessun testo) il blocco a meta' si completa con caratteri nulli (chi riceve non li stampa) e parte, o parte un blocco tutto nullo; alla
@@ -455,6 +511,35 @@ mod tests {
     fn psk_a_pezzi_e_come_l_onda_intera() {
         for mode in [PskMode::Psk31, PskMode::Psk63] {
             assert_eq!(whole(&mut TxModulator::psk(mode, 1500.0), TEXT), psk::modulate(TEXT.as_bytes(), 1500.0, mode, AMP));
+        }
+    }
+
+    /// Throb a pezzi (anche l'attesa in mezzo, che in ThrobX scambia attesa e spazio): lo stesso audio del trasmettitore intero portato a
+    /// 12 kHz.
+    #[test]
+    fn throb_a_pezzi_e_come_l_onda_intera() {
+        use crate::throb::{ThrobTx, ThrobVariant};
+        for v in [ThrobVariant::Throb4, ThrobVariant::ThrobX4] {
+            let mut m = TxModulator::throb(v, 1500.0, false);
+            let mut got = m.preamble();
+            got.extend(m.token("A"));
+            got.extend(m.token(" "));
+            got.extend(m.idle());
+            got.extend(m.token("B"));
+            got.extend(m.postamble());
+            let mut t = ThrobTx::new(v, 1500.0, 1.0, false);
+            let mut a8 = t.preamble();
+            a8.extend(t.char(b'A'));
+            a8.extend(t.char(b' '));
+            a8.extend(t.idle());
+            a8.extend(t.char(b'B'));
+            a8.extend(t.postamble());
+            let mut i = Interpolator::new();
+            let mut want = Vec::new();
+            i.process(&a8, &mut want);
+            i.flush(&mut want);
+            let want: Vec<f32> = want.into_iter().map(|x| x * AMP).collect();
+            assert_eq!(got, want, "{v:?}");
         }
     }
 
