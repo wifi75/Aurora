@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Prestazioni (revisione del 26/11, segue): ricampionatore del motore a fasi precalcolate anche a 44,1 kHz (`resample.rs`, niente seno e coseno per campione); il rivelatore di click dell'analizzatore lavora solo con l'anti-click acceso (`analyzer.rs`); storico delle decodifiche con WAL e `synchronous = NORMAL` (`decode-history`); filtro SSTV calcolato solo nei punti che servono (`mode-sstv/resample.rs`, stessi bit); buffer dei periodi lunghi ridotto a blocchi di un secondo (`slots.rs`). Non fatta la FFT della cascata a 44,1 kHz: sposterebbe le frequenze dei canali.
 - Prestazioni (revisione del 26/11): la lista delle decodifiche e' in `memo` (il telefono non la ricalcola piu' a ogni lettura dello S-meter) e la cascata WebGL2/WebGPU smette di ridisegnare a 60 fotogrammi al secondo quando non arrivano righe nuove (`DecodeList.tsx`, `render/webgl2.ts`, `render/webgpu.ts`).
 - SSTV, scheda Componi e trasmetti: il pannello a schede (Foto, Ritocchi, Livelli, Modelli) sta a sinistra e l'anteprima a destra (richiesta del proprietario; `sstv.css`, solo sopra gli 820 px). Non visto sullo schermo nei due temi.
 - Registro: ogni volta che il DX cambia (doppio clic, DX scritto a mano, Canc DX, coda, sequenza automatica dopo le decodifiche) una riga `DX cambiato: A -> B (causa)` in `aurora.log` (`engine-native/src/tx.rs`, `note_dx_change`), per capire come arriva un DX che l'operatore non ha scelto (caso SV5AZK).

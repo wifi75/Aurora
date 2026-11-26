@@ -161,7 +161,9 @@ impl SlotAssembler {
         let keep_from_ms = next as f64 - 1000.0;
         let keep_idx = (((keep_from_ms - anchor) * RATE as f64 / 1000.0).floor() as i64).max(self.first_idx as i64) as u64;
         let drop = (keep_idx - self.first_idx) as usize;
-        if drop > 0 && drop <= self.buf.len() {
+        // a blocchi da almeno un secondo: con i periodi lunghi (WSPR, FST4W: 120 s, oltre un milione di campioni) il `drain` a ogni blocco da
+        // 40 ms spostava tutto il buffer 25 volte al secondo. Tenere un secondo in piu' non cambia nulla: ogni accesso e' relativo a `first_idx`
+        if drop >= RATE && drop <= self.buf.len() {
             self.buf.drain(..drop);
             self.first_idx = keep_idx;
         }
