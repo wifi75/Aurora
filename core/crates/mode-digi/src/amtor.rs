@@ -471,6 +471,11 @@ impl AmtorRx {
 /// Di quanto l'AFC puo' allontanarsi dal centro scelto (Hz).
 pub const AFC_LIMIT_HZ: f64 = 40.0;
 
+/// Il trasmettitore nel servizio (12 kHz), a flusso.
+pub fn tx_12k(centre_hz: f32, amp: f32, reverse: bool) -> AmtorTx {
+    AmtorTx::new(12_000.0, f64::from(centre_hz), f64::from(amp), reverse)
+}
+
 /// Il ricevitore nel servizio (audio a 12 kHz, nessun ricampionamento: 120 campioni per bit).
 pub struct AmtorLink {
     rx: AmtorRx,

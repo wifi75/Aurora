@@ -26,6 +26,7 @@ pub enum TxModulator {
     Cw(CwTx),
     Olivia(Box<OliviaTx>),
     Throb(Box<ThrobStream>),
+    Amtor(Box<crate::amtor::AmtorTx>),
 }
 
 impl TxModulator {
@@ -60,9 +61,15 @@ impl TxModulator {
         TxModulator::Throb(Box::new(ThrobStream::new(v, freq_hz, reverse)))
     }
 
+    /// Amtor FEC centrato a `freq_hz`; `reverse`: la radio in LSB (mark e space scambiati).
+    pub fn amtor(freq_hz: f32, reverse: bool) -> Self {
+        TxModulator::Amtor(Box::new(crate::amtor::tx_12k(freq_hz, AMP, reverse)))
+    }
+
     /// L'inizio della trasmissione.
     pub fn preamble(&mut self) -> Vec<f32> {
         match self {
+            TxModulator::Amtor(m) => m.preamble(),
             TxModulator::Throb(m) => m.preamble(),
             TxModulator::Rtty(m) => m.preamble(),
             TxModulator::Psk(m) => m.preamble(),
@@ -79,6 +86,7 @@ impl TxModulator {
             TxModulator::Cw(m) => m.token(token),
             TxModulator::Olivia(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Throb(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
+            TxModulator::Amtor(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
         }
     }
 
@@ -99,6 +107,7 @@ impl TxModulator {
             TxModulator::Cw(m) => m.idle(),
             TxModulator::Olivia(m) => m.idle(),
             TxModulator::Throb(m) => m.idle(),
+            TxModulator::Amtor(m) => m.idle(),
         }
     }
 
@@ -110,6 +119,7 @@ impl TxModulator {
             TxModulator::Cw(m) => m.postamble(),
             TxModulator::Olivia(m) => m.postamble(),
             TxModulator::Throb(m) => m.postamble(),
+            TxModulator::Amtor(m) => m.postamble(),
         }
     }
 
@@ -540,6 +550,26 @@ mod tests {
             i.flush(&mut want);
             let want: Vec<f32> = want.into_iter().map(|x| x * AMP).collect();
             assert_eq!(got, want, "{v:?}");
+        }
+    }
+
+    /// Amtor a pezzi (con l'attesa in mezzo) e' l'onda del trasmettitore con gli stessi passi.
+    #[test]
+    fn amtor_a_pezzi_e_come_l_onda_intera() {
+        for rev in [false, true] {
+            let mut m = TxModulator::amtor(1500.0, rev);
+            let mut got = m.preamble();
+            got.extend(m.token("A"));
+            got.extend(m.idle());
+            got.extend(m.token("1"));
+            got.extend(m.postamble());
+            let mut t = crate::amtor::tx_12k(1500.0, AMP, rev);
+            let mut want = t.preamble();
+            want.extend(t.char(b'A'));
+            want.extend(t.idle());
+            want.extend(t.char(b'1'));
+            want.extend(t.postamble());
+            assert_eq!(got, want);
         }
     }
 

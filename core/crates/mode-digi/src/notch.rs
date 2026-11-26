@@ -174,6 +174,8 @@ pub fn default_passband(mode: crate::DigiMode, shift_hz: f32, rtty_baud: f32) ->
         crate::DigiMode::Olivia => 300.0,
         crate::DigiMode::Contestia => 600.0,
         crate::DigiMode::Throb => 120.0,
+        // Amtor: spostamento di 170 Hz piu' due volte i 100 baud
+        crate::DigiMode::Amtor => 370.0,
     }
 }
 
