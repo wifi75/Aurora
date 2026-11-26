@@ -212,9 +212,11 @@ export interface TextContestScore {
   /** QSO non ammessi dalle regole (banda o paese fuori dal contest). */
   esclusi: number;
   /** I moltiplicatori lavorati: tipo (`dxcc`, `cq`, `itu`, `wpx`, `cont`, `area`, `dom`), valore, bande (vuoto = una volta sola). */
-  griglia: { tipo: string; valore: string; bande: string[] }[];
+  griglia: { tipo: string; valore: string; bande: string[]; modi?: string[] }[];
   /** I moltiplicatori che mancano dei tipi con un elenco chiuso. */
   mancanti: { tipo: string; per_banda: boolean; totali: number; valori: string[] }[];
+  /** I moltiplicatori contati per modo (ARRL 10): modo -> moltiplicatori presi in quel modo; assente se nessun moltiplicatore conta per modo. Nelle celle di `griglia`, `modi` sono i modi dove il valore e' stato preso. */
+  molt_per_modo?: Record<string, number>;
   /** Gli ultimi QSO che hanno portato moltiplicatori nuovi (`dxcc:DL`). */
   recenti: { call: string; band: string; time_ms: number; nuovi: string[] }[];
   /** QSO all'ora sugli ultimi 10 minuti, QSO nell'ultima ora, media all'ora. */

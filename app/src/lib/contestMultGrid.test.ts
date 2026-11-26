@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contestBandColor, sortBands } from './contestBandColors';
-import { multGridOf, type MultScore } from './contestMultGrid';
+import { multGridOf, multsByMode, type MultScore } from './contestMultGrid';
 
 const score: MultScore = {
   griglia: [
@@ -56,5 +56,21 @@ describe('colori delle bande', () => {
   });
   it('ordina dalla banda piu bassa', () => {
     expect(sortBands(['10m', '160m', '20m', '80m'])).toEqual(['160m', '80m', '20m', '10m']);
+  });
+});
+
+describe('moltiplicatori per modo (ARRL 10)', () => {
+  it('le celle portano i modi dove il valore e stato preso', () => {
+    const s: MultScore = { griglia: [{ tipo: 'dom', valore: 'CT', bande: [], modi: ['CW', 'SSB'] }, { tipo: 'dom', valore: 'NY', bande: [] }], mancanti: [], recenti: [] };
+    const g = multGridOf(s, 'dom');
+    expect(g.cells.find((c) => c.value === 'CT')?.modes).toEqual(['CW', 'SSB']);
+    expect(g.cells.find((c) => c.value === 'NY')?.modes).toEqual([]);
+  });
+  it('il conteggio per modo e vuoto senza il dato del core', () => {
+    expect(multsByMode({})).toEqual([]);
+    expect(multsByMode({ molt_per_modo: { SSB: 9, CW: 12 } })).toEqual([
+      { mode: 'CW', n: 12 },
+      { mode: 'SSB', n: 9 },
+    ]);
   });
 });

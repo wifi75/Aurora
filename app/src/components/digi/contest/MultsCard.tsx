@@ -39,7 +39,7 @@ export function MultsCard({ score, tipo, pending }: Props) {
           key={c.value}
           role="listitem"
           className={`ctw-mcell${c.worked ? ' on' : ''}${c.fresh ? ' new' : ''}${c.pending ? ' pend' : ''}`}
-          title={c.worked ? (c.bands.length > 0 ? t('ctw.multTip', { value: c.value, bands: c.bands.join(' ') }) : t('ctw.multTipOnce', { value: c.value })) : t('ctw.multTipNo', { value: c.value })}
+          title={(c.worked ? (c.bands.length > 0 ? t('ctw.multTip', { value: c.value, bands: c.bands.join(' ') }) : t('ctw.multTipOnce', { value: c.value })) : t('ctw.multTipNo', { value: c.value })) + (c.modes.length > 0 ? ` (${c.modes.join(' ')})` : '')}
         >
           <b>{c.value}</b>
           {g.perBand ? (

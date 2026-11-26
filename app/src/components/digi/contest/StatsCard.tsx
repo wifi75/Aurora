@@ -1,6 +1,7 @@
 import { useT } from '../../../i18n';
 import type { TextContestScore } from '../../../api/contestTesto';
 import { multSummary } from '../../../lib/contestEntry';
+import { multsByMode } from '../../../lib/contestMultGrid';
 import { multName, scoreLine } from '../ContestStatsDialog';
 
 /** Punti per QSO (la media), una cifra decimale; trattino se non ci sono QSO. */
@@ -13,6 +14,8 @@ export const avgPoints = (punti: number, qso: number): string => (qso > 0 ? (pun
 export function StatsCard({ score: s }: { score: TextContestScore }) {
   const t = useT();
   const mults = multSummary(s).filter((m) => m.perBand !== null);
+  // moltiplicatori per modo (ARRL 10): una riga in piu' solo se il core li da'
+  const byMode = multsByMode(s);
   return (
     <div className="ctw-stats">
       <div className="ctw-score" aria-label={t('ctw.score')}>
@@ -62,6 +65,11 @@ export function StatsCard({ score: s }: { score: TextContestScore }) {
           </tr>
         </tfoot>
       </table>
+      {byMode.length > 0 ? (
+        <p className="ctest-rate" data-testid="ctw-mult-modes">
+          {t('ctest.c.mult')}: {byMode.map((m) => `${m.mode} ${m.n}`).join(' · ')}
+        </p>
+      ) : null}
       {s.errore_script ? (
         <p className="ctest-rate" role="alert">
           {t('ctest.scriptError', { msg: s.errore_script })}

@@ -2,7 +2,7 @@ import { sortBands } from './contestBandColors';
 
 /** Il minimo del punteggio che serve alla scheda di un tipo di moltiplicatore. */
 export interface MultScore {
-  griglia: readonly { tipo: string; valore: string; bande: readonly string[] }[];
+  griglia: readonly { tipo: string; valore: string; bande: readonly string[]; modi?: readonly string[] }[];
   mancanti: readonly { tipo: string; per_banda: boolean; totali: number; valori: readonly string[] }[];
   recenti: readonly { nuovi: readonly string[] }[];
 }
@@ -13,6 +13,8 @@ export interface MultCell {
   worked: boolean;
   /** Le bande dove e' stato lavorato (vuoto se il tipo non conta per banda). */
   bands: string[];
+  /** I modi dove e' stato lavorato, se il moltiplicatore conta per modo (ARRL 10); vuoto altrimenti. */
+  modes: string[];
   /** Portato dall'ultimo QSO che ha dato moltiplicatori nuovi. */
   fresh: boolean;
   /** E' il moltiplicatore del nominativo che si sta scrivendo. */
@@ -43,7 +45,14 @@ export function multGridOf(s: MultScore, tipo: string, pending: ReadonlySet<stri
   const values = Array.from(new Set([...rows.map((r) => r.valore), ...(miss?.valori ?? []), ...incoming])).sort(byValue);
   const cells = values.map((value) => {
     const r = rows.find((x) => x.valore === value);
-    return { value, worked: r !== undefined, bands: r ? sortBands(r.bande) : [], fresh: r !== undefined && fresh.has(key(value)), pending: pending.has(key(value)) };
+    return { value, worked: r !== undefined, bands: r ? sortBands(r.bande) : [], modes: r?.modi ? [...r.modi] : [], fresh: r !== undefined && fresh.has(key(value)), pending: pending.has(key(value)) };
   });
   return { cells, worked: rows.length, total: miss ? miss.totali : null, perBand: rows.some((r) => r.bande.length > 0) || miss?.per_banda === true };
+}
+
+/** I moltiplicatori per modo del punteggio (ARRL 10), in ordine di modo; vuoto se il contest non conta i moltiplicatori per modo. */
+export function multsByMode(s: { molt_per_modo?: Readonly<Record<string, number>> }): { mode: string; n: number }[] {
+  return Object.entries(s.molt_per_modo ?? {})
+    .map(([mode, n]) => ({ mode, n }))
+    .sort((a, b) => a.mode.localeCompare(b.mode));
 }
