@@ -107,7 +107,7 @@ impl PskBandDecoder {
     /// Mezza larghezza del segnale in righe dello spettro (±20 Hz in PSK31, ±40 in PSK63).
     fn half_width(&self) -> usize {
         match self.mode {
-            PskMode::Psk31 => 7,
+            PskMode::Psk31 | PskMode::Qpsk31 => 7,
             PskMode::Psk63 => 14,
         }
     }
@@ -115,7 +115,7 @@ impl PskBandDecoder {
     /// Distanza minima fra due canali (Hz).
     fn spacing_hz(&self) -> f32 {
         match self.mode {
-            PskMode::Psk31 => 30.0,
+            PskMode::Psk31 | PskMode::Qpsk31 => 30.0,
             PskMode::Psk63 => 60.0,
         }
     }

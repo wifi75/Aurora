@@ -42,6 +42,7 @@ pub mod olivia_link;
 pub mod olivia_rx;
 pub mod psk;
 pub mod psk_viterbi;
+pub mod qpsk;
 pub mod recorder;
 pub mod resample_8k;
 pub mod rtty;

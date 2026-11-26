@@ -22,6 +22,7 @@
 //! ([`PskDemodulator::soft_bits`]), non solo il bit deciso.
 
 use crate::psk_viterbi::PskViterbi;
+use crate::qpsk::{ConvViterbi, QpskTx, symbol_metrics};
 use crate::varicode;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
@@ -40,26 +41,33 @@ pub const SQUELCH_DEFAULT: f32 = 15.0;
 pub enum PskMode {
     Psk31,
     Psk63,
+    /// QPSK31: quattro fasi con codice convoluzionale (vedi `qpsk`).
+    Qpsk31,
 }
 
 impl PskMode {
     /// Campioni per simbolo a 12 kHz (31,25 e 62,5 baud).
     pub fn symbol_samples(self) -> usize {
         match self {
-            PskMode::Psk31 => 384,
+            PskMode::Psk31 | PskMode::Qpsk31 => 384,
             PskMode::Psk63 => 192,
         }
+    }
+    /// Il modo a quattro fasi con il codice convoluzionale.
+    pub fn is_qpsk(self) -> bool {
+        self == PskMode::Qpsk31
     }
     pub fn name(self) -> &'static str {
         match self {
             PskMode::Psk31 => "PSK31",
             PskMode::Psk63 => "PSK63",
+            PskMode::Qpsk31 => "QPSK31",
         }
     }
     /// Lunghezza del preambolo, della coda e della finestra del DCD in simboli (fldigi `dcdbits`: 32 in PSK31, 64 in PSK63).
     pub fn dcd_bits(self) -> usize {
         match self {
-            PskMode::Psk31 => 32,
+            PskMode::Psk31 | PskMode::Qpsk31 => 32,
             PskMode::Psk63 => 64,
         }
     }
@@ -92,6 +100,9 @@ fn symbols_of(text: &[u8], mode: PskMode) -> Vec<TxSym> {
 /// Audio (a 12 kHz) del testo, con la portante a `freq_hz`; `amp` è l'ampiezza di picco (0..1). Il primo simbolo sale dal silenzio con
 /// mezzo coseno (niente «click»), e l'ultimo torna al silenzio allo stesso modo.
 pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> {
+    if mode.is_qpsk() {
+        return modulate_qpsk(text, freq_hz, mode, amp, false);
+    }
     let n = mode.symbol_samples();
     let syms = symbols_of(text, mode);
     let mut out = Vec::with_capacity(syms.len() * n);
@@ -117,6 +128,17 @@ pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> 
         }
         prev = next;
     }
+    out
+}
+
+/// QPSK31: l'audio del testo; `reverse`: inversione di banda laterale (la radio in LSB).
+pub fn modulate_qpsk(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32, reverse: bool) -> Vec<f32> {
+    let mut tx = QpskTx::new(freq_hz, mode.symbol_samples(), RATE, amp, reverse);
+    let mut out = tx.preamble(mode.dcd_bits());
+    for &c in text {
+        out.extend(tx.char(c));
+    }
+    out.extend(tx.postamble(mode.dcd_bits()));
     out
 }
 
@@ -420,6 +442,9 @@ pub struct PskDemodulator {
     acquire: Option<Box<Acquire>>,
     /// L'ultimo aggancio non ancora letto da [`PskDemodulator::take_acquired`].
     acquired: Option<f32>,
+    /// QPSK31: inversione di banda laterale e decodificatore convoluzionale.
+    reverse: bool,
+    conv: Option<Box<ConvViterbi>>,
 }
 
 impl PskDemodulator {
@@ -480,7 +505,14 @@ impl PskDemodulator {
             acquire_limit: None,
             acquire: None,
             acquired: None,
+            reverse: false,
+            conv: mode.is_qpsk().then(|| Box::new(ConvViterbi::new())),
         }
+    }
+
+    /// QPSK31: inversione di banda laterale (la radio in LSB); negli altri modi non cambia niente.
+    pub fn set_reverse(&mut self, on: bool) {
+        self.reverse = on;
     }
 
     /// Aggancio alla portante del segnale PSK piu' forte entro `limit` Hz dalla frequenza scelta, quando l'ascolto ne e' lontano piu'
@@ -709,6 +741,9 @@ impl PskDemodulator {
     }
 
     fn symbol(&mut self, z: (f32, f32), mag: f32, out: &mut Vec<u8>) {
+        if self.mode.is_qpsk() {
+            return self.symbol_qpsk(z, mag, out);
+        }
         let prev = self.prev;
         self.prev = z;
         let dot = z.0 * prev.0 + z.1 * prev.1;
@@ -808,6 +843,63 @@ impl PskDemodulator {
                     self.tune(f);
                 }
             }
+        }
+    }
+
+    /// QPSK31: niente DCD (preambolo e coda sono uguali, come in fldigi): decide lo squelch sulla metrica di e^(j 4 dphi); il
+    /// decodificatore di Viterbi riceve le metriche dei quattro simboli e i suoi bit vanno nel registro della varicode.
+    fn symbol_qpsk(&mut self, z: (f32, f32), mag: f32, out: &mut Vec<u8>) {
+        let prev = self.prev;
+        self.prev = z;
+        let dot = z.0 * prev.0 + z.1 * prev.1;
+        let cross = z.1 * prev.0 - z.0 * prev.1;
+        // il nostro mixer moltiplica per e^(-j w t): la fase vista e' la coniugata di quella trasmessa (I·cos + Q·sin)
+        let dphi = cross.atan2(dot);
+        self.level_db = (20.0 * mag.max(1e-6).log10()).max(-90.0);
+        self.power = decay_avg(self.power, mag * mag, 32.0);
+        let p = (z.0 * z.0 + z.1 * z.1 + prev.0 * prev.0 + prev.1 * prev.1) / 2.0;
+        self.p_local += (p - self.p_local) / if self.p_local > 0.0 { 4.0 } else { 1.0 };
+        let w = (dot / self.p_local.max(1e-30), -cross / self.p_local.max(1e-30));
+        let (s4, c4) = (4.0 * dphi).sin_cos();
+        self.quality = (decay_avg(self.quality.0, c4, SQL_DECAY), decay_avg(self.quality.1, s4, SQL_DECAY));
+        let q = self.quality.0 * self.quality.0 + self.quality.1 * self.quality.1;
+        self.metric = (100.0 * q).min(100.0);
+        self.afcmetric = decay_avg(self.afcmetric, q, 50.0);
+        if self.squelch.is_some_and(|t| self.metric > t) {
+            self.hold = SQUELCH_HOLD;
+        } else {
+            self.hold = self.hold.saturating_sub(1);
+        }
+        self.open = self.hold > 0;
+        let was = self.dcd;
+        self.dcd = self.squelch.is_none() || self.open;
+        if self.dcd && !was {
+            self.shreg = 0;
+            if let Some(c) = self.conv.as_mut() {
+                c.reset();
+            }
+        }
+        if !self.dcd {
+            if was {
+                let bits = self.conv.as_mut().map(|c| c.flush()).unwrap_or_default();
+                for b in bits {
+                    self.push_bit(b, out);
+                }
+                self.shreg = 0;
+            }
+            return;
+        }
+        let reverse = self.reverse;
+        if let Some(b) = self.conv.as_mut().and_then(|c| c.push(symbol_metrics(w, reverse))) {
+            self.push_bit(b, out);
+        }
+        if self.afc && self.afcmetric >= 0.05 {
+            // errore di fase rimasto dopo aver tolto il multiplo di 90 gradi piu' vicino (±45 gradi)
+            let quarter = PI as f32 / 2.0;
+            let err = dphi - (dphi / quarter).round() * quarter;
+            let err_hz = err * self.baud / (2.0 * PI as f32);
+            let f = (self.freq_hz + err_hz / self.mode.dcd_bits() as f32).clamp(self.base_hz - AFC_LIMIT_HZ, self.base_hz + AFC_LIMIT_HZ);
+            self.tune(f);
         }
     }
 
@@ -1049,5 +1141,91 @@ mod tests {
         all.extend(vec![0.0; 4000]);
         let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
         assert!(r.contains("CQ DE IU3ABC"), "ricevuto: {r:?}");
+    }
+
+    /// QPSK31 ad anello chiuso: `ppm` scosta l'orologio di chi trasmette (ricampionamento lineare), `noise` l'ampiezza del rumore.
+    fn qpsk_giro(text: &str, tx_hz: f32, rx_hz: f32, ppm: f64, noise: f32, rev: bool) -> String {
+        let audio = modulate_qpsk(text.as_bytes(), tx_hz, PskMode::Qpsk31, 0.5, rev);
+        let ratio = 1.0 + ppm * 1e-6;
+        let len = (audio.len() as f64 / ratio) as usize;
+        let audio: Vec<f32> = (0..len)
+            .map(|i| {
+                let t = i as f64 * ratio;
+                let k = t as usize;
+                let f = (t - k as f64) as f32;
+                let a = audio.get(k).copied().unwrap_or(0.0);
+                let b = audio.get(k + 1).copied().unwrap_or(0.0);
+                a * (1.0 - f) + b * f
+            })
+            .collect();
+        let mut seed = 4242_u32;
+        let mut all = vec![0.0; 4000];
+        all.extend(audio);
+        all.extend(vec![0.0; 4000]);
+        for x in all.iter_mut() {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            *x += (seed as f32 / u32::MAX as f32 - 0.5) * noise;
+        }
+        let mut rx = PskDemodulator::new(PskMode::Qpsk31, rx_hz);
+        rx.set_squelch(Some(SQUELCH_DEFAULT));
+        rx.set_reverse(rev);
+        String::from_utf8_lossy(&rx.process(&all)).into_owned()
+    }
+
+    #[test]
+    fn qpsk31_andata_e_ritorno() {
+        let r = qpsk_giro("CQ CQ DE IU3ABC IU3ABC PSE K", 1000.0, 1000.0, 0.0, 0.0, false);
+        assert!(r.contains("CQ CQ DE IU3ABC IU3ABC PSE K"), "ricevuto: {r:?}");
+    }
+
+    #[test]
+    fn qpsk31_con_l_inversione_di_banda() {
+        let r = qpsk_giro("the quick brown fox 73", 1500.0, 1500.0, 0.0, 0.0, true);
+        assert!(r.contains("the quick brown fox 73"), "ricevuto: {r:?}");
+        // senza l'inversione dalla parte di chi riceve il testo non esce
+        let audio = modulate_qpsk(b"the quick brown fox 73", 1500.0, PskMode::Qpsk31, 0.5, true);
+        let mut rx = PskDemodulator::new(PskMode::Qpsk31, 1500.0);
+        rx.set_squelch(Some(SQUELCH_DEFAULT));
+        let wrong = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(!wrong.contains("quick brown"), "ricevuto senza inversione: {wrong:?}");
+    }
+
+    #[test]
+    fn qpsk31_con_rumore_scostamento_e_orologio() {
+        let r = qpsk_giro("CQ CQ DE IU3ABC IU3ABC PSE K", 1000.0, 1002.0, 300.0, 0.6, false);
+        assert!(r.contains("DE IU3ABC IU3ABC"), "ricevuto: {r:?}");
+        let r = qpsk_giro("CQ CQ DE IU3ABC IU3ABC PSE K", 1000.0, 998.0, -300.0, 0.6, false);
+        assert!(r.contains("DE IU3ABC IU3ABC"), "ricevuto: {r:?}");
+    }
+
+    #[test]
+    fn qpsk31_l_afc_insegue_la_portante() {
+        // con quattro fasi l'AFC della fase recupera meno di un ottavo della velocita' (3,9 Hz): oltre ci pensa l'aggancio
+        let audio = modulate_qpsk(b"CQ CQ CQ DE IU3ABC IU3ABC PSE K", 1003.0, PskMode::Qpsk31, 0.5, false);
+        let mut rx = PskDemodulator::new(PskMode::Qpsk31, 1000.0);
+        rx.set_squelch(Some(SQUELCH_DEFAULT));
+        rx.set_afc(true);
+        let mut all = vec![0.0; 4000];
+        all.extend(audio);
+        let mut r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
+        let f = rx.frequency();
+        r.push_str(&String::from_utf8_lossy(&rx.process(&[0.0; 12000])));
+        assert!((f - 1003.0).abs() < 1.0, "frequenza raggiunta {f}");
+        assert!(r.contains("IU3ABC PSE K"), "ricevuto {r:?}");
+    }
+
+    #[test]
+    fn qpsk31_il_rumore_da_solo_non_stampa() {
+        let mut seed = 99_u32;
+        let noise: Vec<f32> = (0..12_000 * 10)
+            .map(|_| {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed as f32 / u32::MAX as f32 - 0.5) * 0.2
+            })
+            .collect();
+        let mut rx = PskDemodulator::new(PskMode::Qpsk31, 1000.0);
+        rx.set_squelch(Some(SQUELCH_DEFAULT));
+        let out = rx.process(&noise);
+        assert!(out.len() < 3, "dal rumore: {out:?}");
     }
 }
