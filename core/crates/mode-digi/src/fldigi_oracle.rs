@@ -321,3 +321,78 @@ impl Drop for FldigiSitorb {
         unsafe { aurora_fldigi_sitorb_free(self.rx) };
     }
 }
+
+unsafe extern "C" {
+    fn aurora_fldigi_mt63_new(bandwidth: i32, long_intlv: i32, freq: f64, integ: i32) -> *mut c_void;
+    fn aurora_fldigi_mt63_process(rx: *mut c_void, samples: *const f32, len: usize);
+    fn aurora_fldigi_mt63_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
+    fn aurora_fldigi_mt63_snr(rx: *mut c_void) -> f64;
+    fn aurora_fldigi_mt63_free(rx: *mut c_void);
+    fn aurora_fldigi_mt63_tx(
+        bandwidth: i32,
+        long_intlv: i32,
+        freq: f64,
+        text: *const std::ffi::c_char,
+        out: *mut f32,
+        cap: usize,
+        fill: *mut u8,
+        jam: *mut u8,
+    ) -> usize;
+}
+
+/// Il ricevitore MT63 di fldigi (7 bit, senza squelch), audio a 8000 Hz; `freq_hz` e' il centro; `integ`: 16 o 32 simboli.
+pub struct FldigiMt63 {
+    rx: *mut c_void,
+}
+
+/// Quello che il trasmettitore di fldigi ha prodotto: l'audio grezzo e i numeri a caso usati (riempimento e disturbo).
+pub struct FldigiMt63Tx {
+    pub wave: Vec<f32>,
+    pub fill: Vec<u8>,
+    pub jam: Vec<bool>,
+}
+
+impl FldigiMt63 {
+    pub fn new(v: crate::mt63::Mt63Variant, freq_hz: f64, integ: i32) -> Self {
+        // SAFETY: crea un oggetto C++ posseduto da questa struttura e liberato in `drop`.
+        let rx = unsafe { aurora_fldigi_mt63_new(v.bandwidth_hz() as i32, i32::from(v.long()), freq_hz, integ) };
+        Self { rx }
+    }
+
+    pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
+        if self.rx.is_null() {
+            return Vec::new();
+        }
+        // SAFETY: `rx` e' valido finche' vive la struttura; il puntatore e la lunghezza vengono dalla stessa fetta.
+        unsafe { aurora_fldigi_mt63_process(self.rx, samples.as_ptr(), samples.len()) };
+        take_all(self.rx, aurora_fldigi_mt63_take)
+    }
+
+    /// Il rapporto segnale/rumore del decodificatore (lineare, come lo vede fldigi).
+    pub fn snr(&self) -> f64 {
+        // SAFETY: `rx` e' valido finche' vive la struttura (la funzione accetta anche il nullo).
+        unsafe { aurora_fldigi_mt63_snr(self.rx) }
+    }
+
+    /// Il trasmettitore di fldigi (sequenza di `tx_process`, uscita grezza).
+    pub fn transmit(v: crate::mt63::Mt63Variant, freq_hz: f64, text: &str) -> FldigiMt63Tx {
+        let Ok(c) = std::ffi::CString::new(text) else { return FldigiMt63Tx { wave: Vec::new(), fill: Vec::new(), jam: Vec::new() } };
+        let (bw, long) = (v.bandwidth_hz() as i32, i32::from(v.long()));
+        let mut fill = vec![0u8; v.interleave() * 64];
+        let mut jam = vec![0u8; 64];
+        let null = std::ptr::null_mut();
+        // SAFETY: con `out` nullo la funzione dice solo quanti campioni servono; `fill` e `jam` sono lunghi quanto chiede.
+        let n = unsafe { aurora_fldigi_mt63_tx(bw, long, freq_hz, c.as_ptr(), null, 0, fill.as_mut_ptr(), jam.as_mut_ptr()) };
+        let mut wave = vec![0.0_f32; n];
+        // SAFETY: `wave` e' lungo `n` campioni e la funzione ne scrive al massimo tanti.
+        unsafe { aurora_fldigi_mt63_tx(bw, long, freq_hz, c.as_ptr(), wave.as_mut_ptr(), n, fill.as_mut_ptr(), jam.as_mut_ptr()) };
+        FldigiMt63Tx { wave, fill, jam: jam.into_iter().map(|b| b != 0).collect() }
+    }
+}
+
+impl Drop for FldigiMt63 {
+    fn drop(&mut self) {
+        // SAFETY: `rx` viene da `aurora_fldigi_mt63_new` e si libera una volta sola (il nullo e' ammesso).
+        unsafe { aurora_fldigi_mt63_free(self.rx) };
+    }
+}

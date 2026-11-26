@@ -39,6 +39,7 @@ pub mod macro_audio;
 pub mod macro_files;
 #[cfg(feature = "mmtty-oracle")]
 pub mod mmtty_oracle;
+pub mod mt63;
 pub mod notch;
 pub mod olivia;
 pub mod olivia_link;
