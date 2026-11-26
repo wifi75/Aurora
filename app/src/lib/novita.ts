@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.357',
-    released: '2026-11-26T21:18:43Z',
+    released: '2026-11-26T21:25:41Z',
     kind: 'new',
     title: [
       'Frequenze WEFAX tue, BIGScan regolabile e altro',
