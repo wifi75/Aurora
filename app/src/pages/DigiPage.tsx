@@ -920,12 +920,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (viaClick && macroState.rxLocked) return;
     const l = live.current;
     // in RTTY la frequenza e' il centro fra i due toni: Snap cerca la coppia (un tono solo andrebbe sul mark o sullo space)
-    const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
+    // Amtor: la stessa ricerca della coppia con lo spostamento fisso di 170 Hz
+    const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : l.snap.settings.mode === 'amtor' ? 170 : 0;
     // in PSK la portante e' al centro del segnale: la riga piu' forte e' una delle due a mezzo baud, fuori di quanto l'AFC recupera
     const pskHalf = l.snap.settings.mode === 'psk31' || l.snap.settings.mode === 'qpsk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
-    // Olivia e Contestia: il segnale e' largo quanto la banda e la frequenza e' il centro, Snap non aggancia un tono (resta il clic)
+    // Olivia, Contestia e Throb: il segnale e' largo quanto la banda (Throb: i suoi toni) e la frequenza e' il centro, Snap non aggancia un tono (resta il clic)
     const snapped =
-      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode)
+      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode) && l.snap.settings.mode !== 'throb'
         ? rttyShift > 0
           ? snapToPair(avg.current.values(), lastRow.current, hz, rttyShift)
           : pskHalf > 0
@@ -991,10 +992,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (spot) void tuneToSpotRef.current(spot, false).catch(() => toast(t('digi.spot.failed'), 'info'));
   }, [t]);
 
-  // Seek e Scan trovano un picco: in RTTY e' uno dei due toni, e la sintonia va al centro della coppia
+  // Seek e Scan trovano un picco: in RTTY e Amtor e' uno dei due toni, e la sintonia va al centro della coppia
   const centreOfPair = (tone: number, row: SpectrumRow) => {
     const c = live.current.snap.settings;
-    return c.mode === 'rtty' ? snapToPair(avg.current.values(), row, tone, c.rtty_shift_hz) : tone;
+    return c.mode === 'rtty' ? snapToPair(avg.current.values(), row, tone, c.rtty_shift_hz) : c.mode === 'amtor' ? snapToPair(avg.current.values(), row, tone, 170) : tone;
   };
 
   const seek = (direction: 'left' | 'right', quiet = false): number | null => {
@@ -2222,7 +2223,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   );
   /** La cascata; con `cardHeight` (dentro una scheda) prende quell'altezza e niente maniglie di misura: la misura la da' la scheda. */
   const waterfallFor = (cardHeight?: number) => (
-    <DigiWaterfall height={cardHeight ?? wfHeight} onHeight={cardHeight === undefined ? changeWfHeight : undefined} widthPx={cardHeight === undefined ? wfWidth : null} onWidth={cardHeight === undefined ? changeWfWidth : undefined} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
+    <DigiWaterfall height={cardHeight ?? wfHeight} onHeight={cardHeight === undefined ? changeWfHeight : undefined} widthPx={cardHeight === undefined ? wfWidth : null} onWidth={cardHeight === undefined ? changeWfWidth : undefined} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'amtor' ? 170 : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
       extraRx={extras}
       onExtraMove={(id, hz, commit) => {
         const next = extras.map((x) => (x.id === id ? { ...x, freq_hz: hz } : x));
