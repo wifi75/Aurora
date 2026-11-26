@@ -93,7 +93,7 @@
 .sstv-field--mode { min-width: min(100%, 330px); }
 .sstv-field--call input { width: 9rem; text-transform: uppercase; font-family: var(--font-data); }
 .sstv-toolbar-edit { display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
-.sstv-editor { display: grid; grid-template-columns: min(var(--sstv-art-w, 520px), 52%) minmax(320px, 440px); gap: 0.8rem; align-items: stretch; justify-content: start; }
+.sstv-editor { display: grid; grid-template-columns: minmax(320px, 440px) min(var(--sstv-art-w, 520px), 52%); gap: 0.8rem; align-items: stretch; justify-content: start; }
 .sstv-panel { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); max-height: calc(82vh / var(--ui-zoom, 1)); overflow: auto; }
 .sstv-panel h3 { margin: 0.2rem 0 0; font-size: 1rem; }
 .sstv-panel h4 { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -148,6 +148,10 @@
 .sstv-lightbox-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .sstv-lightbox .sstv-check { color: #e7eef7; }
 
+@media (min-width: 821px) {
+  /* il pannello a schede a sinistra, l'anteprima a destra (richiesta del proprietario, 2026-11-26) */
+  .sstv-editor > .sstv-center { order: 2; }
+}
 @media (max-width: 820px) {
   .sstv-rx, .sstv-editor { grid-template-columns: minmax(0, 1fr); }
   /* una colonna sola: l'immagine sta sopra, le informazioni sotto */

@@ -540,7 +540,7 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
       </div>
 
       <div className="sstv-editor" style={{ '--sstv-art-w': `min(520px, calc(38vh / var(--ui-zoom, 1) * ${W} / ${H}))` } as CSSProperties}>
-        {/* a sinistra l'anteprima; a destra il pannello a schede, alto quanto l'anteprima */}
+        {/* a sinistra il pannello a schede; a destra l'anteprima (solo con schermo largo), alto quanto l'anteprima */}
         <div className="sstv-center">
           <div
             ref={stage}
