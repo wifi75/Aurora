@@ -6,6 +6,7 @@ export const RU_UI: Record<string, string> = {
   "about.dedicaFirma": "— Папа, Тициано",
   "about.derived": "Производный код",
   "about.derivedOlivia": "Olivia и Contestia — режимы Павла Ялохи (Pawel Jalocha): кодер, модулятор и приёмник переписаны на Rust Тицианом Кассоне на основе библиотеки из fldigi (© Dave Freese W1HKJ и участники), GPL-3.",
+  "about.derivedQpsk": "QPSK31 следует соглашениям fldigi (© Dave Freese W1HKJ и участники, GPL-3): свёрточный код, порядок символов и направление вращения фаз изучены по его исходникам и переписаны на Rust Тицианом Кассоне; приёмник — приёмник PSK31 из Aurora.",
   "about.derivedText": "Части Aurora — алгоритмы из WSJT-X (© Joe Taylor K1JT и WSJT Development Group) и JTDX (© авторы JTDX), GPL-3, переведённые на Rust и доработанные Tiziano Cassone. Для PSK, RTTY, CW и SSTV: таблицы и схемы из fldigi (© Dave Freese W1HKJ и другие) и QSSTV (© Johan Maes ON4QZ), GPL-3. Полный список в THIRD-PARTY-NOTICES.md.",
   "about.donateButton": "Пожертвовать через PayPal",
   "about.donateNote": "Свободное и добровольное пожертвование в поддержку бесплатного проекта Aurora, без какого-либо встречного предоставления товаров или услуг.",
