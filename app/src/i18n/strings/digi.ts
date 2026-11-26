@@ -602,6 +602,23 @@ export const digiStrings = {
   'digi.bar.styleBold': ["Grassetto", "Bold", "Fett", "Gras", "Negrita", "Negrito"],
   'digi.bar.styleBoldItalic': ["Grassetto corsivo", "Bold italic", "Fett kursiv", "Gras italique", "Negrita cursiva", "Negrito itálico"],
   'digi.bar.fontDefault': ["Predefinito", "Default", "Standard", "Par défaut", "Predeterminado", "Predefinido"],
+  // Impostazioni del modo: Throb e Amtor non hanno soglie da regolare
+  'digi.ms.throbNote': [
+    'Throb: lo squelch è fisso (nel solo rumore non scrive niente) e la variante si sceglie nel menu Modo.',
+    'Throb: the squelch is fixed (it writes nothing on noise alone) and the variant is chosen in the Mode menu.',
+    'Throb: Der Squelch ist fest (bei reinem Rauschen schreibt er nichts), die Variante wählst du im Menü Modus.',
+    'Throb : le squelch est fixe (il n’écrit rien sur le bruit seul) et la variante se choisit dans le menu Mode.',
+    'Throb: el squelch es fijo (con solo ruido no escribe nada) y la variante se elige en el menú Modo.',
+    'Throb: o squelch é fixo (só com ruído não escreve nada) e a variante escolhe-se no menu Modo.',
+  ],
+  'digi.ms.amtorNote': [
+    'Amtor FEC: niente soglie da regolare, il testo esce solo quando il ricevitore è agganciato ai caratteri.',
+    'Amtor FEC: no thresholds to adjust, text only comes out once the receiver has locked onto the characters.',
+    'Amtor FEC: Keine Schwellen einzustellen, Text erscheint erst, wenn der Empfänger auf die Zeichen synchronisiert ist.',
+    'Amtor FEC : aucun seuil à régler, le texte ne sort que lorsque le récepteur est accroché aux caractères.',
+    'Amtor FEC: no hay umbrales que ajustar, el texto solo sale cuando el receptor está enganchado a los caracteres.',
+    'Amtor FEC: não há limiares para ajustar, o texto só sai quando o recetor está enganchado nos caracteres.',
+  ],
   // Throb: la variante
   'digi.throb.variant': ['Variante', 'Variant', 'Variante', 'Variante', 'Variante', 'Variante'],
   'digi.throb.variantTip': [

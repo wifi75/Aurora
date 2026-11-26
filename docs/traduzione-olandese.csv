@@ -4720,6 +4720,8 @@ digi.bar.styleItalic,Italic,Cursief
 digi.bar.styleBold,Bold,Vet
 digi.bar.styleBoldItalic,Bold italic,Vet cursief
 digi.bar.fontDefault,Default,Standaard
+digi.ms.throbNote,Throb: the squelch is fixed (it writes nothing on noise alone) and the variant is chosen in the Mode menu.,Throb: de squelch staat vast (bij alleen ruis schrijft hij niets) en de variant kies je in het menu Modus.
+digi.ms.amtorNote,"Amtor FEC: no thresholds to adjust, text only comes out once the receiver has locked onto the characters.","Amtor FEC: geen drempels in te stellen, er komt pas tekst als de ontvanger op de tekens is gesynchroniseerd."
 digi.throb.variant,Variant,Variant
 digi.throb.variantTip,"Throb at 1, 2 or 4 symbols per second (9 tones) or ThrobX (11 tones). The other station must use the same variant; THRBX4 is not standard.","Throb met 1, 2 of 4 symbolen per seconde (9 tonen) of ThrobX (11 tonen). Het andere station moet dezelfde variant gebruiken; THRBX4 is niet standaard."
 digi.olivia.tones,Tones,Tonen

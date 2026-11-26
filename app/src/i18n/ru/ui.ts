@@ -1893,6 +1893,8 @@ export const RU_UI: Record<string, string> = {
   "digi.state.sending": "Передача",
   "digi.tab.cluster": "DX Cluster",
   "digi.tab.rotor": "Ротор",
+  "digi.ms.throbNote": "Throb: шумоподавитель фиксированный (на одном шуме ничего не пишет), а вариант выбирается в меню «Режим».",
+  "digi.ms.amtorNote": "Amtor FEC: порогов для настройки нет, текст появляется только после синхронизации приёмника по символам.",
   "digi.throb.variant": "Вариант",
   "digi.throb.variantTip": "Throb с 1, 2 или 4 символами в секунду (9 тонов) или ThrobX (11 тонов). Другая станция должна использовать тот же вариант; THRBX4 нестандартный.",
   "digi.title": "PSK и RTTY",
