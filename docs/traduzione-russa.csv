@@ -851,7 +851,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -1822,7 +1822,7 @@ cat.preset.external,The sound card of the interface connected to the radio (outp
 cat.preset.openAudio,Open Audio,Открыть Аудио
 cat.preset.generic,Item names are indicative: check the radio manual.,Названия пунктов приблизительные: проверьте по руководству радио.
 tip.cat.preset,"Known values for this model. The button only changes speed, PTT and CI-V; the port stays yours. No TX: it’s CAT. TX without power: it’s audio.","Известные значения для этой модели. Кнопка меняет только скорость, PTT и CI-V; порт остаётся вашим. Нет передачи: проблема в CAT. Передача без мощности: проблема в аудио."
-cat.warn.icomBaud,"Icom with CAT PTT: the speed must be 115200, as in the radio.","Icom с PTT по CAT: скорость должна быть 115200, как в радио."
+cat.warn.icomBaud,"Icom with CAT PTT: the USB speed is usually 115200; what matters is that it matches the radio’s menu (some models, such as the IC-7300 MK2, work better with a fixed 19200 than with “Auto”). If the connection works, ignore this notice.","Icom с PTT по CAT: скорость USB обычно 115200; важно, чтобы она совпадала с меню радиостанции (некоторые модели, например IC-7300 MK2, лучше работают с фиксированными 19200, чем с «Auto»). Если соединение работает, игнорируйте это сообщение."
 wf.spot,{call} · spotted by {spotter} on {freq} kHz: click to move the receive frequency here,"{call} · спот от {spotter} на {freq} кГц: нажмите, чтобы переместить сюда частоту приёма"
 wf.spotMore,"{n} more spots nearby, with no room for a label:","Ещё спотов рядом: {n}, без места для подписи:"
 tab.cluster,DX Cluster,DX-кластер
@@ -4906,7 +4906,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
+sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°

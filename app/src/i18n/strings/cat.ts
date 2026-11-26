@@ -590,11 +590,11 @@ export const catStrings = {
     'Valores conhecidos para este modelo. O botão só muda velocidade, PTT e CI-V; a porta fica a tua. Sem TX: é o CAT. TX sem potência: é o áudio.',
   ],
   'cat.warn.icomBaud': [
-    'Icom con PTT dal CAT: la velocità deve essere 115200, come nella radio.',
-    'Icom with CAT PTT: the speed must be 115200, as in the radio.',
-    'Icom mit CAT-PTT: die Geschwindigkeit muss 115200 sein, wie im Funkgerät.',
-    'Icom avec PTT par CAT : la vitesse doit être 115200, comme dans la radio.',
-    'Icom con PTT por CAT: la velocidad debe ser 115200, como en la radio.',
-    'Icom com PTT por CAT: a velocidade tem de ser 115200, como no rádio.',
+    'Icom con PTT dal CAT: di solito la velocità USB è 115200; l’importante è che sia uguale a quella del menu della radio (alcuni modelli, come l’IC-7300 MK2, funzionano meglio con 19200 fisso e non con «Auto»). Se il collegamento funziona, ignora questo avviso.',
+    'Icom with CAT PTT: the USB speed is usually 115200; what matters is that it matches the radio’s menu (some models, such as the IC-7300 MK2, work better with a fixed 19200 than with “Auto”). If the connection works, ignore this notice.',
+    'Icom mit CAT-PTT: Die USB-Geschwindigkeit ist meist 115200; wichtig ist, dass sie mit dem Menü des Funkgeräts übereinstimmt (manche Modelle, etwa der IC-7300 MK2, laufen mit festen 19200 besser als mit „Auto“). Funktioniert die Verbindung, ignoriere diesen Hinweis.',
+    'Icom avec PTT par CAT : la vitesse USB est en général 115200 ; l’important est qu’elle soit identique à celle du menu de la radio (certains modèles, comme l’IC-7300 MK2, fonctionnent mieux avec 19200 fixe qu’avec « Auto »). Si la connexion fonctionne, ignore cet avis.',
+    'Icom con PTT por CAT: la velocidad USB suele ser 115200; lo importante es que coincida con la del menú de la radio (algunos modelos, como el IC-7300 MK2, funcionan mejor con 19200 fijo que con «Auto»). Si la conexión funciona, ignora este aviso.',
+    'Icom com PTT por CAT: a velocidade USB costuma ser 115200; o importante é que coincida com a do menu do rádio (alguns modelos, como o IC-7300 MK2, funcionam melhor com 19200 fixo do que com «Auto»). Se a ligação funciona, ignora este aviso.',
   ],
 } as const satisfies Record<string, Entry>;

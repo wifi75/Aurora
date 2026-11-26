@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Impostazioni › Radio, avviso sulla velocita' delle Icom (W4RHC, IC-7300 MK2, email): l'avviso diceva che la velocita' «deve essere 115200», ma l'IC-7300 MK2 funzionava solo con 19200 fisso e non con «Auto»; ora dice che di solito e' 115200, che l'importante e' che sia uguale al menu della radio, e che con il collegamento funzionante si puo' ignorare (`cat.warn.icomBaud`, otto lingue).
 
 ## 0.11.356 - 2026-11-26
 - Stabilita' e prestazioni (analisi profonda del 26/11, tre revisori): RBN, la pulizia sopra il tetto toglie prima le voci scadute invece di ordinare 3000 voci a ogni riga e, senza dati per 5 minuti (PC sospeso, NAT), il collegamento riparte; contest, sottrazioni di tempo con `saturating_sub` (l'ora di Windows corretta all'indietro non svuota piu' i doppi e i sentiti); `ALL.TXT` spento, i due elenchi (QSO registrati e note di trasmissione) si svuotano invece di crescere; JT9 e JT65, FFT con pianificatore per thread; cluster, una sola lettura del testo dello spot; interfaccia, impostazioni del cluster con chiave di cache propria (non sfarfalla piu' il pannello), scritture identiche delle preferenze non rimandate al server, un solo intervallo per la pulizia dopo `<RXC>`.

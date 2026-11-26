@@ -600,7 +600,7 @@ export const NL_UI: Record<string, string> = {
   "cat.txAlc": "Tijdens zenden ook de ALC lezen",
   "cat.txPower": "Tijdens het zenden het vermogen uitlezen",
   "cat.txSwr": "Tijdens het zenden de SWR uitlezen",
-  "cat.warn.icomBaud": "Icom met CAT-PTT: de snelheid moet 115200 zijn, zoals in de zender.",
+  "cat.warn.icomBaud": "Icom met CAT-PTT: de USB-snelheid is meestal 115200; belangrijk is dat hij overeenkomt met het menu van de zender (sommige modellen, zoals de IC-7300 MK2, werken beter met vaste 19200 dan met «Auto»). Werkt de verbinding, negeer dan deze melding.",
   "clock.ahead": "{ms} ms voor",
   "clock.alert.days": "{n} dagen",
   "clock.alert.hours": "{n} uur",
