@@ -159,12 +159,12 @@ fn jtdx_field(out: &mut String, name: &str, value: &str) {
     let _ = write!(out, " <{name}:{}>{value}", value.len());
 }
 
-/// Il modo ADIF dei modi che la specifica tratta come sottomodi (`AdifQso.cpp` di WSJT-X 3.3.0-beta6): FT4, Q65, FST4, FST4W in `MFSK`, PSK31 e PSK63
+/// Il modo ADIF dei modi che la specifica tratta come sottomodi (`AdifQso.cpp` di WSJT-X 3.3.0-beta6): FT4, Q65, FST4, FST4W in `MFSK`, PSK31, PSK63 e QPSK31
 /// in `PSK`. `None` per i modi che sono gia' un modo ADIF (FT8, JT65, JT9, MSK144, RTTY, CW, SSTV...).
 pub fn adif_parent_mode(mode: &str) -> Option<&'static str> {
     match mode {
         "FT4" | "Q65" | "FST4" | "FST4W" | "JTTY" => Some("MFSK"),
-        "PSK31" | "PSK63" | "PSK125" => Some("PSK"),
+        "PSK31" | "PSK63" | "PSK125" | "QPSK31" => Some("PSK"),
         _ => None,
     }
 }

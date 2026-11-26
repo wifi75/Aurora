@@ -12,6 +12,7 @@ use crate::cw::{PROSIGNS, pattern_of, unit_seconds};
 use crate::olivia;
 use crate::resample_8k::Interpolator;
 use crate::psk::{PskMode, RATE};
+use crate::qpsk::QpskTx;
 use crate::rtty::{LTRS, Reg, RttyCharset, RttyParams, push_char, push_frame};
 use crate::varicode;
 
@@ -33,6 +34,15 @@ impl TxModulator {
 
     pub fn psk(mode: PskMode, freq_hz: f32) -> Self {
         TxModulator::Psk(PskTx::new(mode, freq_hz))
+    }
+
+    /// PSK con l'inversione di banda laterale (`reverse`: la radio in LSB), che conta solo in QPSK31.
+    pub fn psk_reverse(mode: PskMode, freq_hz: f32, reverse: bool) -> Self {
+        let mut m = PskTx::new(mode, freq_hz);
+        if mode.is_qpsk() {
+            m.qpsk = Some(Box::new(QpskTx::new(freq_hz, mode.symbol_samples(), RATE, AMP, reverse)));
+        }
+        TxModulator::Psk(m)
     }
 
     pub fn cw(tone_hz: f32, wpm: f32) -> Self {
@@ -188,11 +198,14 @@ pub struct PskTx {
     phase: f64,
     prev: f32,
     sign: f32,
+    /// QPSK31: il suo trasmettitore (quattro fasi e codice convoluzionale); `None` negli altri modi.
+    qpsk: Option<Box<QpskTx>>,
 }
 
 impl PskTx {
     fn new(mode: PskMode, freq_hz: f32) -> Self {
-        Self { mode, step: 2.0 * PI * f64::from(freq_hz) / f64::from(RATE), phase: 0.0, prev: 0.0, sign: 1.0 }
+        let qpsk = mode.is_qpsk().then(|| Box::new(QpskTx::new(freq_hz, mode.symbol_samples(), RATE, AMP, false)));
+        Self { mode, step: 2.0 * PI * f64::from(freq_hz) / f64::from(RATE), phase: 0.0, prev: 0.0, sign: 1.0, qpsk }
     }
 
     /// Un simbolo: `Some(bit)`, oppure `None` = silenzio (la discesa finale).
@@ -217,6 +230,10 @@ impl PskTx {
     }
 
     fn preamble(&mut self) -> Vec<f32> {
+        let len = self.mode.dcd_bits();
+        if let Some(q) = self.qpsk.as_mut() {
+            return q.preamble(len);
+        }
         let mut out = Vec::new();
         for _ in 0..self.mode.dcd_bits() {
             self.symbol(Some(false), &mut out);
@@ -225,6 +242,9 @@ impl PskTx {
     }
 
     fn char(&mut self, c: u8) -> Vec<f32> {
+        if let Some(q) = self.qpsk.as_mut() {
+            return q.char(c);
+        }
         let mut out = Vec::new();
         for ch in varicode::encode(c).chars() {
             self.symbol(Some(ch == '1'), &mut out);
@@ -235,6 +255,9 @@ impl PskTx {
     }
 
     fn idle(&mut self) -> Vec<f32> {
+        if let Some(q) = self.qpsk.as_mut() {
+            return q.idle();
+        }
         let mut out = Vec::new();
         for _ in 0..4 {
             self.symbol(Some(false), &mut out);
@@ -243,6 +266,9 @@ impl PskTx {
     }
 
     fn postamble(&mut self) -> Vec<f32> {
+        if let Some(q) = self.qpsk.as_mut() {
+            return q.postamble(crate::qpsk::TAIL_ZEROS);
+        }
         let mut out = Vec::new();
         for _ in 0..self.mode.dcd_bits() {
             self.symbol(Some(true), &mut out);
@@ -430,6 +456,15 @@ mod tests {
         for mode in [PskMode::Psk31, PskMode::Psk63] {
             assert_eq!(whole(&mut TxModulator::psk(mode, 1500.0), TEXT), psk::modulate(TEXT.as_bytes(), 1500.0, mode, AMP));
         }
+    }
+
+    #[test]
+    fn qpsk31_a_pezzi_e_come_l_onda_intera() {
+        for rev in [false, true] {
+            let want = psk::modulate_qpsk(TEXT.as_bytes(), 1500.0, PskMode::Qpsk31, AMP, rev);
+            assert_eq!(whole(&mut TxModulator::psk_reverse(PskMode::Qpsk31, 1500.0, rev), TEXT), want);
+        }
+        assert_eq!(whole(&mut TxModulator::psk(PskMode::Qpsk31, 1500.0), TEXT), psk::modulate(TEXT.as_bytes(), 1500.0, PskMode::Qpsk31, AMP));
     }
 
     #[test]

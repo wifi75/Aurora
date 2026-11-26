@@ -165,7 +165,7 @@ impl Default for SpectralFilter {
 /// Il passabanda di base di ogni modo (Hz): PSK tre volte il baud (almeno 60 Hz), RTTY lo spostamento piu' due volte il baud, CW 80 Hz.
 pub fn default_passband(mode: crate::DigiMode, shift_hz: f32, rtty_baud: f32) -> f32 {
     match mode {
-        crate::DigiMode::Psk31 => 3.0 * 31.25,
+        crate::DigiMode::Psk31 | crate::DigiMode::Qpsk31 => 3.0 * 31.25,
         crate::DigiMode::Psk63 => 3.0 * 62.5,
         crate::DigiMode::Rtty => shift_hz + 2.0 * rtty_baud,
         crate::DigiMode::Cw => 80.0,

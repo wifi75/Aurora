@@ -121,10 +121,13 @@ pub enum DigiMode {
     Olivia,
     /// Contestia (come Olivia con blocchi piu' corti e 64 caratteri): toni e banda in [`DigiSettings::contestia`].
     Contestia,
+    /// QPSK31: PSK a quattro fasi con codice convoluzionale (vedi `qpsk`); in LSB le fasi girano al contrario.
+    Qpsk31,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 7] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb, DigiMode::Olivia, DigiMode::Contestia];
+    pub const ALL: [DigiMode; 8] =
+        [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb, DigiMode::Olivia, DigiMode::Contestia, DigiMode::Qpsk31];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -135,6 +138,7 @@ impl DigiMode {
             DigiMode::Ssb => "ssb",
             DigiMode::Olivia => "olivia",
             DigiMode::Contestia => "contestia",
+            DigiMode::Qpsk31 => "qpsk31",
         }
     }
 
@@ -147,6 +151,7 @@ impl DigiMode {
             DigiMode::Ssb => "SSB",
             DigiMode::Olivia => "Olivia",
             DigiMode::Contestia => "Contestia",
+            DigiMode::Qpsk31 => "QPSK31",
         }
     }
 
@@ -158,6 +163,7 @@ impl DigiMode {
         match self {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
+            DigiMode::Qpsk31 => Some(PskMode::Qpsk31),
             DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia => None,
         }
     }
@@ -719,7 +725,7 @@ impl DigiSettings {
     /// Di quanto l'AFC puo' allontanarsi dalla frequenza scelta: ±15 Hz in PSK31 (in proporzione al baud), meta' spostamento in RTTY, ±50 Hz in CW.
     fn afc_limit(&self) -> f32 {
         match self.mode {
-            DigiMode::Psk31 => 15.0,
+            DigiMode::Psk31 | DigiMode::Qpsk31 => 15.0,
             DigiMode::Psk63 => 30.0,
             DigiMode::Rtty => self.rtty_shift_hz / 2.0,
             DigiMode::Cw => 50.0,
@@ -1317,6 +1323,8 @@ impl DigiService {
         }
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
         match (s.mode.psk(), s.mode) {
+            // QPSK31: in LSB le fasi girano al contrario
+            (Some(mode), _) if mode.is_qpsk() => psk::modulate_qpsk(&bytes, s.tx_freq(), mode, 0.9, lsb),
             (Some(mode), _) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
             (None, DigiMode::Cw) => cw::modulate(&bytes, s.tx_freq(), s.cw_wpm, 0.9),
             (None, _) => rtty::modulate_charset(text, s.rtty(s.tx_freq(), lsb), 0.9, s.rtty_charset),
@@ -1513,6 +1521,8 @@ impl Demod {
         match s.mode.psk() {
             Some(mode) => {
                 let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
+                // QPSK31: in LSB le fasi girano al contrario (negli altri modi non cambia niente)
+                d.set_reverse(lsb);
                 d.set_afc(s.afc_on);
                 // con l'AFC acceso la ricezione si aggancia da sola alla portante entro il limite dell'AFC (oltre un quarto di baud l'AFC
                 // della fase non la ritrova, prova `psk_finestra_e_lista`)

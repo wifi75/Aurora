@@ -56,7 +56,7 @@ pub(super) fn modulator(s: &DigiSettings, lsb: bool) -> Result<TxModulator, Digi
         });
     }
     Ok(match (s.mode.psk(), s.mode) {
-        (Some(mode), _) => TxModulator::psk(mode, s.tx_freq()),
+        (Some(mode), _) => TxModulator::psk_reverse(mode, s.tx_freq(), lsb),
         (None, DigiMode::Cw) => TxModulator::cw(s.tx_freq(), s.cw_wpm),
         (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset).with_diddle(s.rtty_diddle),
     })
