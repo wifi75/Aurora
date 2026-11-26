@@ -15,7 +15,7 @@ const DOWNLOAD_URL: &str = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
 pub fn ensure() -> bool {
     let Err(e) = tauri::webview_version() else { return true };
     eprintln!("WebView2 non disponibile: {e}");
-    let lang = crate::agent::ui_lang();
+    let lang = crate::agent::ui_lang8();
     let (title, text) = texts(lang);
     if ask_yes_no(title, text)
         && let Err(e) = install_and_restart()
@@ -73,7 +73,7 @@ pub fn ensure() -> bool {
 #[cfg(windows)]
 pub fn window_failed(error: &str) {
     eprintln!("finestra principale non aperta: {error}");
-    let lang = crate::agent::ui_lang();
+    let lang = crate::agent::ui_lang8();
     let (title, text) = failed_texts(lang);
     let text = text.replace("{error}", error);
     if ask_yes_no(title, &text)
@@ -89,10 +89,10 @@ pub fn window_failed(error: &str) {
     eprintln!("finestra principale non aperta: {error}");
 }
 
-/// Titolo e testo del messaggio «la finestra non si apre» nelle sei lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt).
+/// Titolo e testo del messaggio «la finestra non si apre» nelle otto lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt, 6 nl, 7 ru).
 #[cfg(windows)]
 fn failed_texts(lang: usize) -> (&'static str, &'static str) {
-    const ALL: [(&str, &str); 6] = [
+    const ALL: [(&str, &str); 8] = [
         (
             "Aurora: la finestra non si apre",
             "Aurora non riesce ad aprire la sua finestra. Windows ha risposto: {error}
@@ -141,14 +141,30 @@ Normalmente basta reiniciar o Windows. Se não bastar, o problema costuma ser o 
 
 Queres que o Aurora reinstale o WebView2 agora e volte a abrir sozinho? Com «Não» o Aurora fecha.",
         ),
+        (
+            "Aurora: het venster gaat niet open",
+            "Aurora kan zijn venster niet openen. Windows antwoordde: {error}
+
+Meestal volstaat het om Windows opnieuw op te starten. Zo niet, dan is het probleem vaak Microsoft Edge WebView2 (het onderdeel waarmee Aurora het venster tekent): Windows bijwerken of WebView2 opnieuw installeren lost het op.
+
+Moet Aurora WebView2 nu opnieuw installeren en zichzelf weer openen? Met «Nee» sluit Aurora zich af.",
+        ),
+        (
+            "Aurora: окно не открывается",
+            "Aurora не может открыть своё окно. Windows ответила: {error}
+
+Обычно достаточно перезагрузить Windows. Если нет, проблема часто в Microsoft Edge WebView2 (компоненте, которым Aurora рисует окно): обновление Windows или переустановка WebView2 это исправляет.
+
+Переустановить WebView2 сейчас, чтобы Aurora открылась снова сама? При выборе «Нет» Aurora закроется.",
+        ),
     ];
-    ALL[lang.min(ALL.len() - 1)]
+    ALL[if lang < ALL.len() { lang } else { 1 }]
 }
 
-/// Titolo e testo del messaggio nelle sei lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt).
+/// Titolo e testo del messaggio nelle otto lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt, 6 nl, 7 ru).
 #[cfg(windows)]
 fn texts(lang: usize) -> (&'static str, &'static str) {
-    const ALL: [(&str, &str); 6] = [
+    const ALL: [(&str, &str); 8] = [
         (
             "Aurora: manca WebView2",
             "Aurora non può aprire la sua finestra: su questo PC manca Microsoft Edge WebView2, il componente di Windows con cui la disegna (oppure non funziona).\n\nVuoi che Aurora lo installi ora? Si apre l'installazione gratuita di Microsoft e alla fine Aurora si riapre da sola.",
@@ -173,8 +189,20 @@ fn texts(lang: usize) -> (&'static str, &'static str) {
             "Aurora: falta o WebView2",
             "O Aurora não consegue abrir a sua janela: neste PC falta o Microsoft Edge WebView2, o componente do Windows com que a desenha (ou não funciona).\n\nQueres que o Aurora o instale agora? Abre-se o instalador gratuito da Microsoft e, no fim, o Aurora volta a abrir sozinho.",
         ),
+        (
+            "Aurora: WebView2 ontbreekt",
+            "Aurora kan zijn venster niet openen: op deze pc ontbreekt Microsoft Edge WebView2, het Windows-onderdeel waarmee het wordt getekend (of het werkt niet).
+
+Moet Aurora het nu installeren? Het gratis installatieprogramma van Microsoft opent en daarna opent Aurora zichzelf weer.",
+        ),
+        (
+            "Aurora: WebView2 отсутствует",
+            "Aurora не может открыть своё окно: на этом ПК отсутствует Microsoft Edge WebView2, компонент Windows, которым оно рисуется (или он не работает).
+
+Установить его сейчас? Откроется бесплатный установщик Microsoft, и после него Aurora откроется снова сама.",
+        ),
     ];
-    ALL[lang.min(ALL.len() - 1)]
+    ALL[if lang < ALL.len() { lang } else { 1 }]
 }
 
 /// Messaggio di Windows con «Sì» e «No»; `true` se si sceglie «Sì».
@@ -193,20 +221,20 @@ mod tests {
     use super::texts;
 
     #[test]
-    fn six_languages_and_a_fallback() {
-        for lang in 0..6 {
+    fn eight_languages_and_a_fallback() {
+        for lang in 0..8 {
             let (title, text) = texts(lang);
             assert!(title.contains("WebView2") && text.contains("WebView2"));
         }
-        assert_eq!(texts(99), texts(5));
+        assert_eq!(texts(99), texts(1), "una lingua fuori elenco vale l'inglese");
     }
 
     #[test]
-    fn the_window_failed_message_has_six_languages_and_the_error_placeholder() {
-        for lang in 0..6 {
+    fn the_window_failed_message_has_eight_languages_and_the_error_placeholder() {
+        for lang in 0..8 {
             let (title, text) = super::failed_texts(lang);
             assert!(!title.is_empty() && text.contains("{error}") && text.contains("WebView2"));
         }
-        assert_eq!(super::failed_texts(99), super::failed_texts(5));
+        assert_eq!(super::failed_texts(99), super::failed_texts(1));
     }
 }

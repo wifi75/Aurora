@@ -252,9 +252,9 @@ pub(crate) fn ui_lang_code() -> String {
         .unwrap_or_default()
 }
 
-/// La lingua dell'interfaccia per i messaggi di Windows mostrati prima della finestra (per esempio WebView2 mancante).
-pub(crate) fn ui_lang() -> usize {
-    lang()
+/// Come `ui_lang`, ma con le otto lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt, 6 nl, 7 ru): per i messaggi di Windows che hanno anche l'olandese e il russo.
+pub(crate) fn ui_lang8() -> usize {
+    ["it", "en", "de", "fr", "es", "pt", "nl", "ru"].iter().position(|c| *c == lang_code()).unwrap_or(1)
 }
 
 fn lang_index(code: &str) -> usize {
