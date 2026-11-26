@@ -87,7 +87,7 @@ import '../styles/digi-log-corta.css';
 import '../styles/digi-band.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -160,6 +160,7 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'BPSK31': return 'psk31';
     case 'PSK63':
     case 'BPSK63': return 'psk63';
+    case 'QPSK31': return 'qpsk31';
     case 'RTTY': return 'rtty';
     case 'CW': return 'cw';
     case 'SSB':
@@ -907,7 +908,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     // in RTTY la frequenza e' il centro fra i due toni: Snap cerca la coppia (un tono solo andrebbe sul mark o sullo space)
     const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
     // in PSK la portante e' al centro del segnale: la riga piu' forte e' una delle due a mezzo baud, fuori di quanto l'AFC recupera
-    const pskHalf = l.snap.settings.mode === 'psk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
+    const pskHalf = l.snap.settings.mode === 'psk31' || l.snap.settings.mode === 'qpsk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
     // Olivia e Contestia: il segnale e' largo quanto la banda e la frequenza e' il centro, Snap non aggancia un tono (resta il clic)
     const snapped =
       snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode)
@@ -2640,7 +2641,7 @@ function txProblem(code: string, s: DigiSettings, t: T): string {
 /** La larghezza del filtro BPF (Hz), come la calcola il core: la sua se impostata, altrimenti secondo il modo. */
 function passbandWidth(s: DigiSettings): number {
   if ((s.passband_hz ?? 0) > 0) return s.passband_hz ?? 0;
-  if (s.mode === 'psk31') return 3 * 31.25;
+  if (s.mode === 'psk31' || s.mode === 'qpsk31') return 3 * 31.25;
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   if (s.mode === 'ssb') return 2400;

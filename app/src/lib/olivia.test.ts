@@ -167,6 +167,7 @@ describe('menu dei modi', () => {
   it('Olivia e Contestia non sono piu fra i modi in arrivo', () => {
     expect(MODI_IN_ARRIVO).not.toContain('Olivia');
     expect(MODI_IN_ARRIVO).not.toContain('Contestia');
+    expect(MODI_IN_ARRIVO).not.toContain('QPSK31');
     expect(MODI_IN_ARRIVO).toContain('MFSK');
   });
 

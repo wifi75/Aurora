@@ -229,7 +229,7 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'LOCKRXTOGGLE': macroState.rxLocked = !macroState.rxLocked; return;
     case 'MODEMACROS': {
       const m = arg.trim().toLowerCase().replace(/\.mc$/, '').replace(/^bpsk/, 'psk');
-      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw', 'ssb', 'olivia', 'contestia'].includes(m) ? m : null);
+      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw', 'ssb', 'olivia', 'contestia', 'qpsk31'].includes(m) ? m : null);
       return;
     }
     case 'WORDMODE': macroState.wordMode = on(arg); txLiveOptions.wordMode = macroState.wordMode; return;
@@ -273,7 +273,7 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       else if (key === 'SQUELCH') d.save({ squelch_on: on(val) });
       else if (key === 'SUBMODE' && !macroState.modeLocked) {
         const m = val.replace(/^BPSK/, 'PSK');
-        const mode = m === 'PSK31' ? 'psk31' : m === 'PSK63' ? 'psk63' : m === 'RTTY' ? 'rtty' : m === 'CW' ? 'cw' : null;
+        const mode = m === 'PSK31' ? 'psk31' : m === 'PSK63' ? 'psk63' : m === 'QPSK31' ? 'qpsk31' : m === 'RTTY' ? 'rtty' : m === 'CW' ? 'cw' : null;
         if (mode) d.save({ mode });
         else notInAurora(d, `SET SUBMODE:${val}`, val);
       }

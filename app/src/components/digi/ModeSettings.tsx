@@ -280,7 +280,7 @@ export function ModeSettingsFields({
         ? section(
             t('sw.digi.perMode'),
             <>
-              <b className="sw-digi-mode">PSK31 · PSK63</b>
+              <b className="sw-digi-mode">PSK31 · PSK63 · QPSK31</b>
               {pskRx}
               <b className="sw-digi-mode">RTTY</b>
               {rtty}
