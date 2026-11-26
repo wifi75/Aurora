@@ -1385,7 +1385,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           }
           const named = oliviaModePatch(l.snap.settings, a.mode);
           const m = modeFromName(a.mode);
+          // <MODE:THRBX1> e simili: Throb con quella variante (<MODE:THROB> lascia la variante scelta)
+          const variant = THROB_VARIANTS.find((v) => throbName(v) === a.mode.toUpperCase());
           if (named) save(named);
+          else if (variant) save({ mode: 'throb', throb: variant });
           else if (m) save({ mode: m });
           else toast(t('digi.run.modeUnsupported', { mode: a.mode }), 'info');
           break;
