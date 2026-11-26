@@ -156,6 +156,8 @@ pub struct Options {
     /// `SeqHaltTxReplyOther`: ferma la trasmissione se il DX risponde a un altro (di fabbrica acceso); spento, si ferma solo se il DX parla
     /// entro la banda di guardia dalla nostra frequenza di trasmissione (FT8 51 Hz, FT4 84 Hz).
     pub abandon_if_dx_answers_other: bool,
+    /// Split acceso (Tx e Rx indipendenti, di solito in un pile-up): il DX che risponde a un altro non ferma la trasmissione (Pere EA3CUU, #113).
+    pub split_active: bool,
     /// Registrazione automatica del QSO (`AutoQSOLogging`): a fine QSO (FIN, 73 inviato) JTDX **ferma la trasmissione**. Spento, passa da solo al
     /// prossimo chiamante o al CQ.
     pub autolog: bool,
@@ -209,6 +211,7 @@ impl Default for Options {
             limits: RepeatLimits::default(),
             watchdog_min: 6,
             abandon_if_dx_answers_other: true,
+            split_active: false,
             autolog: true,
             clear_dx: false,
             tx_even: true,

@@ -1306,6 +1306,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.note_heard(slot, decoded);
         self.note_exchanges(decoded);
         self.auto_hound(decoded, &mut log);
+        // con Split acceso (pile-up) il DX che risponde a un altro non ferma la trasmissione (#113)
+        let split_now = self.controls.switch_on("split");
+        if self.opts.split_active != split_now {
+            self.opts.split_active = split_now;
+            self.seq.set_options(self.opts.clone());
+        }
         self.seq.on_decodes_at(slot, &list, Some(now_s));
         let mut qsos = self.collect_events(slot_start_ms, dial_hz, band, &mut log);
         self.wait_features(slot, decoded, now_s, &mut log);

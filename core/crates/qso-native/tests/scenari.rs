@@ -447,6 +447,18 @@ fn dx_answers_someone_else() {
     assert_eq!(b.tx(4), None);
 }
 
+/// Con Split acceso (pile-up, #113) il DX che risponde a un altro non ferma la trasmissione: si continua a chiamare.
+#[test]
+fn dx_answers_someone_else_with_split_keeps_calling() {
+    let mut b = Bench::ft8(Options { split_active: true, ..opts() });
+    b.reply(1, "CQ LZ2KSQ KN23", -12);
+    assert!(b.tx(2).is_some());
+    b.rx(3, &[("AA1AA LZ2KSQ -10", -12)]);
+    assert!(b.stops().is_empty());
+    assert_eq!(b.seq.dx(), Some("LZ2KSQ"));
+    assert!(b.tx(4).is_some());
+}
+
 /// `process_Auto` con `m_reply_other` e `AnswerCQ` acceso: il DX si libera subito, senza aspettare il valore del contatore.
 #[test]
 fn dx_answers_someone_else_with_the_counter_on_frees_the_dx() {

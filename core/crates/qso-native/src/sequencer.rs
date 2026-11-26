@@ -954,7 +954,7 @@ impl Sequencer {
         } else if de_is_his && !msg.starts_with("CQ ") && !msg.starts_with("DE ") && !msg.starts_with("QRZ ") && !msg.contains(" 73") && !msg.contains(" RR73") && !msg.contains(" RRR") {
             // il DX parla con un altro: se e' vicino alla nostra frequenza (o sempre, con `SeqHaltTxReplyOther`) si ferma la trasmissione
             self.used_freq = freq;
-            if self.enabled && !self.reply_me && !self.opts.hound && ((self.used_freq - self.tx_hz()).abs() < self.opts.guard_hz(self.mode) || self.opts.abandon_if_dx_answers_other) {
+            if self.enabled && !self.reply_me && !self.opts.hound && !self.opts.split_active && ((self.used_freq - self.tx_hz()).abs() < self.opts.guard_hz(self.mode) || self.opts.abandon_if_dx_answers_other) {
                 self.halt_tx_reason(StopReason::ReplyOther);
             }
         }

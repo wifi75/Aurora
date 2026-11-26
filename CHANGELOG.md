@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Split acceso (pile-up), il DX che risponde a un altro non ferma piu' la trasmissione (Pere EA3CUU, #113, pacchetto 6CBCB1BA, OH0K): `SeqHaltTxReplyOther` e banda di guardia valgono solo con Split spento; opzione `split_active` in `qso-native` aggiornata dal motore a ogni periodo (`engine-native/src/tx.rs`), prova `dx_answers_someone_else_with_split_keeps_calling`.
 
 ## 0.11.353 - 2026-11-25
 - Nuovo sistema di controllo radio: Ham Radio Deluxe (HRD Rig Control), sulla porta di rete 7809, richiesto da un utente; non ancora provato con HRD vero. In Impostazioni › Stazione › Radio: Indirizzo, Porta e Radio (facoltativo); il PTT usa il pulsante TX di HRD, senza misuratori e senza accensione e spegnimento. Testi in tutte le lingue, Guida e `docs/cat-radio.md`.
