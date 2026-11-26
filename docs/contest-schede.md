@@ -98,7 +98,7 @@ Nel catalogo di `contest-formato.md` e' `statistiche`; qui si propone di tenerlo
 
 ### 2.10 `punteggio`
 
-Come in `contest-formato.md` (`mostra`). **In Aurora**: si (`ssbc-score`: QSO, punti, moltiplicatori, totale, ritmo). Manca solo `moltiplicatori_per_modo`, richiesto da ARRL 10 (vedi `contest-formato.md`, sezione «Da fare nel motore»). **S**.
+Come in `contest-formato.md` (`mostra`). **In Aurora**: si (`ssbc-score`: QSO, punti, moltiplicatori, totale, ritmo). Anche `moltiplicatori_per_modo` (ARRL 10): `score.molt_per_modo`, una riga nella scheda Statistiche. **S**.
 
 ### 2.11 `log_contest`, finestra del log (finestra principale)
 
@@ -178,7 +178,7 @@ Come in `contest-formato.md`. `doppi` e' coperto dall'allarme in `ssbc-alert`; `
 | `ritmo` | parziale | `punti_testo.rs` (`ritmo`), `ContestStatsDialog.tsx` | ultimi N QSO, punti/h, equivalenza di un mult, Pt/QSO e Pt/Mult | M |
 | `super_check` | no | `core/crates/aurora/src/lib.rs` (legge MASTER.SCP solo per convalidare) | endpoint o indice, ricerca parziale e N+1, scheda | L |
 | `sommario` / `statistiche` | si | `ContestStatsDialog.tsx`, `lib/contestEntry.ts` | colonna Media, colonne scelte dal contest | S |
-| `punteggio` | si | `SsbContestView.tsx` | moltiplicatori per modo | S |
+| `punteggio` | si | `SsbContestView.tsx`, `StatsCard.tsx` | - (moltiplicatori per modo fatti) | S |
 | `log_contest` | si | `DigiLog.tsx`, `SsbContestView.tsx` | «DUPE» sui doppi a log, S&P/Run, orologio UTC | S |
 | `matrice_paesi` | parziale | `/api/v1/dxcc-matrix`, `ContestStatsDialog.tsx` (`MultGrid`) | scheda compatta per continente, legata al contest | M |
 | `matrice_moltiplicatori` | si (altra forma) | `SsbContestView.tsx` (`Mults`) | vista a caselle (parametro di `moltiplicatori`) | S |
@@ -244,7 +244,7 @@ Schede presenti: Inserimento QSO (`EntryCard`), Log e DX Cluster (`DigiLog` con 
 
 Limiti noti, dove il core non da' ancora il dato (non inventati nell'interfaccia):
 
-- **Moltiplicatori per modo** (CW/Fonia, per esempio ARRL 10): `griglia` ha solo tipo, valore e bande; il modo sta nella chiave interna del core (`#CW`/`#SSB`) e non esce. La scheda mostra un valore come lavorato se lo e' in uno dei due modi. Serve in `CellaMolt` un campo `modi` (come `bande`) e il parametro `per_modo` della scheda.
+- **Moltiplicatori per modo** (CW/Fonia, per esempio ARRL 10): fatto in parte. `CellaMolt` ha il campo `modi` (solo se il moltiplicatore conta per modo) e il punteggio `molt_per_modo`; la scheda Statistiche mostra i conteggi per modo, la casella del moltiplicatore e' lavorata se lo e' in uno dei modi e il suggerimento dice quali. Manca il parametro `per_modo` della scheda (una casella per modo).
 - **Ritmo sugli ultimi 10, 50 e 100 QSO** e punti all'ora, riga «1 moltiplicatore vale»: non ci sono nel core (`Punteggio` ha `rate10`, `rate60`, `media_ora`); la scheda del ritmo mostra solo quelli.
 - **QSO per ora per banda**: il grafico e' ancora quello a barre semplici delle ultime 12 ore (senza i colori delle bande); i colori delle bande ci sono solo nei punti dei moltiplicatori (`lib/contestBandColors.ts`).
 - **Schede dichiarate dal contest** (`[[scheda]]` di `contest.toml`: `colonne`, `righe`, `x`, `y`): la disposizione di partenza e' quella di `contestLayout.ts` per tutti i contest; le misure del contest non sono ancora lette (il lettore e' dell'altro lavoro).
