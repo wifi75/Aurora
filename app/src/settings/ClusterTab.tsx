@@ -88,7 +88,7 @@ function LedLight({ led, t, real }: { led: Led | undefined; t: T; real?: { state
 export function ClusterTab() {
   const t = useT();
   const client = useQueryClient();
-  const state = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(1), retry: false, refetchInterval: 4000 });
+  const state = useQuery({ queryKey: ['dx-cluster', 'cfg'], queryFn: () => getClusterSpots(1), retry: false, refetchInterval: 4000 });
   const catalog = useQuery({ queryKey: ['dx-cluster-catalog'], queryFn: getClusterCatalog, retry: false, staleTime: Infinity });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [note, setNote] = useState('');

@@ -376,7 +376,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return true;
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => () => void stopTxe(), []);
+  useEffect(() => () => {
+    stopTxe();
+    if (clearAfterTimer.current !== null) window.clearInterval(clearAfterTimer.current);
+  }, []);
   // barra sopra la finestra RX: vista ferma (Pausa) e ricerca di un nominativo
   const [rxPaused, setRxPaused] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -415,6 +418,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const sending = snap.tx.state === 'sending';
   // <RXANDCLEAR>: pulizia della finestra di trasmissione rimandata alla fine della trasmissione
   const clearAfterTx = useRef(false);
+  const clearAfterTimer = useRef<number | null>(null);
   // il menu del tasto destro nella finestra di trasmissione
   const [txMenu, setTxMenu] = useState<{ x: number; y: number } | null>(null);
   // il testo nuovo della finestra di trasmissione (tastiera e menu): mentre si trasmette parte subito, e il Backspace toglie solo quello
@@ -1512,19 +1516,24 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       if (transmitting) {
         // riserva: se la pagina non vede mai «in trasmissione» (trasmissione cortissima), pulisce appena il core dice che non trasmette piu'
         const t0 = Date.now();
+        // un solo intervallo alla volta: macro di fila non ne accumulano, e chiudendo la pagina si ferma (cleanup sotto)
+        if (clearAfterTimer.current !== null) window.clearInterval(clearAfterTimer.current);
         const id = window.setInterval(() => {
           if (!clearAfterTx.current || Date.now() - t0 > 600_000) {
             window.clearInterval(id);
+            if (clearAfterTimer.current === id) clearAfterTimer.current = null;
             return;
           }
           if (txeTimer.current !== null || macroInflight.current > 0 || wasSending.current || Date.now() - t0 < 2000) return;
           if (live.current.snap.tx.state !== 'sending') {
             clearAfterTx.current = false;
             window.clearInterval(id);
+            if (clearAfterTimer.current === id) clearAfterTimer.current = null;
             clearTxWindow();
             window.setTimeout(clearTxWindow, 600);
           }
         }, 500);
+        clearAfterTimer.current = id;
       } else clearTxWindow();
     }
   };

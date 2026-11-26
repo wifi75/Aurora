@@ -140,8 +140,10 @@ export function keepSynced(kind: DeviceKind, doFetch: Fetch = fetch, options: Sy
   };
   const { setItem, removeItem } = Storage.prototype;
   Storage.prototype.setItem = function (this: Storage, key: string, value: string) {
+    // una scrittura identica non cambia niente: non si rimanda tutto il gruppo al server
+    const same = this === storage && this.getItem(key) === String(value);
     setItem.call(this, key, value);
-    if (this === storage) schedule(key, String(value));
+    if (this === storage && !same) schedule(key, String(value));
   };
   Storage.prototype.removeItem = function (this: Storage, key: string) {
     removeItem.call(this, key);
