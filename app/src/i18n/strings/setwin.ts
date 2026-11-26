@@ -70,6 +70,7 @@ export const setWinStrings = {
   'sw.pg.rx': ['Ricezione', 'Receive', 'Empfang', 'Réception', 'Recepción', 'Receção'],
   'sw.pg.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'sw.pg.images': ['Immagini', 'Pictures', 'Bilder', 'Images', 'Imágenes', 'Imagens'],
+  'sw.pg.wefaxFreq': ['Frequenze', 'Frequencies', 'Frequenzen', 'Fréquences', 'Frecuencias', 'Frequências'],
   'sw.pg.orbits': ['Orbite', 'Orbits', 'Bahnen', 'Orbites', 'Órbitas', 'Órbitas'],
   'sw.pg.doppler': ['Doppler e rotore', 'Doppler and rotator', 'Doppler und Rotor', 'Doppler et rotor', 'Doppler y rotor', 'Doppler e rotor'],
   'sw.pg.files': ['File ADIF', 'ADIF files', 'ADIF-Dateien', 'Fichiers ADIF', 'Archivos ADIF', 'Ficheiros ADIF'],

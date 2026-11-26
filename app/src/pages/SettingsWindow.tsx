@@ -32,6 +32,7 @@ import { OnlineTab } from '../settings/OnlineTab';
 import { RadioTab } from '../settings/RadioTab';
 import { RotatorTab } from '../settings/RotatorTab';
 import { SSTV_DRAFT, SstvTab, sstvDraftToSettings, type SstvDraft } from '../settings/SstvTab';
+import { WefaxFreqTab } from '../settings/WefaxFreqTab';
 import { SdrTab } from '../settings/SdrTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
@@ -96,6 +97,8 @@ const RENDER: Readonly<Record<string, () => ReactNode>> = {
   sstv: () => <SstvTab part="rx" />,
   sstvtx: () => <SstvTab part="tx" />,
   sstvimages: () => <SstvTab part="images" />,
+  // Modi › WEFAX
+  wefaxfreq: () => <WefaxFreqTab />,
   // Modi › Satelliti
   satorbits: () => <SatSettingsPage cat="orbits" />,
   satmap: () => <SatSettingsPage cat="map" />,

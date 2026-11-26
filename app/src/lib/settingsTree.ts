@@ -73,6 +73,7 @@ export const SETTINGS_TREE: readonly TreeFamily[] = [
       page('wspr', 'sw.sub.wspr'),
       sub('modedigi', 'sw.sub.digi', [page('digi', 'sw.pg.digiRxTx'), page('digimacros', 'sw.pg.digiMacros'), page('digiscan', 'sw.pg.digiScan'), page('digicluster', 'cop.title')]),
       sub('modesstv', 'sw.sec.sstv', [page('sstv', 'sw.pg.rx'), page('sstvtx', 'sw.pg.tx'), page('sstvimages', 'sw.pg.images')]),
+      sub('modewefax', 'nav.wefax', [page('wefaxfreq', 'sw.pg.wefaxFreq')]),
       sub('modesat', 'nav.sat', [page('satorbits', 'sw.pg.orbits'), page('satmap', 'sat.set.catMap'), page('satradio', 'sw.pg.doppler'), page('sattrack', 'sw.pg.tracking')]),
     ],
   },
