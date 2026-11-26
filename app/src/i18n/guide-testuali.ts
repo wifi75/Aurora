@@ -1642,6 +1642,14 @@ export const GUIDE_TESTUALI: readonly GuideSection[] = [
         "En la misma ventana están también «[[digi.olivia.syncMargin]]» (cuánto se busca la señal alrededor de la frecuencia elegida, de fábrica 8) y «[[digi.olivia.syncInteg]]» (en cuántos bloques se suma el sincronismo, de fábrica 4): normalmente no hace falta tocarlos. El plan de banda de Aurora todavía no tiene frecuencias para Olivia y Contestia: al entrar en la página en estos modos la radio se queda donde está.",
         "Na mesma janela há também «[[digi.olivia.syncMargin]]» (até onde se procura o sinal à volta da frequência escolhida, de origem 8) e «[[digi.olivia.syncInteg]]» (em quantos blocos se soma o sincronismo, de origem 4): normalmente não é preciso mexer neles. O plano de banda do Aurora ainda não tem frequências para Olivia e Contestia: ao entrar na página nestes modos a rádio fica onde está.",
       ],
+      [
+        "Da provare in onda: ricezione e trasmissione di Olivia e Contestia sono provate con prove automatiche contro fldigi, ma non ancora con una radio vera. Se qualcosa non va (dal menu [[digi.menu.mode]] o in trasmissione), segnalalo su GitHub con le impostazioni usate.",
+        "To be tested on air: Olivia and Contestia reception and transmission are checked with automatic tests against fldigi, but not yet with a real radio. If something goes wrong (from the [[digi.menu.mode]] menu or while transmitting), report it on GitHub with the settings you used.",
+        "Noch im Funkbetrieb zu testen: Empfang und Senden von Olivia und Contestia sind mit automatischen Tests gegen fldigi geprüft, aber noch nicht mit einem echten Funkgerät. Wenn etwas nicht klappt (im Menü [[digi.menu.mode]] oder beim Senden), melde es auf GitHub mit den verwendeten Einstellungen.",
+        "À essayer en l’air : la réception et l’émission d’Olivia et Contestia sont vérifiées par des tests automatiques face à fldigi, mais pas encore avec une vraie radio. Si quelque chose ne va pas (depuis le menu [[digi.menu.mode]] ou en émission), signale-le sur GitHub avec les réglages utilisés.",
+        "Por probar en el aire: la recepción y la transmisión de Olivia y Contestia están comprobadas con pruebas automáticas frente a fldigi, pero aún no con una radio real. Si algo falla (desde el menú [[digi.menu.mode]] o al transmitir), avísalo en GitHub con los ajustes usados.",
+        "Por testar no ar: a receção e a transmissão de Olivia e Contestia estão verificadas com testes automáticos contra o fldigi, mas ainda não com um rádio real. Se algo correr mal (no menu [[digi.menu.mode]] ou ao transmitir), assinala-o no GitHub com as definições usadas.",
+      ],
     ],
   },
   {

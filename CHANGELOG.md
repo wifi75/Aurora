@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Guida, Olivia e Contestia: un passo dice che i due modi sono ancora da provare in onda (provati solo con prove automatiche contro fldigi) e come segnalare i problemi. Otto lingue.
 - Modi testuali, sensibilita' di Aurora BIGScan (Impostazioni del modo CW e PSK, «Sensibilita' BIGScan»): Alta (soglia che apre i canali 2 dB piu' bassa: piu' stazioni deboli, piu' canali falsi), Media (di fabbrica: la soglia di sempre, stessi risultati di prima, provato da `bigscan_sensitivity_medium_is_unchanged` in CW e PSK) e Bassa (3 dB piu' alta: meno falsi). Vale subito, si salva come le altre preferenze (`band_sensitivity`); in RTTY non cambia niente. I valori -2/+3 dB non sono ancora misurati sul banco BIGScan.
 - Cascata dei modi testuali, tasto destro › «Che modo e'? (suggerimento)»: dalle righe degli ultimi 30 s propone il modo piu' probabile del segnale sotto il mouse (CW, portante ferma, RTTY con lo spostamento, PSK31, PSK63, FT8, FT4 o «segnale largo») con come decodificarlo; e' solo un suggerimento e non cambia mai modo. Si basa su larghezza, righe e pause (ogni riga e' una FFT di 1,365 s: la manipolazione del CW e la velocita' dei simboli non si vedono); se le misure non bastano dice che non lo riconosce (`lib/modeGuess.ts`, prove su spettri sintetici).
 - Messaggi di Windows prima della finestra (WebView2 mancante, finestra che non si apre): ora anche in olandese e russo (prima ricadevano sull'inglese); `agent::ui_lang8` con le otto lingue, una lingua fuori elenco vale l'inglese (`desktop/src-tauri/src/webview_check.rs`).
