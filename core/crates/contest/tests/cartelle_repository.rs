@@ -177,6 +177,10 @@ fn le_prove_danno_il_punteggio_atteso() {
                 if let (Some(modo), Some(atteso)) = (k.strip_prefix("moltiplicatori_"), v.as_integer()) {
                     let n = valutati.iter().filter(|x| x.qso.mode.eq_ignore_ascii_case(modo)).map(|x| x.nuovi.len() as i64).sum::<i64>();
                     assert_eq!(n, atteso, "{nome}: moltiplicatori {modo}");
+                    // con moltiplicatori per modo (ARRL 10) lo stesso conteggio esce dal motore in `molt_per_modo` (per la scheda del punteggio)
+                    if !tot.molt_per_modo.is_empty() {
+                        assert_eq!(tot.molt_per_modo.get(&modo.to_ascii_uppercase()).copied().map_or(0, i64::from), atteso, "{nome}: molt_per_modo {modo}");
+                    }
                 }
             }
         }
@@ -208,4 +212,48 @@ fn arrl_dx_hanno_due_punti_di_vista() {
         viste += 1;
     }
     assert!(viste >= 2, "attese le cartelle ARRL DX-CW e DX-SSB");
+}
+
+/// ARRL 10: i moltiplicatori contano per modo; il motore li restituisce per modo (`molt_per_modo`) e nelle celle (`modi`) senza cambiare
+/// il punteggio. Un contest senza moltiplicatori per modo non ha i campi nuovi nel JSON.
+#[test]
+fn arrl_10_moltiplicatori_per_modo() {
+    let db = database();
+    let c = carica(&radice().join("ARRL 10 Meter Contest"), Origine::Inclusa).unwrap_or_else(|e| panic!("{e}"));
+    let prove: toml::Value = toml::from_str(&c.prove.clone().unwrap_or_default()).unwrap_or_else(|e| panic!("{e}"));
+    let giorno = prove.get("prova").map(|p| testo(p, "data")).unwrap_or_default();
+    let ora = istante(&giorno, "1200");
+    let contesto = c.in_contesto(ora);
+    let q = |call: &str, modo: &str, rcvd: &str, hhmm: &str| QsoTesto { call: call.into(), band: "10m".into(), mode: modo.into(), freq_hz: if modo == "CW" { 28_020_000 } else { 28_400_000 }, time_ms: istante(&giorno, hhmm), rst_sent: if modo == "CW" { "599".into() } else { "59".into() }, rst_rcvd: if modo == "CW" { "599".into() } else { "59".into() }, exch_sent: "001".into(), exch_rcvd: rcvd.into() };
+    let qsos = vec![q("W1AW", "CW", "CT", "0010"), q("K1ABC", "SSB", "CT", "0020"), q("DL1ABC", "CW", "001", "0030"), q("W1AW", "SSB", "CT", "0040")];
+    let mio = paese_di(&db, "IU3ABC");
+    let validi = qso_del_contest(&contesto, &qsos, ora);
+    assert_eq!(validi.len(), qsos.len());
+    let dominio = c.dominio_del_contest();
+    let (_, tot) = valuta(&contesto, &validi, mio.as_ref(), &|call| paese_di(&db, call), dominio.as_ref());
+    // CT in CW e in SSB, DL in CW: 3 moltiplicatori (2 CW, 1 SSB); il QSO 4 e' un altro modo ma CT in SSB c'e' gia'
+    assert_eq!(tot.molt, 3);
+    assert_eq!(tot.molt_per_modo.get("CW"), Some(&2));
+    assert_eq!(tot.molt_per_modo.get("SSB"), Some(&1));
+    assert_eq!(tot.molt_per_modo.values().map(|n| i64::from(*n)).sum::<i64>(), tot.molt);
+    let ct = tot.griglia.iter().find(|g| g.valore == "CT").unwrap_or_else(|| panic!("CT non in griglia: {:?}", tot.griglia));
+    assert_eq!(ct.modi, vec!["CW".to_string(), "SSB".to_string()]);
+    let dl = tot.griglia.iter().find(|g| g.valore == "DL").unwrap_or_else(|| panic!("DL non in griglia: {:?}", tot.griglia));
+    assert_eq!(dl.modi, vec!["CW".to_string()]);
+    let j = serde_json::to_value(&tot).unwrap_or_default();
+    assert!(j.get("molt_per_modo").is_some());
+
+    // CQ WW DX CW: nessun moltiplicatore per modo, nessun campo nuovo nel JSON
+    let c = carica(&radice().join("CQ WW DX CW Contest"), Origine::Inclusa).unwrap_or_else(|e| panic!("{e}"));
+    let giorno = toml::from_str::<toml::Value>(&c.prove.clone().unwrap_or_default()).ok().and_then(|p| p.get("prova").map(|p| testo(p, "data"))).unwrap_or_default();
+    let ora = istante(&giorno, "1200");
+    let contesto = c.in_contesto(ora);
+    let qsos = vec![QsoTesto { call: "DL1ABC".into(), band: "20m".into(), mode: "CW".into(), freq_hz: 14_020_000, time_ms: istante(&giorno, "0010"), rst_sent: "599".into(), rst_rcvd: "599".into(), exch_sent: "15".into(), exch_rcvd: "14".into() }];
+    let validi = qso_del_contest(&contesto, &qsos, ora);
+    let (_, tot) = valuta(&contesto, &validi, mio.as_ref(), &|call| paese_di(&db, call), c.dominio_del_contest().as_ref());
+    assert!(tot.molt_per_modo.is_empty());
+    assert!(!tot.griglia.is_empty());
+    let j = serde_json::to_value(&tot).unwrap_or_default();
+    assert!(j.get("molt_per_modo").is_none());
+    assert!(j["griglia"].as_array().is_some_and(|g| g.iter().all(|c| c.get("modi").is_none() && c.get("bande").is_some())));
 }

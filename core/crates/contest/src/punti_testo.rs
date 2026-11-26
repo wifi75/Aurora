@@ -229,6 +229,10 @@ pub struct Punteggio {
     pub griglia: Vec<CellaMolt>,
     /// I moltiplicatori che mancano dei tipi con elenco chiuso.
     pub mancanti: Vec<Mancanti>,
+    /// I moltiplicatori contati per modo (`mult=.../mode`, ARRL 10): modo (come nel log, in maiuscolo) -> moltiplicatori presi in quel modo.
+    /// Vuoto (e assente dal JSON) se nessun moltiplicatore conta per modo; la somma e' gia' dentro `molt`.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub molt_per_modo: BTreeMap<String, u32>,
     /// Ritmo: QSO all'ora sugli ultimi 10 minuti, QSO nell'ultima ora, media all'ora.
     pub rate10: u32,
     pub rate60: u32,
@@ -265,7 +269,7 @@ pub struct NuovoMolt {
 
 impl Default for Punteggio {
     fn default() -> Self {
-        Punteggio { qso: 0, doppi: 0, punti: 0, molt: 0, punteggio: 0, qtc: 0, tipi: Vec::new(), bande: Vec::new(), esclusi: 0, fattore_mille: 1000, per_qso: false, griglia: Vec::new(), mancanti: Vec::new(), rate10: 0, rate60: 0, media_ora: 0.0, recenti: Vec::new(), errore_script: None, script: String::new(), primo_mandato: String::new(), per_banda: false, mio_dxcc: String::new(), mio_cont: String::new(), paesi: BTreeMap::new() }
+        Punteggio { qso: 0, doppi: 0, punti: 0, molt: 0, punteggio: 0, qtc: 0, tipi: Vec::new(), bande: Vec::new(), esclusi: 0, fattore_mille: 1000, per_qso: false, griglia: Vec::new(), mancanti: Vec::new(), molt_per_modo: BTreeMap::new(), rate10: 0, rate60: 0, media_ora: 0.0, recenti: Vec::new(), errore_script: None, script: String::new(), primo_mandato: String::new(), per_banda: false, mio_dxcc: String::new(), mio_cont: String::new(), paesi: BTreeMap::new() }
     }
 }
 
@@ -275,6 +279,9 @@ pub struct CellaMolt {
     pub tipo: String,
     pub valore: String,
     pub bande: Vec<String>,
+    /// I modi dove e' stato preso, se il moltiplicatore conta per modo (vuoto e assente dal JSON altrimenti).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub modi: Vec<String>,
 }
 
 /// I valori che mancano di un tipo con un elenco chiuso (zone, continenti, aree, domini).
@@ -333,6 +340,7 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
     let mut visti: HashSet<(String, String, String)> = HashSet::new();
     let mut molt: HashSet<String> = HashSet::new();
     let mut griglia: BTreeMap<(usize, String), BTreeSet<String>> = BTreeMap::new();
+    let mut modi_cella: BTreeMap<(usize, String), BTreeSet<String>> = BTreeMap::new();
     let (mut somma, mut prodotto) = (0i64, 0i64);
     let mut bande: BTreeMap<String, RigaBanda> = BTreeMap::new();
     let mut out = Vec::with_capacity(qsos.len());
@@ -404,6 +412,13 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
                 } else {
                     somma += w;
                 }
+                if d.per_modo {
+                    let modo = q.mode.to_ascii_uppercase();
+                    if d.aggiunta == 0 {
+                        *tot.molt_per_modo.entry(modo.clone()).or_default() += u32::try_from(w).unwrap_or(0);
+                    }
+                    modi_cella.entry((i, v.clone())).or_default().insert(modo);
+                }
                 let cella = griglia.entry((i, v)).or_default();
                 if d.per_banda {
                     cella.insert(banda.clone());
@@ -442,8 +457,14 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
     tot.per_banda = r.per_banda;
     tot.mio_dxcc = mio.map(|m| m.dxcc.clone()).unwrap_or_default();
     tot.mio_cont = mio.map(|m| m.continente.clone()).unwrap_or_default();
-    tot.griglia = griglia.into_iter().map(|((i, valore), b)| CellaMolt { tipo: r.molt[i].tipo.nome().to_string(), valore, bande: ordina_bande(b.into_iter().collect()) }).collect();
-    tot.griglia.extend(griglia_script.into_iter().map(|((tipo, valore), b)| CellaMolt { tipo, valore, bande: ordina_bande(b.into_iter().collect()) }));
+    tot.griglia = griglia
+        .into_iter()
+        .map(|((i, valore), b)| {
+            let modi = modi_cella.remove(&(i, valore.clone())).map(|m| m.into_iter().collect()).unwrap_or_default();
+            CellaMolt { tipo: r.molt[i].tipo.nome().to_string(), valore, bande: ordina_bande(b.into_iter().collect()), modi }
+        })
+        .collect();
+    tot.griglia.extend(griglia_script.into_iter().map(|((tipo, valore), b)| CellaMolt { tipo, valore, bande: ordina_bande(b.into_iter().collect()), modi: Vec::new() }));
     for d in r.molt.iter().filter(|_| !molt_script) {
         let tutti = valori_possibili(&d.tipo, dominio);
         if tutti.is_empty() || tot.mancanti.iter().any(|m| m.tipo == d.tipo.nome()) {
