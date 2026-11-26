@@ -2036,6 +2036,8 @@ export interface DigiSettings {
   band_spots_cq_only?: boolean;
   /** Tutta la banda: convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`). */
   band_validation?: string;
+  /** Tutta la banda (BIGScan): sensibilita' della soglia che apre i canali (`high`, `medium`, `low`; di base `medium`). CW e PSK. */
+  band_sensitivity?: 'high' | 'medium' | 'low';
   /** Passabanda «a coltello» intorno alla frequenza di ricezione, davanti al ricevitore. */
   passband_on?: boolean;
   /** Larghezza del passabanda (Hz, 20-1000); 0 = quella di base del modo. */

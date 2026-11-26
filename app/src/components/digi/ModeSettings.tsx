@@ -96,6 +96,14 @@ export function ModeSettingsFields({
         <input type="checkbox" checked={s.band_psk !== false} onChange={(e) => onSave({ band_psk: e.target.checked })} />
         {t('digi.band.miPsk')}
       </label>
+      <label title={t('digi.band.sensitivityTip')}>
+        <span>{t('digi.band.sensitivity')}</span>
+        <select value={s.band_sensitivity ?? 'medium'} onChange={(e) => onSave({ band_sensitivity: e.target.value as DigiSettings['band_sensitivity'] })}>
+          <option value="high">{t('digi.band.sensHigh')}</option>
+          <option value="medium">{t('digi.band.sensMedium')}</option>
+          <option value="low">{t('digi.band.sensLow')}</option>
+        </select>
+      </label>
       <p className="sstv-hint">
         {quality === null ? null : <>{t('digi.psk.qualityNow', { q: Math.round(quality) })} — </>}
         {t('digi.psk.squelchHint')}
@@ -137,6 +145,14 @@ export function ModeSettingsFields({
           <option value="normal">{t('digi.band.valNormal')}</option>
           <option value="strict">{t('digi.band.valStrict')}</option>
           <option value="maximum">{t('digi.band.valMaximum')}</option>
+        </select>
+      </label>
+      <label title={t('digi.band.sensitivityTip')}>
+        <span>{t('digi.band.sensitivity')}</span>
+        <select value={s.band_sensitivity ?? 'medium'} onChange={(e) => onSave({ band_sensitivity: e.target.value as DigiSettings['band_sensitivity'] })}>
+          <option value="high">{t('digi.band.sensHigh')}</option>
+          <option value="medium">{t('digi.band.sensMedium')}</option>
+          <option value="low">{t('digi.band.sensLow')}</option>
         </select>
       </label>
       <label>

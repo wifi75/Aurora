@@ -270,6 +270,10 @@ html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-
 .digi-st-menu { min-width: 13rem; }
 .digi-st-menu button { display: flex; align-items: center; gap: 0.35rem; }
 .digi-st-menu-check { display: inline-block; width: 1rem; text-align: center; color: var(--accent, #8e7bff); font-weight: 700; }
+/* Suggerimento del modo dal tasto destro sulla cascata: testo che va a capo */
+.wf-guess { width: 20rem; max-width: calc(100vw - 8px); box-sizing: border-box; }
+.wf-guess p { margin: 0.3rem 0.5rem; font-size: 0.8rem; line-height: 1.35; white-space: normal; }
+.wf-guess .wf-guess-title { font-weight: 700; }
 .digi-st-menu-sep { margin: 0.25rem 0.3rem; border: 0; border-top: 1px solid var(--border); }
 
 /* finestra «Impostazioni RTTY»: compatta, quattro profili con i pallini, soglia dello squelch in verticale */

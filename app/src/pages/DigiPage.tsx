@@ -64,6 +64,7 @@ import { useDigiTxLive } from '../lib/digiTxLive';
 import { createLatestSequencer, restartBox } from '../lib/macroRestart';
 import { TxMenu } from '../components/digi/TxMenu';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, snapToPsk, type SpectrumRow } from '../lib/digiSpectrum';
+import { guessMode, type ModeGuessResult } from '../lib/modeGuess';
 import { bandOf } from '../lib/format';
 import { logBand, saveErrorText } from '../lib/logSaveError';
 import { effectiveMacros, macroNameForKey, macroNeeds, runMacro, type Macro, type MacroAction, type MacroContext, type PrevQso } from '../lib/macroLang';
@@ -564,9 +565,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // lo spettro: la media delle righe recenti serve a Snap, Seek e Scan
   const avg = useRef(new RowAverager());
   const lastRow = useRef<SpectrumRow | null>(null);
+  // le righe degli ultimi 30 s circa (una su tre, copiate) per il suggerimento del modo dal tasto destro sulla cascata
+  const guessRows = useRef<{ row: SpectrumRow; at: number }[]>([]);
+  const rowTick = useRef(0);
   const onRow = useCallback((row: SpectrumRow) => {
     lastRow.current = row;
     avg.current.push(row);
+    if (rowTick.current++ % 3 === 0) {
+      const h = guessRows.current;
+      h.push({ row: { bins: row.bins.slice(), fMinHz: row.fMinHz, fMaxHz: row.fMaxHz }, at: performance.now() });
+      if (h.length > 150) h.shift();
+    }
+  }, []);
+  const [guess, setGuess] = useState<{ x: number; y: number; hz: number; result: ModeGuessResult } | null>(null);
+  const closeGuess = useCallback(() => setGuess(null), []);
+  const showGuess = useCallback((x: number, y: number, hz: number) => {
+    const h = guessRows.current;
+    const first = h[0];
+    const lastOne = h[h.length - 1];
+    const spr = first && lastOne && h.length > 1 ? (lastOne.at - first.at) / 1000 / (h.length - 1) : 0.2;
+    setGuess({ x, y, hz, result: guessMode(h.map((e) => e.row), hz, spr) });
   }, []);
 
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
@@ -2581,6 +2599,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 </>
               );
             })()}
+            <hr />
+            <button type="button" role="menuitem" onClick={() => { showGuess(wfMenu.x, wfMenu.y, wfMenu.hz); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true" />
+              {t('wfm.guess')}
+            </button>
+          </>
+        ) : null}
+      </PopupMenu>
+      <PopupMenu at={guess} onClose={closeGuess} className="call-menu wf-guess" width={340} height={320} label={guess ? t('wfm.guessTitle', { hz: guess.hz }) : undefined}>
+        {guess ? (
+          <>
+            <p className="wf-guess-title">{t('wfm.guessTitle', { hz: guess.hz })}</p>
+            {guess.result.guesses.length === 0 ? <p className="sstv-hint">{t('wfm.guessNone')}</p> : null}
+            {guess.result.guesses.map((g) => (
+              <p key={g.kind} className="wf-guess-item">
+                <b>{t(g.confidence === 'likely' ? 'wfm.guessLikely' : 'wfm.guessPossible')}</b> — {t(`wfm.guess.${g.kind}`, { shift: g.shiftHz ?? 170 })}
+              </p>
+            ))}
+            {guess.result.widthHz > 0 ? <p className="sstv-hint">{t('wfm.guessMeasure', { w: guess.result.widthHz, db: guess.result.peakDb })}</p> : null}
+            <p className="sstv-hint">{t('wfm.guessNote')}</p>
           </>
         ) : null}
       </PopupMenu>
