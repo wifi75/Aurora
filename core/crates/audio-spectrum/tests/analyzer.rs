@@ -233,8 +233,8 @@ fn anticlick_removes_key_clicks_and_keeps_the_signal() {
         let clicks = a.recent_clicks().count();
         (rows, clicks)
     };
-    let (off, clicks) = rows_with(false);
-    let (on_rows, _) = rows_with(true);
+    let (off, _) = rows_with(false);
+    let (on_rows, clicks) = rows_with(true);
     // la mediana di tre righe vicine nel tempo, cella per cella, sulle righe senza anti-click
     let median: Vec<Vec<u8>> = (0..off.len())
         .map(|r| {

@@ -62,7 +62,7 @@ impl std::error::Error for AnalyzerError {}
 ///
 /// Anti-click (`aurora_core::waterfall::anticlick`, o [`SpectrumAnalyzer::set_anticlick`] nelle prove): i click di manipolazione trovati
 /// da [`ClickDetector`] si spengono, con fronti morbidi, prima della trasformata; gli istanti dei click si leggono con
-/// [`SpectrumAnalyzer::recent_clicks`] anche con l'opzione spenta.
+/// [`SpectrumAnalyzer::recent_clicks`] solo con l'opzione accesa (spenta, il rivelatore non lavora).
 pub struct SpectrumAnalyzer {
     fft: Arc<dyn Fft<f32>>,
     n: usize,
@@ -192,9 +192,12 @@ impl SpectrumAnalyzer {
             self.gains.push_back(1.0);
             self.gains.pop_front();
             self.total += 1;
-            self.pending.push(s);
-            if self.pending.len() >= CLICK_CHUNK {
-                self.detect_clicks();
+            // con l'anti-click spento il rivelatore non lavora (erano circa 375 trasformate da 256 punti al secondo a 48 kHz buttate)
+            if anticlick {
+                self.pending.push(s);
+                if self.pending.len() >= CLICK_CHUNK {
+                    self.detect_clicks();
+                }
             }
             self.since_row += 1;
             if self.since_row >= self.hop {
