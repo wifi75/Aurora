@@ -134,7 +134,12 @@ fn like_pattern(text: &str) -> String {
 
 impl HistoryStore {
     pub fn open(path: &Path) -> Result<HistoryStore, HistoryError> {
-        Self::init(Connection::open(path)?)
+        let conn = Connection::open(path)?;
+        // scheda SD e dischi lenti: con il journal di default ogni scrittura da 2 s fa fsync completi e blocca anche le letture. WAL con
+        // `synchronous = NORMAL` li evita; se il file system non lo permette (rete, sola lettura) resta com'era
+        let _ = conn.query_row("PRAGMA journal_mode = WAL", [], |r| r.get::<_, String>(0));
+        let _ = conn.execute_batch("PRAGMA synchronous = NORMAL;");
+        Self::init(conn)
     }
 
     pub fn open_in_memory() -> Result<HistoryStore, HistoryError> {
