@@ -59,6 +59,38 @@ describe('guessMode', () => {
     expect(Math.abs((r.guesses[0]?.centerHz ?? 0) - 1200)).toBeLessThan(3);
   });
 
+  it.each([30, 0])('un CW vero a 20 WPM (pausa fra le chiamate %i punti), visto con la finestra di 1,365 s del motore, resta CW', (pause) => {
+    // manipolazione vera: punto 60 ms, linea 180, spazio fra lettere 180, fra parole 420; poi la media su 1,365 s ogni 0,2 s
+    const code: Record<string, string> = { C: '-.-.', Q: '--.-', D: '-..', E: '.', I: '..', U: '..-', '3': '...--', A: '.-', B: '-...', K: '-.-' };
+    const dit = 0.06;
+    const keyed: boolean[] = [];
+    const push = (on: boolean, units: number) => {
+      for (let i = 0; i < Math.round((units * dit) / 0.01); i++) keyed.push(on);
+    };
+    for (let rep = 0; rep < 6; rep++) {
+      for (const word of ['CQ', 'CQ', 'DE', 'IU3ABC', 'IU3ABC', 'K']) {
+        for (const ch of word) {
+          for (const el of code[ch] ?? '') {
+            push(true, el === '-' ? 3 : 1);
+            push(false, 1);
+          }
+          push(false, 2);
+        }
+        push(false, 4);
+      }
+      push(false, pause); // fine della chiamata
+    }
+    const win = Math.round(1.365 / 0.01);
+    const rows = history(150, (k) => {
+      const end = Math.min(keyed.length, k * 20 + win);
+      let on = 0;
+      for (let i = end - win; i < end; i++) if (keyed[i]) on++;
+      const frac = on / win;
+      return frac > 0 ? [[1200, 22 + 20 * Math.log10(frac), 3]] : [];
+    });
+    expect(guessMode(rows, 1200, SPR).guesses[0]?.kind).toBe('cw');
+  });
+
   it('una riga ferma e continua e\' una portante (CW solo possibile)', () => {
     const r = guessMode(history(150, () => [[900, 25, 2]]), 900, SPR);
     expect(kinds(r)).toEqual(['carrier', 'cw']);
@@ -110,6 +142,20 @@ describe('guessMode', () => {
   it('un blocco di 50 Hz a periodi di 15 s e\' FT8 probabile, PSK31 possibile', () => {
     // 12,6 s acceso e 2,4 s spento, a righe di 0,2 s: 63 accese e 12 spente
     const rows = history(150, (k) => (k % 75 < 63 ? block(1500, 50, 18, 6.25) : []));
+    const r = guessMode(rows, 1500, SPR);
+    expect(kinds(r)).toEqual(['ft8', 'psk31']);
+    expect(r.guesses[0]?.confidence).toBe('likely');
+  });
+
+  it('FT8 visto con la finestra di 1,365 s del motore (pause smussate) resta FT8 probabile', () => {
+    // 12,6 s acceso e 2,4 s spento; ogni riga e' la media su 1,365 s
+    const rows = history(150, (k) => {
+      const t = k * SPR;
+      let on = 0;
+      for (let i = 0; i < 137; i++) if ((t - i * 0.01 + 150) % 15 < 12.6) on++;
+      const frac = on / 137;
+      return frac > 0 ? block(1500, 50, 18 + 10 * Math.log10(frac), 6.25) : [];
+    });
     const r = guessMode(rows, 1500, SPR);
     expect(kinds(r)).toEqual(['ft8', 'psk31']);
     expect(r.guesses[0]?.confidence).toBe('likely');

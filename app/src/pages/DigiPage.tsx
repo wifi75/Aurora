@@ -2555,7 +2555,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {extras.map((x, i) => (
         <ExtraRxWindow key={x.id} id={x.id} freqHz={x.freq_hz} modeName={MODE_NAMES[s.mode]} index={i} afc={x.afc === true} onAfc={(on) => setExtras(extras.map((e) => (e.id === x.id ? { ...e, afc: on } : e)))} onClose={() => closeExtra(x.id)} onWord={takeCall} />
       ))}
-      <PopupMenu at={wfMenu} onClose={closeWfMenu} className="call-menu digi-st-menu" width={250} height={300} label={t('wfm.title')}>
+      <PopupMenu at={wfMenu} onClose={closeWfMenu} className="call-menu digi-st-menu" width={250} height={340} label={t('wfm.title')}>
         {wfMenu ? (
           <>
             <button type="button" role="menuitemcheckbox" aria-checked={views.wfCalls} onClick={() => { setView({ wfCalls: !views.wfCalls }); setWfMenu(null); }}>

@@ -196,7 +196,8 @@ export function guessMode(rows: SpectrumRow[], hz: number, secondsPerRow: number
     const p = pair(s, Math.max(4, s * 0.05), 10);
     if (p) {
       const centerHz = Math.round(((hzOf(pk) + hzOf(p.q)) / 2) * 10) / 10;
-      const shiftHz = Math.round(Math.abs(hzOf(p.q) - hzOf(pk)));
+      // lo spostamento standard trovato (170, non i 168 misurati): e' quello da scegliere nel modo RTTY
+      const shiftHz = s;
       return result([{ kind: 'rtty', confidence: p.corr !== null && p.corr > 0.6 ? 'likely' : 'possible', centerHz, shiftHz }]);
     }
   }
@@ -205,10 +206,13 @@ export function guessMode(rows: SpectrumRow[], hz: number, secondsPerRow: number
   const lv = levels(main.a, main.b);
   const pauses = intermittent(lv);
   if (mainW <= 15) {
-    // una riga stretta: CW se il livello si muove (parole e pause) o va a pause, altrimenti una portante ferma
+    // una riga stretta: CW se il livello si muove (parole e pause, che la finestra di 1,365 s mostra come una quota di tasto abbassato
+    // che cambia) o va a pause; portante ferma solo con il livello davvero piatto (sotto 1 dB); in mezzo CW prima e portante dopo
     const on = lv.filter((v) => v >= 4);
-    const moving = pauses === true || std(on) >= 2;
-    return result(moving ? [{ kind: 'cw', confidence: 'likely', centerHz }] : [{ kind: 'carrier', confidence: 'likely', centerHz }, { kind: 'cw', confidence: 'possible', centerHz }]);
+    const sd = std(on);
+    if (pauses === true || sd >= 2) return result([{ kind: 'cw', confidence: 'likely', centerHz }]);
+    if (sd < 1) return result([{ kind: 'carrier', confidence: 'likely', centerHz }, { kind: 'cw', confidence: 'possible', centerHz }]);
+    return result([{ kind: 'cw', confidence: 'possible', centerHz }, { kind: 'carrier', confidence: 'possible', centerHz }]);
   }
   if (mainW >= 25 && mainW <= 70) {
     // un blocco di circa 50 Hz: FT8 se va a pause (i periodi di 15 s), altrimenti puo' essere anche un PSK31 che scrive
