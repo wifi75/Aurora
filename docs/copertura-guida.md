@@ -1037,6 +1037,7 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modo › Banda del filtro CW (solo CW) | PRC › Modo | t-digi-menu-mode, t-digi-cw |
 | Modo › TX alla velocità ricevuta (solo CW) | PRC › Modo | t-digi-menu-mode, digicw |
 | Modo › Toni e Banda (solo Olivia e Contestia) | PRC › Modo, barra di stato | t-digi-olivia |
+| Modo › Variante (solo Throb: THROB1/2/4, THRBX1/2/4) | PRC › Modo | t-digi-throb |
 | Modo › modi «in arrivo» (FSK31, MFSK, MT63, Hellschreiber, Packet, Pactor) | PRC › Modo | t-digi-menu-mode |
 | Modo › Impostazioni del modo… (apre le Impostazioni) | PRC › Modo | t-digi-menu-mode |
 | Modo › Soglia dello squelch… (apre la finestra Impostazioni del modo) | PRC › Modo | t-digi-menu-mode, t-digi-modeset |
