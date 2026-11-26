@@ -177,13 +177,14 @@ function WefaxBody({ solo }: { solo: boolean }) {
           aria-label={t('digi.menu.mode')}
           onChange={(e) => {
             if (e.target.value === 'sstv') window.location.hash = '#/sstv';
-            else if (e.target.value !== 'wefax') void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb');
+            else if (e.target.value !== 'wefax') void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor');
           }}
         >
           <option value="psk31">PSK31</option>
           <option value="psk63">PSK63</option>
           <option value="qpsk31">QPSK31</option>
           <option value="throb">Throb</option>
+          <option value="amtor">Amtor</option>
           <option value="rtty">RTTY</option>
           <option value="cw">CW</option>
           <option value="olivia">Olivia</option>

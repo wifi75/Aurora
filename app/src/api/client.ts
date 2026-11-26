@@ -1972,7 +1972,7 @@ export type ThrobVariant = 'throb1' | 'throb2' | 'throb4' | 'throbx1' | 'throbx2
 
 export interface DigiSettings {
   /** `ssb`: fonia, senza decodifica ne' testo trasmesso (log e contest). */
-  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb';
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor';
   /** Olivia: 8 toni in 250 Hz di base (assente nei motori di prima). */
   olivia?: OliviaSettings;
   /** Contestia: 16 toni in 500 Hz di base (assente nei motori di prima). */

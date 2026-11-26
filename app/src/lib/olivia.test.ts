@@ -169,6 +169,7 @@ describe('menu dei modi', () => {
     expect(MODI_IN_ARRIVO).not.toContain('Contestia');
     expect(MODI_IN_ARRIVO).not.toContain('QPSK31');
     expect(MODI_IN_ARRIVO).not.toContain('Throb');
+    expect(MODI_IN_ARRIVO).not.toContain('Amtor');
     expect(MODI_IN_ARRIVO).toContain('MFSK');
   });
 

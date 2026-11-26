@@ -91,7 +91,7 @@ const VIEWS_KEY = 'aurora.digi.viste';
 const THROB_VARIANTS: readonly ThrobVariant[] = ['throb1', 'throb2', 'throb4', 'throbx1', 'throbx2', 'throbx4'];
 /** Il nome di una variante di Throb come lo scrive ADIF (sottomodo di THRB). */
 const throbName = (v: ThrobVariant | undefined): string => ({ throb1: 'THROB1', throb2: 'THROB2', throb4: 'THROB4', throbx1: 'THRBX1', throbx2: 'THRBX2', throbx4: 'THRBX4' })[v ?? 'throb2'];
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB', amtor: 'AMTOR' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -172,6 +172,9 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'THRBX1':
     case 'THRBX2':
     case 'THRBX4': return 'throb';
+    case 'AMTOR':
+    case 'AMTORFEC':
+    case 'SITORB': return 'amtor';
     case 'RTTY': return 'rtty';
     case 'CW': return 'cw';
     case 'SSB':
@@ -1218,8 +1221,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       band: logBand(dial, l.manualBand),
       // la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
       freq_hz: dial > 0 ? dial + Math.round(l.rxHz) : 0,
-      // Throb: il sottomodo ADIF della variante (THROB2, THRBX1...)
-      mode: l.snap.settings.mode === 'throb' ? throbName(l.snap.settings.throb) : MODE_NAMES[l.snap.settings.mode],
+      // Throb: il sottomodo ADIF della variante (THROB2, THRBX1...); Amtor: AMTORFEC (sottomodo di TOR)
+      mode: l.snap.settings.mode === 'throb' ? throbName(l.snap.settings.throb) : l.snap.settings.mode === 'amtor' ? 'AMTORFEC' : MODE_NAMES[l.snap.settings.mode],
       rst_sent: l.saved.rsts,
       rst_rcvd: l.saved.rstr,
       grid: l.qso.wwloc,
@@ -2663,6 +2666,7 @@ function passbandWidth(s: DigiSettings): number {
   if (s.mode === 'psk31' || s.mode === 'qpsk31') return 3 * 31.25;
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'throb') return 120;
+  if (s.mode === 'amtor') return 370;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   if (s.mode === 'ssb') return 2400;
   // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo, come nel core
