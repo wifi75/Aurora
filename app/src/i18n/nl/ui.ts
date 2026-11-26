@@ -563,6 +563,8 @@ export const NL_UI: Record<string, string> = {
   "cat.ptt.state": "PTT",
   "cat.ptt.vox": "VOX",
   "cat.pttData": "Data-PTT: zenden met de achter-/USB-audio van de radio",
+  "cat.pttonly.hint": "Met «Geen» stuurt Aurora helemaal geen PTT-commando. Om alleen de PTT via RTS of DTR van de COM-poort te gebruiken, zonder CAT (zoals «Rig: None» in JTDX), heb je Hamlib met het model «Dummy» nodig.",
+  "cat.pttonly.set": "Alleen PTT instellen (Hamlib · Dummy)",
   "cat.radiomode": "Zendermode",
   "cat.restore": "Hamlib herstellen",
   "cat.restore.busy": "Hamlib downloaden…",

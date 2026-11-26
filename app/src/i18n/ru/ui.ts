@@ -563,6 +563,8 @@ export const RU_UI: Record<string, string> = {
   "cat.ptt.state": "PTT",
   "cat.ptt.vox": "VOX",
   "cat.pttData": "PTT «данные»: передача через заднее/USB-аудио радио",
+  "cat.pttonly.hint": "При выборе «Нет» Aurora не отправляет команду PTT вообще. Чтобы использовать только PTT по линии RTS или DTR COM-порта без CAT (как «Rig: None» в JTDX), нужен Hamlib с моделью «Dummy».",
+  "cat.pttonly.set": "Только PTT (Hamlib · Dummy)",
   "cat.radiomode": "Режим радио",
   "cat.restore": "Восстановить Hamlib",
   "cat.restore.busy": "Загрузка Hamlib…",
