@@ -5,6 +5,7 @@ export const RU_UI: Record<string, string> = {
   "about.dedica": "Посвящается Aurora, моей дочери: свету, в честь которого названа эта программа.",
   "about.dedicaFirma": "— Папа, Тициано",
   "about.derived": "Производный код",
+  "about.derivedAmtor": "Amtor FEC (SITOR-B) следует fldigi (декодер NAVTEX и SITOR-B — Remi Chateauneu F4ECW и Rik van Riel AB1KW, на основе JNX Paul Lutus; GPL-3): таблицы кода CCIR 476, порядок битов, позиции двух копий и фазирование изучены в его исходниках и переписаны на Rust Тицианом Кассоне; приёмник собственный, Aurora.",
   "about.derivedOlivia": "Olivia и Contestia — режимы Павла Ялохи (Pawel Jalocha): кодер, модулятор и приёмник переписаны на Rust Тицианом Кассоне на основе библиотеки из fldigi (© Dave Freese W1HKJ и участники), GPL-3.",
   "about.derivedQpsk": "QPSK31 следует соглашениям fldigi (© Dave Freese W1HKJ и участники, GPL-3): свёрточный код, порядок символов и направление вращения фаз изучены по его исходникам и переписаны на Rust Тицианом Кассоне; приёмник — приёмник PSK31 из Aurora.",
   "about.derivedText": "Части Aurora — алгоритмы из WSJT-X (© Joe Taylor K1JT и WSJT Development Group) и JTDX (© авторы JTDX), GPL-3, переведённые на Rust и доработанные Tiziano Cassone. Для PSK, RTTY, CW и SSTV: таблицы и схемы из fldigi (© Dave Freese W1HKJ и другие) и QSSTV (© Johan Maes ON4QZ), GPL-3. Полный список в THIRD-PARTY-NOTICES.md.",
