@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.354',
+    released: '2026-11-26T11:34:20Z',
+    kind: 'changed',
+    title: [
+      'Split in pile-up, una sola riga Tx, SSTV e programma più leggero',
+      'Split in a pile-up, one Tx line, SSTV and a lighter program',
+      'Split im Pile-up, nur eine Tx-Zeile, SSTV und ein leichteres Programm',
+      'Split en pile-up, une seule ligne Tx, SSTV et un programme plus léger',
+      'Split en pile-up, una sola línea Tx, SSTV y un programa más ligero',
+      'Split em pile-up, uma só linha Tx, SSTV e um programa mais leve',
+    ],
+    text: [
+      'Con Split acceso Aurora non ferma più la trasmissione quando il DX risponde a un altro (pile-up). Nella Finestra RX, se il messaggio Tx cambia a metà trasmissione (decodifica tardiva) resta una sola riga Tx, non due. Nel registro una riga «DX cambiato» dice come è cambiato il DX (doppio clic, a mano, sequenza automatica). SSTV, Componi e trasmetti: il pannello a schede sta a sinistra e l’anteprima a destra. Prestazioni: telefono e cascata più leggeri da fermi, ricampionamento a 44,1 kHz, storico delle decodifiche e filtro SSTV più veloci.',
+      'With Split on, Aurora no longer stops transmitting when the DX answers someone else (pile-up). In the RX window, if the Tx message changes mid-transmission (late decode) there is now one Tx line, not two. The log gets a “DX changed” line saying how the DX changed (double click, by hand, automatic sequence). SSTV, Compose and transmit: the tabbed panel is on the left and the preview on the right. Performance: the phone page and the waterfall are lighter when idle, resampling at 44.1 kHz, the decode history and the SSTV filter are faster.',
+      'Bei eingeschaltetem Split stoppt Aurora das Senden nicht mehr, wenn der DX einem anderen antwortet (Pile-up). Im RX-Fenster bleibt, wenn sich die Tx-Nachricht mitten im Senden ändert (späte Dekodierung), nur eine Tx-Zeile statt zwei. Im Protokoll steht eine Zeile „DX geändert“ mit dem Grund (Doppelklick, von Hand, automatische Sequenz). SSTV, Erstellen und senden: das Registerfeld steht links, die Vorschau rechts. Leistung: Telefonseite und Wasserfall im Ruhezustand leichter, Resampling bei 44,1 kHz, Dekodierverlauf und SSTV-Filter schneller.',
+      'Avec Split activé, Aurora n’arrête plus l’émission quand le DX répond à un autre (pile-up). Dans la fenêtre RX, si le message Tx change en cours d’émission (décodage tardif), il reste une seule ligne Tx, pas deux. Le journal reçoit une ligne « DX changé » qui dit comment le DX a changé (double clic, à la main, séquence automatique). SSTV, Composer et émettre : le panneau à onglets est à gauche et l’aperçu à droite. Performances : page du téléphone et cascade plus légères à l’arrêt, rééchantillonnage à 44,1 kHz, historique des décodages et filtre SSTV plus rapides.',
+      'Con Split activado, Aurora ya no detiene la transmisión cuando el DX responde a otro (pile-up). En la ventana RX, si el mensaje Tx cambia a mitad de la transmisión (decodificación tardía) queda una sola línea Tx, no dos. El registro recibe una línea «DX cambiado» que dice cómo cambió el DX (doble clic, a mano, secuencia automática). SSTV, Componer y transmitir: el panel de fichas está a la izquierda y la vista previa a la derecha. Rendimiento: la página del teléfono y la cascada son más ligeras en reposo, remuestreo a 44,1 kHz, historial de decodificaciones y filtro SSTV más rápidos.',
+      'Com o Split ligado, o Aurora já não pára a transmissão quando o DX responde a outro (pile-up). Na janela RX, se a mensagem Tx muda a meio da transmissão (descodificação tardia) fica uma só linha Tx, não duas. O registo recebe uma linha «DX alterado» que diz como o DX mudou (duplo clique, à mão, sequência automática). SSTV, Compor e transmitir: o painel de separadores fica à esquerda e a pré-visualização à direita. Desempenho: a página do telefone e a cascata mais leves em repouso, reamostragem a 44,1 kHz, histórico de descodificações e filtro SSTV mais rápidos.',
+    ],
+  },
+  {
     version: '0.11.353',
     released: '2026-11-26T02:47:58Z',
     kind: 'new',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora consulte le log de Log4OM et ne renvoie que les QSO qui manquent vraiment (même indicatif, bande et mode à un quart d’heure près = déjà présent). Pas de doublons si les QSO étaient déjà arrivés autrement.',
       'Aurora mira en el log de Log4OM y reenvía solo los QSO que faltan de verdad (mismo indicativo, banda y modo en un cuarto de hora = ya está). Sin duplicados si los QSO ya habían llegado por otra vía.',
       'A Aurora consulta o log do Log4OM e reenvia só os QSO que faltam mesmo (mesmo indicativo, banda e modo num quarto de hora = já existe). Sem duplicados se os QSO já tinham chegado por outra via.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'changed',
-    title: [
-      'Riquadri uguali a quelli della Stazione',
-      'Panels identical to the Station ones',
-      'Felder wie auf der Stationsseite',
-      'Cadres identiques à ceux de la Station',
-      'Recuadros iguales a los de la Estación',
-      'Quadros iguais aos da Estação',
-    ],
-    text: [
-      'Satelliti, WEFAX, SSTV, Propagazione e Statistiche hanno gli stessi riquadri della Stazione (FT8): stesso filo, angoli e barra del titolo, nei due temi. SSTV ha ora la barra «Ricezione».',
-      'Satellites, WEFAX, SSTV, Propagation and Statistics now use the same panels as the Station (FT8): same outline, corners and title bar, in both themes. SSTV now has a “Reception” bar.',
-      'Satelliten, WEFAX, SSTV, Ausbreitung und Statistik haben jetzt dieselben Felder wie die Station (FT8): gleiche Umrandung, Ecken und Titelleiste, in beiden Designs. SSTV hat jetzt die Leiste „Empfang“.',
-      'Satellites, WEFAX, SSTV, Propagation et Statistiques ont maintenant les mêmes cadres que la Station (FT8) : même contour, mêmes coins et même barre de titre, dans les deux thèmes. SSTV a maintenant la barre « Réception ».',
-      'Satélites, WEFAX, SSTV, Propagación y Estadísticas tienen ahora los mismos recuadros que la Estación (FT8): mismo borde, esquinas y barra de título, en los dos temas. SSTV tiene ahora la barra «Recepción».',
-      'Satélites, WEFAX, SSTV, Propagação e Estatísticas têm agora os mesmos quadros da Estação (FT8): mesmo contorno, cantos e barra de título, nos dois temas. O SSTV tem agora a barra «Receção».',
     ],
   },
 ];
