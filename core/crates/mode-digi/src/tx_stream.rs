@@ -393,7 +393,7 @@ impl ThrobStream {
         Self { tx: crate::throb::ThrobTx::new(v, f64::from(freq_hz), 1.0, reverse), interp: Interpolator::new() }
     }
 
-    fn to_12k(&mut self, audio: &[f32]) -> Vec<f32> {
+    fn resample_12k(&mut self, audio: &[f32]) -> Vec<f32> {
         let mut out = Vec::with_capacity(audio.len() * 3 / 2 + 2);
         self.interp.process(audio, &mut out);
         for v in &mut out {
@@ -404,22 +404,22 @@ impl ThrobStream {
 
     fn preamble(&mut self) -> Vec<f32> {
         let a = self.tx.preamble();
-        self.to_12k(&a)
+        self.resample_12k(&a)
     }
 
     fn char(&mut self, c: u8) -> Vec<f32> {
         let a = self.tx.char(c);
-        self.to_12k(&a)
+        self.resample_12k(&a)
     }
 
     fn idle(&mut self) -> Vec<f32> {
         let a = self.tx.idle();
-        self.to_12k(&a)
+        self.resample_12k(&a)
     }
 
     fn postamble(&mut self) -> Vec<f32> {
         let a = self.tx.postamble();
-        let mut out = self.to_12k(&a);
+        let mut out = self.resample_12k(&a);
         let mut rest = Vec::new();
         self.interp.flush(&mut rest);
         out.extend(rest.into_iter().map(|v| v * AMP));
