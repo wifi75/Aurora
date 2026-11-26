@@ -14,6 +14,16 @@
 //! - [`wspr`]: WSPR-2 (messaggi a 50 bit, Fano, OSD, onda e ricezione di wsprd).
 
 pub mod fano;
+
+/// La FFT diretta di `n` punti: un pianificatore per thread le ricorda, invece di rifare piano e tabelle a ogni candidato (JT9 e JT65). Lo
+/// stesso pianificatore sceglie lo stesso algoritmo, quindi i risultati sono gli stessi.
+pub(crate) fn fft_forward(n: usize) -> std::sync::Arc<dyn rustfft::Fft<f32>> {
+    thread_local! {
+        static PLANNER: std::cell::RefCell<rustfft::FftPlanner<f32>> = std::cell::RefCell::new(rustfft::FftPlanner::new());
+    }
+    PLANNER.with(|planner| planner.borrow_mut().plan_fft_forward(n))
+}
+
 pub mod fst4;
 pub mod fst4ldpc;
 pub mod fst4msg;

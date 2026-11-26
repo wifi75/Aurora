@@ -551,7 +551,7 @@ impl ContestService {
             modificato: false,
         });
         d.recenti.push((q.call.to_ascii_uppercase(), n, ora_ms()));
-        d.recenti.retain(|(_, _, t)| ora_ms() - *t < 5 * 60_000);
+        d.recenti.retain(|(_, _, t)| ora_ms().saturating_sub(*t) < 5 * 60_000);
         self.salva_log(&d);
         Some(n)
     }
@@ -614,7 +614,7 @@ impl ContestService {
         if banda.is_empty() {
             return;
         }
-        d.sentiti.retain(|x| t - x.t < SENTITI_MS);
+        d.sentiti.retain(|x| t.saturating_sub(x.t) < SENTITI_MS);
         if let Some(x) = d.sentiti.iter_mut().find(|x| x.call == call && x.banda == banda) {
             // il locatore resta quello gia' visto se questo messaggio non lo porta
             if !grid.is_empty() {
@@ -656,7 +656,7 @@ impl ContestService {
         let mut d = self.lock();
         d.stato.attivo.as_ref()?;
         if let Some((t, v)) = &d.consiglio
-            && ora - t < 10_000
+            && ora.saturating_sub(*t) < 10_000
         {
             return Some(v.clone());
         }

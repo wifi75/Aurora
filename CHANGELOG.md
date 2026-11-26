@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Stabilita' e prestazioni (analisi profonda del 26/11, tre revisori): RBN, la pulizia sopra il tetto toglie prima le voci scadute invece di ordinare 3000 voci a ogni riga e, senza dati per 5 minuti (PC sospeso, NAT), il collegamento riparte; contest, sottrazioni di tempo con `saturating_sub` (l'ora di Windows corretta all'indietro non svuota piu' i doppi e i sentiti); `ALL.TXT` spento, i due elenchi (QSO registrati e note di trasmissione) si svuotano invece di crescere; JT9 e JT65, FFT con pianificatore per thread; cluster, una sola lettura del testo dello spot; interfaccia, impostazioni del cluster con chiave di cache propria (non sfarfalla piu' il pannello), scritture identiche delle preferenze non rimandate al server, un solo intervallo per la pulizia dopo `<RXC>`.
 
 ## 0.11.355 - 2026-11-26
 - Guida e documentazione riviste: Split in pile-up (regola dell’arresto per risposta ad altri), SSTV Componi e trasmetti (pannello a sinistra, anteprima a destra), riga «DX cambiato» nel registro, prestazioni; nessun cambiamento al programma.

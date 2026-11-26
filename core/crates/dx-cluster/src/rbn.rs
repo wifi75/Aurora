@@ -398,6 +398,10 @@ impl RbnService {
         s.last_ms = now;
         s.receivers = entry.heard.len();
         if entries.len() > MAX_ENTRIES {
+            // prima le scadute (oltre il tempo massimo): di solito basta, e il giro costoso non scatta a ogni riga sopra il tetto
+            entries.retain(|_, e| now.saturating_sub(e.spot.last_ms) <= MAX_AGE_MS);
+        }
+        if entries.len() > MAX_ENTRIES {
             let oldest: BTreeSet<_> = {
                 let mut all: Vec<_> = entries.iter().map(|(k, e)| (e.spot.last_ms, k.clone())).collect();
                 all.sort();
@@ -466,7 +470,11 @@ async fn feed_session(svc: &Arc<RbnService>, host: &str, port: u16, call: &str) 
     let mut buf = [0u8; 4096];
     let mut logged_in = false;
     loop {
-        let n = reader.read(&mut buf).await.map_err(|e| format!("lettura: {e}"))?;
+        // il flusso RBN grezzo non sta fermo cinque minuti: senza dati (PC sospeso, NAT che chiude) si ricollega invece di restare «connected»
+        let n = tokio::time::timeout(std::time::Duration::from_secs(300), reader.read(&mut buf))
+            .await
+            .map_err(|_| "nessun dato da 5 minuti".to_string())?
+            .map_err(|e| format!("lettura: {e}"))?;
         if n == 0 {
             return Ok(());
         }

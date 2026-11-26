@@ -307,8 +307,7 @@ fn noise_per_bin(spectra: &[f32]) -> f32 {
 /// `symspec2`: le energie dei nove toni in ogni simbolo e, da quelle, i 207 simboli soft (nell'ordine rimescolato) con `schk`, il rapporto
 /// S/N e il sincronismo `sync` di `softsym`/`afc9`.
 fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> Soft {
-    let mut planner = FftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(NSPS);
+    let fft = crate::fft_forward(NSPS);
     let mut scratch = vec![Complex::new(0.0f32, 0.0); fft.get_inplace_scratch_len()];
     let table = rotation_table(f);
     let mut buf = vec![Complex::new(0.0f32, 0.0); NSPS];

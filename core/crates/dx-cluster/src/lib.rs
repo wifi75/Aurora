@@ -717,10 +717,11 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                             if logged_in && text.trim().to_ascii_lowercase().starts_with("sorry") {
                                 refused = true;
                             }
-                            if logged_in && !text.trim().is_empty() && spot::parse_spot(&text).is_none() {
+                            let parsed_spot = spot::parse_spot(&text);
+                            if logged_in && !text.trim().is_empty() && parsed_spot.is_none() {
                                 last_said = text.trim().chars().take(80).collect();
                             }
-                            if let Some(parsed) = spot::parse_spot(&text) {
+                            if let Some(parsed) = parsed_spot {
                                 logged_in = true;
                                 svc.push_spot(server, parsed);
                             } else if !logged_in && telnet::is_login_prompt(&text) {

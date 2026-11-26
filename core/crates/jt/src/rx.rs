@@ -483,8 +483,7 @@ fn smo121(x: &mut [f32]) {
 
 /// Gli spettri dei simboli di dati per il sottomodo `mode65` (1, 2, 4), con la stessa finestra di un simbolo di `decode65a.f90:71-86`.
 fn bin_spectra(samples: &[f32], f: f64, dt_samples: f64, drift: f64, mode65: usize) -> BinSpectra {
-    let mut planner = FftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(WINDOW);
+    let fft = crate::fft_forward(WINDOW);
     let mut scratch = vec![Complex::new(0.0f32, 0.0); fft.get_inplace_scratch_len()];
     let nb = BinSpectra::bins(mode65);
     let mut rows = Vec::with_capacity(NN);

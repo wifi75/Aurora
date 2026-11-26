@@ -1025,6 +1025,11 @@ fn note_logged(due: &mut Vec<(u64, String)>, qso: &aurora_core::QsoRecord, now_m
 /// cui periodo e' cominciato, i QSO registrati (dopo la riga di trasmissione che li chiude).
 fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPort>>, logged_due: &mut Vec<(u64, String)>, live: &LiveConfig, mode: Mode, now_ms: u64) {
     if !all_txt.is_enabled() {
+        // ALL.TXT spento: i due elenchi non servono, ma vanno svuotati lo stesso (altrimenti crescevano a ogni QSO e a ogni periodo trasmesso)
+        logged_due.clear();
+        if let Some(driver) = driver {
+            drop(driver.due_notes(now_ms));
+        }
         return;
     }
     let dial = live.dial_hz.load(Ordering::Relaxed);
