@@ -19,10 +19,12 @@
 //! - `cw_noise`: il rumore del ricevitore CW istante per istante (bande laterali e minimo scorrevole);
 //! - `cw_agc`: l'AGC del ricevitore CW comandato dal fondo del rumore (radio che pompa, scrosci larghi);
 //! - [`olivia`], [`olivia_rx`]: Olivia e Contestia (codificatore FEC, trasmettitore e ricevitore);
+//! - [`amtor`]: Amtor FEC (SITOR-B), trasmettitore e ricevitore;
 //! - [`throb`]: Throb e ThrobX (trasmettitore e ricevitore a 8 kHz);
 //! - [`resample_8k`]: i ricampionatori 12 <-> 8 kHz di Olivia e Contestia (FIR a fase lineare);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
+pub mod amtor;
 pub mod band;
 pub mod blanker;
 pub mod cw;
