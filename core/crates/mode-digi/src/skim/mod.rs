@@ -689,10 +689,10 @@ pub(crate) mod tests {
     }
 
     /// Sensibilita' di BIGScan: Media da' esattamente quello che dava il decodificatore senza la regolazione (stessi canali, stesso
-    /// testo, stessi nominativi, stessi spot); Alta trova almeno i canali di Media e Bassa al piu' quelli di Media.
+    /// testo, stessi nominativi, stessi spot); Alta apre piu' canali di Media e Bassa meno.
     #[test]
     fn bigscan_sensitivity_medium_is_unchanged() {
-        let stations = [(600.0_f32, 0.2_f32, "IU3ABC"), (1_000.0, 0.03, "K1ABC"), (1_400.0, 0.02, "DL1ABC"), (1_900.0, 0.015, "F1ABC")];
+        let stations = [(600.0_f32, 0.2_f32, "IU3ABC"), (1_000.0, 0.03, "K1ABC"), (1_400.0, 0.02, "DL1ABC"), (1_900.0, 0.015, "F1ABC"), (2_200.0, 0.011, "G1ABC"), (800.0, 0.0085, "EA1ABC")];
         let mut band = vec![0.0_f32; 12_000 * 30];
         for (hz, amp, call) in stations {
             let wave = modulate(format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K").as_bytes(), hz, 20.0, amp);
@@ -720,7 +720,8 @@ pub(crate) mod tests {
         assert_eq!(base_spots, medium_spots);
         let (_, _, high_n) = run(Some(Sensitivity::High));
         let (_, _, low_n) = run(Some(Sensitivity::Low));
-        assert!(high_n >= base_n && low_n <= base_n, "alta {high_n}, media {base_n}, bassa {low_n}");
+        // le stazioni piu' deboli stanno fra le soglie: con Alta se ne aprono di piu', con Bassa di meno
+        assert!(high_n > base_n && low_n < base_n, "alta {high_n}, media {base_n}, bassa {low_n}");
         assert_eq!(Sensitivity::from_id("medium"), Some(Sensitivity::default()));
         assert_eq!(Sensitivity::default().offset_db(), 0.0);
         assert_eq!(PEAK_DB + Sensitivity::Medium.offset_db(), PEAK_DB);
