@@ -1980,6 +1980,28 @@ mod tests {
     }
 
     #[test]
+    fn qpsk31_trasmesso_e_ricevuto_dal_servizio_in_usb_e_in_lsb() {
+        let s = DigiSettings { mode: DigiMode::Qpsk31, rx_freq_hz: 1200.0, tx_freq_hz: 1200.0, ..DigiSettings::default() };
+        assert_eq!(DigiMode::from_id("qpsk31"), Some(DigiMode::Qpsk31));
+        for lsb in [false, true] {
+            let mut d = Demod::new(&s, lsb);
+            assert!(matches!(d, Demod::Psk(..)), "QPSK31 deve andare al ricevitore PSK, non all'RTTY");
+            let mut wave = vec![0.0; 6000];
+            wave.extend(DigiService::wave_of("CQ DE IU3ABC 599 K", &s, lsb));
+            wave.extend(vec![0.0; 24_000]);
+            let mut out = String::new();
+            for b in wave.chunks(1200) {
+                out.push_str(&d.process(b).0);
+            }
+            assert!(out.contains("CQ DE IU3ABC 599 K"), "lsb {lsb}, ricevuto: {out:?}");
+            // con la banda laterale sbagliata non si legge
+            let mut wrong = Demod::new(&s, !lsb);
+            let bad = wrong.process(&wave).0;
+            assert!(!bad.contains("IU3ABC"), "lsb {lsb}, banda sbagliata: {bad:?}");
+        }
+    }
+
+    #[test]
     fn cw_veloce_mostra_il_provvisorio_e_poi_il_definitivo() {
         // senza il campo (impostazioni salvate prima dell'opzione) vale il veloce, il predefinito
         let old: DigiSettings = serde_json::from_str("{}").unwrap_or_default();

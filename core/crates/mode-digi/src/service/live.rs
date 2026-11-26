@@ -513,6 +513,19 @@ mod tests {
     }
 
     #[test]
+    fn qpsk31_a_flusso_si_rilegge() {
+        let (svc, port, events, _dir) = service(DigiMode::Qpsk31);
+        svc.transmit("CQ DE IU3ABC").expect("partita");
+        assert!(wait_state(&svc, "done", 20), "stato: {:?}", svc.snapshot().tx);
+        assert_eq!(sent(&events), "CQ DE IU3ABC");
+        let mut d = super::super::Demod::new(&svc.settings(), false);
+        let mut wave = lock(&port.wave).clone();
+        wave.extend(vec![0.0; 24_000]);
+        let out = d.process(&wave).0;
+        assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    #[test]
     fn i_caratteri_risultano_partiti_al_ritmo_dell_audio() {
         let (svc, _port, events, _dir) = service(DigiMode::Rtty);
         let t0 = Instant::now();

@@ -1214,6 +1214,32 @@ mod tests {
         assert!(r.contains("IU3ABC PSE K"), "ricevuto {r:?}");
     }
 
+    /// Come trasmette fldigi: coda di soli 32 zeri, poi rumore. L'ultimo carattere deve uscire; si contano i caratteri spuri dopo il testo.
+    #[test]
+    fn qpsk31_coda_corta_come_fldigi_poi_rumore() {
+        let mut tx = QpskTx::new(1000.0, 384, RATE, 0.5, false);
+        let mut audio = vec![0.0_f32; 4000];
+        audio.extend(tx.preamble(32));
+        for &c in b"CQ DE IU3ABC K" {
+            audio.extend(tx.char(c));
+        }
+        audio.extend(tx.postamble(32));
+        audio.extend(vec![0.0; 12_000 * 5]);
+        let mut seed = 77_u32;
+        for x in audio.iter_mut() {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            *x += (seed as f32 / u32::MAX as f32 - 0.5) * 0.1;
+        }
+        let mut rx = PskDemodulator::new(PskMode::Qpsk31, 1000.0);
+        rx.set_squelch(Some(SQUELCH_DEFAULT));
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        let pos = r.find("CQ DE IU3ABC K");
+        assert!(pos.is_some(), "ricevuto: {r:?}");
+        let extra = r.len() - pos.unwrap_or(0) - "CQ DE IU3ABC K".len();
+        // limite noto: senza DCD (come fldigi) lo squelch resta aperto ancora qualche simbolo sul rumore, oggi 4 caratteri spuri
+        assert!(extra <= 6, "caratteri spuri dopo il testo: {r:?}");
+    }
+
     #[test]
     fn qpsk31_il_rumore_da_solo_non_stampa() {
         let mut seed = 99_u32;

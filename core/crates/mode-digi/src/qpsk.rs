@@ -74,9 +74,10 @@ impl Default for ConvViterbi {
 }
 
 impl ConvViterbi {
+    /// Tutti gli stati alla pari: all'inizio di un segnale il preambolo porta subito allo stato zero, e se lo squelch si riapre a meta'
+    /// (evanescenza) non si forza uno stato sbagliato.
     pub fn new() -> Self {
-        let mut metric = [-1e9_f32; STATES];
-        metric[0] = 0.0;
+        let metric = [0.0_f32; STATES];
         Self { metric, hist: vec![0; TRACEBACK], pos: 0, filled: 0 }
     }
 
