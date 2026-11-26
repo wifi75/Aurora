@@ -399,6 +399,22 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           {t('cat.omnirig.missing')}
         </Message>
       ) : null}
+      {/* «Nessuno» non manda nessun PTT: chi vuole solo RTS o DTR senza CAT (come «Rig: None» di JTDX) usa Hamlib con il modello Dummy */}
+      {config.backend === 'none' ? (
+        <Message kind="muted">
+          {t('cat.pttonly.hint')}{' '}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              const dummy = modelList.find((m) => m.id === 1);
+              set({ backend: 'hamlib', model: 1, rig_name: dummy ? modelLabel(dummy) : 'Hamlib Dummy', ptt: config.ptt === 'dtr' ? 'dtr' : 'rts' });
+            }}
+          >
+            {t('cat.pttonly.set')}
+          </button>
+        </Message>
+      ) : null}
       {hamlib && !snap.data.status.rigctld_found ? (
         <Message kind="alert">
           {t('cat.missing')}

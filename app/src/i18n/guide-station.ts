@@ -342,12 +342,12 @@ export const GUIDE_STATION: readonly GuideSection[] = [
       ],
     ],
     tip: [
-      'Solo PTT su RTS o DTR, senza CAT: scegli il modello Hamlib «Dummy» e indica la porta in [[cat.port]]; poi nel riquadro [[cat.grp.ptt]] scegli RTS o DTR.',
-      'PTT only on RTS or DTR, without CAT: choose the Hamlib model “Dummy” and give the port in [[cat.port]]; then in the [[cat.grp.ptt]] box choose RTS or DTR.',
-      'Nur PTT über RTS oder DTR, ohne CAT: das Hamlib-Modell „Dummy“ wählen und den Port in [[cat.port]] angeben; dann im Feld [[cat.grp.ptt]] RTS oder DTR wählen.',
-      'PTT seulement sur RTS ou DTR, sans CAT : choisis le modèle Hamlib « Dummy » et indique le port dans [[cat.port]] ; puis dans le cadre [[cat.grp.ptt]] choisis RTS ou DTR.',
-      'Solo PTT por RTS o DTR, sin CAT: elige el modelo Hamlib «Dummy» e indica el puerto en [[cat.port]]; luego en el recuadro [[cat.grp.ptt]] elige RTS o DTR.',
-      'Só PTT em RTS ou DTR, sem CAT: escolhe o modelo Hamlib «Dummy» e indica a porta em [[cat.port]]; depois no quadro [[cat.grp.ptt]] escolhe RTS ou DTR.',
+      'Solo PTT su RTS o DTR, senza CAT: scegli il modello Hamlib «Dummy» e indica la porta in [[cat.port]]; poi nel riquadro [[cat.grp.ptt]] scegli RTS o DTR. Con «[[cat.backend.none]]» il PTT non parte: scegliendolo compare il pulsante «[[cat.pttonly.set]]» che mette Hamlib e il modello Dummy al posto tuo.',
+      'PTT only on RTS or DTR, without CAT: choose the Hamlib model “Dummy” and give the port in [[cat.port]]; then in the [[cat.grp.ptt]] box choose RTS or DTR. With “[[cat.backend.none]]” the PTT does not work: when you pick it the “[[cat.pttonly.set]]” button appears and sets Hamlib and the Dummy model for you.',
+      'Nur PTT über RTS oder DTR, ohne CAT: das Hamlib-Modell „Dummy“ wählen und den Port in [[cat.port]] angeben; dann im Feld [[cat.grp.ptt]] RTS oder DTR wählen. Mit „[[cat.backend.none]]“ geht das PTT nicht: Wählt man es, erscheint die Schaltfläche „[[cat.pttonly.set]]“, die Hamlib und das Modell Dummy für dich einstellt.',
+      'PTT seulement sur RTS ou DTR, sans CAT : choisis le modèle Hamlib « Dummy » et indique le port dans [[cat.port]] ; puis dans le cadre [[cat.grp.ptt]] choisis RTS ou DTR. Avec « [[cat.backend.none]] » le PTT ne part pas : en le choisissant apparaît le bouton « [[cat.pttonly.set]] » qui règle Hamlib et le modèle Dummy à ta place.',
+      'Solo PTT por RTS o DTR, sin CAT: elige el modelo Hamlib «Dummy» e indica el puerto en [[cat.port]]; luego en el recuadro [[cat.grp.ptt]] elige RTS o DTR. Con «[[cat.backend.none]]» el PTT no sale: al elegirlo aparece el botón «[[cat.pttonly.set]]», que pone Hamlib y el modelo Dummy por ti.',
+      'Só PTT em RTS ou DTR, sem CAT: escolhe o modelo Hamlib «Dummy» e indica a porta em [[cat.port]]; depois no quadro [[cat.grp.ptt]] escolhe RTS ou DTR. Com «[[cat.backend.none]]» o PTT não sai: ao escolhê-lo aparece o botão «[[cat.pttonly.set]]», que põe o Hamlib e o modelo Dummy por ti.',
     ],
   },
   {

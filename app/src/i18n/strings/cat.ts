@@ -589,6 +589,15 @@ export const catStrings = {
     'Valores conocidos para este modelo. El botón solo cambia velocidad, PTT y CI-V; el puerto sigue siendo el tuyo. Sin TX: es el CAT. TX sin potencia: es el audio.',
     'Valores conhecidos para este modelo. O botão só muda velocidade, PTT e CI-V; a porta fica a tua. Sem TX: é o CAT. TX sem potência: é o áudio.',
   ],
+  'cat.pttonly.hint': [
+    'Con «Nessuno» Aurora non manda nessun comando PTT. Per usare solo il PTT su RTS o DTR della porta COM, senza CAT (come «Rig: None» di JTDX), serve Hamlib con il modello «Dummy».',
+    'With “None” Aurora sends no PTT command at all. To use only the PTT on the COM port RTS or DTR line, without CAT (like JTDX “Rig: None”), you need Hamlib with the “Dummy” model.',
+    'Mit „Keins“ sendet Aurora keinen PTT-Befehl. Für nur PTT über RTS oder DTR der COM-Schnittstelle, ohne CAT (wie „Rig: None“ in JTDX), braucht man Hamlib mit dem Modell „Dummy“.',
+    'Avec « Aucun », Aurora n’envoie aucune commande PTT. Pour n’utiliser que le PTT sur RTS ou DTR du port COM, sans CAT (comme « Rig: None » de JTDX), il faut Hamlib avec le modèle « Dummy ».',
+    'Con «Ninguno» Aurora no envía ningún comando PTT. Para usar solo el PTT en RTS o DTR del puerto COM, sin CAT (como «Rig: None» de JTDX), hace falta Hamlib con el modelo «Dummy».',
+    'Com «Nenhum» o Aurora não envia nenhum comando PTT. Para usar só o PTT em RTS ou DTR da porta COM, sem CAT (como «Rig: None» do JTDX), é preciso o Hamlib com o modelo «Dummy».',
+  ],
+  'cat.pttonly.set': ['Imposta solo PTT (Hamlib · Dummy)', 'Set PTT only (Hamlib · Dummy)', 'Nur PTT einstellen (Hamlib · Dummy)', 'Régler PTT seul (Hamlib · Dummy)', 'Configurar solo PTT (Hamlib · Dummy)', 'Configurar só PTT (Hamlib · Dummy)'],
   'cat.warn.icomBaud': [
     'Icom con PTT dal CAT: di solito la velocità USB è 115200; l’importante è che sia uguale a quella del menu della radio (alcuni modelli, come l’IC-7300 MK2, funzionano meglio con 19200 fisso e non con «Auto»). Se il collegamento funziona, ignora questo avviso.',
     'Icom with CAT PTT: the USB speed is usually 115200; what matters is that it matches the radio’s menu (some models, such as the IC-7300 MK2, work better with a fixed 19200 than with “Auto”). If the connection works, ignore this notice.',

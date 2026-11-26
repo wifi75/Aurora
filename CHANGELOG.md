@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Impostazioni › Radio, solo PTT su RTS o DTR senza CAT (Les, #117): scegliendo «Nessuno» (che non manda nessun PTT) compare un avviso con il pulsante «Imposta solo PTT (Hamlib · Dummy)» che mette Hamlib con il modello Dummy e il PTT su RTS (o DTR se era scelto); Guida e testi in otto lingue (`CatTab.tsx`, `cat.pttonly.*`).
 - Contest, moltiplicatori per modo (ARRL 10 Meter Contest, CW e fonia contati a parte): il motore restituisce i moltiplicatori presi in ogni modo (`molt_per_modo`) e, per ogni valore, i modi dove e' stato preso (`modi` nella griglia); la scheda Statistiche mostra una riga «Molt.: CW 12 · SSB 9» e il suggerimento delle caselle dei moltiplicatori dice i modi. Punteggio e totali non cambiano; negli altri contest i campi nuovi non ci sono.
 - Impostazioni › Radio, avviso sulla velocita' delle Icom (W4RHC, IC-7300 MK2, email): l'avviso diceva che la velocita' «deve essere 115200», ma l'IC-7300 MK2 funzionava solo con 19200 fisso e non con «Auto»; ora dice che di solito e' 115200, che l'importante e' che sia uguale al menu della radio, e che con il collegamento funzionante si puo' ignorare (`cat.warn.icomBaud`, otto lingue).
 
