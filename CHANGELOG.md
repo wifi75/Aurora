@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Nuovo modo QPSK31 nei modi testuali (menu Modo, ricezione, trasmissione dalla finestra TX e dalle macro, <MODE:QPSK31>): PSK31 a quattro fasi con codice convoluzionale (vincolo 5, 1/2) e decodifica di Viterbi, convenzioni di fldigi, fasi invertite da sole con la radio in LSB, coda di 72 zeri perche' anche fldigi stampi l'ultimo carattere. Provato contro il ricevitore QPSK di fldigi (oracolo) e ad anello chiuso con rumore e scostamenti; da provare in onda. FSK31 resta «presto»: nessuna specifica pubblica affidabile dei toni. Guida e «Informazioni» in otto lingue.
+
 ## 0.11.357 - 2026-11-26
 - Guida, Olivia e Contestia: un passo dice che i due modi sono ancora da provare in onda (provati solo con prove automatiche contro fldigi) e come segnalare i problemi. Otto lingue.
 - Modi testuali, sensibilita' di Aurora BIGScan (Impostazioni del modo CW e PSK, «Sensibilita' BIGScan»): Alta (soglia che apre i canali 2 dB piu' bassa: piu' stazioni deboli, piu' canali falsi), Media (di fabbrica: la soglia di sempre, stessi risultati di prima, provato da `bigscan_sensitivity_medium_is_unchanged` in CW e PSK) e Bassa (3 dB piu' alta: meno falsi). Vale subito, si salva come le altre preferenze (`band_sensitivity`); in RTTY non cambia niente. I valori -2/+3 dB non sono ancora misurati sul banco BIGScan.
