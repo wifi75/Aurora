@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.353',
-    released: '2026-11-25T22:31:49Z',
+    released: '2026-11-26T02:47:58Z',
     kind: 'new',
     title: [
       'Nuovo: controllo della radio con Ham Radio Deluxe',
