@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.356',
+    released: '2026-11-26T19:27:15Z',
+    kind: 'changed',
+    title: [
+      'Più stabile e più leggero',
+      'More stable and lighter',
+      'Stabiler und leichter',
+      'Plus stable et plus léger',
+      'Más estable y más ligero',
+      'Mais estável e mais leve',
+    ],
+    text: [
+      'Revisione di stabilità e prestazioni: la pulizia dei dati RBN costa molto meno e il collegamento riparte da solo se non arrivano dati per 5 minuti (PC sospeso), il contest non perde più i doppi se l’ora di Windows viene corretta all’indietro, con ALL.TXT spento non cresce più la memoria, JT9 e JT65 riusano le FFT, l’interfaccia ridisegna meno (impostazioni del cluster, preferenze identiche, pulizia dopo <RXC>). Nessuna funzione cambia.',
+      'Stability and performance review: cleaning RBN data costs much less and the connection restarts by itself if no data arrives for 5 minutes (sleeping PC), the contest no longer loses its dupes if the Windows clock is corrected backwards, with ALL.TXT off memory no longer grows, JT9 and JT65 reuse their FFTs, the interface redraws less (cluster settings, identical preferences, clean-up after <RXC>). No feature changes.',
+      'Überprüfung von Stabilität und Leistung: Das Aufräumen der RBN-Daten kostet viel weniger, und die Verbindung startet von selbst neu, wenn 5 Minuten lang keine Daten kommen (schlafender PC); der Contest verliert die Dupes nicht mehr, wenn die Windows-Uhr rückwärts korrigiert wird; bei ausgeschaltetem ALL.TXT wächst der Speicher nicht mehr; JT9 und JT65 verwenden ihre FFTs wieder; die Oberfläche zeichnet weniger neu (Cluster-Einstellungen, identische Einstellungen, Aufräumen nach <RXC>). Keine Funktion ändert sich.',
+      'Revue de stabilité et de performances : le nettoyage des données RBN coûte bien moins et la connexion repart d’elle-même si aucune donnée n’arrive pendant 5 minutes (PC en veille), le contest ne perd plus les doublons si l’heure de Windows est corrigée en arrière, avec ALL.TXT désactivé la mémoire ne grossit plus, JT9 et JT65 réutilisent leurs FFT, l’interface se redessine moins (réglages du cluster, préférences identiques, nettoyage après <RXC>). Aucune fonction ne change.',
+      'Revisión de estabilidad y rendimiento: la limpieza de los datos RBN cuesta mucho menos y la conexión se reinicia sola si no llegan datos en 5 minutos (PC suspendido), el concurso ya no pierde los duplicados si se corrige la hora de Windows hacia atrás, con ALL.TXT apagado la memoria ya no crece, JT9 y JT65 reutilizan sus FFT, la interfaz redibuja menos (ajustes del clúster, preferencias idénticas, limpieza tras <RXC>). Ninguna función cambia.',
+      'Revisão de estabilidade e desempenho: a limpeza dos dados RBN custa muito menos e a ligação recomeça sozinha se não chegarem dados em 5 minutos (PC suspenso), o concurso já não perde os duplicados se a hora do Windows for corrigida para trás, com o ALL.TXT desligado a memória já não cresce, JT9 e JT65 reutilizam as suas FFT, a interface redesenha menos (definições do cluster, preferências idênticas, limpeza após <RXC>). Nenhuma função muda.',
+    ],
+  },
+  {
     version: '0.11.355',
     released: '2026-11-26T17:00:10Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Log se met à jour toute seule quand un QSO arrive d’un autre log (Log4OM, OpsLog, HRD…) ou quand vous en enregistrez un. Après une suppression, les lignes restantes ne restent plus grisées.',
       'La página Log se actualiza sola cuando llega un QSO de otro log (Log4OM, OpsLog, HRD…) o registras uno. Tras un borrado, las filas restantes ya no quedan apagadas.',
       'A página Log atualiza-se sozinha quando chega um QSO de outro log (Log4OM, OpsLog, HRD…) ou registas um. Depois de uma eliminação, as linhas restantes já não ficam apagadas.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'new',
-    title: [
-      'Display della radio: Pannello FT-2000 con ROS, ALC e potenza',
-      'Radio display: FT-2000 panel with SWR, ALC and power',
-      'Funkgerät-Anzeige: FT-2000-Panel mit SWR, ALC und Leistung',
-      'Affichage de la radio : panneau FT-2000 avec ROS, ALC et puissance',
-      'Pantalla de la radio: panel FT-2000 con ROE, ALC y potencia',
-      'Mostrador do rádio: painel FT-2000 com ROE, ALC e potência',
-    ],
-    text: [
-      'Nuovo stile del display: VFO A e VFO B grandi e, in mezzo, ROS, ALC e potenza in trasmissione. Si sceglie in Impostazioni › Radio › Stile del display; gli altri stili non cambiano.',
-      'New display style: large VFO A and VFO B and, in between, SWR, ALC and transmit power. Choose it in Settings › Radio › Display style; the other styles do not change.',
-      'Neuer Anzeigestil: große VFO A und VFO B und dazwischen SWR, ALC und Sendeleistung. Auswahl unter Einstellungen › Funkgerät › Anzeigestil; die anderen Stile bleiben unverändert.',
-      'Nouveau style d’affichage : grands VFO A et VFO B et, au milieu, ROS, ALC et puissance en émission. Se choisit dans Réglages › Radio › Style d’affichage ; les autres styles ne changent pas.',
-      'Nuevo estilo de pantalla: VFO A y VFO B grandes y, en medio, ROE, ALC y potencia en transmisión. Se elige en Ajustes › Radio › Estilo de pantalla; los demás estilos no cambian.',
-      'Novo estilo de mostrador: VFO A e VFO B grandes e, no meio, ROE, ALC e potência em transmissão. Escolhe-se em Definições › Rádio › Estilo do mostrador; os outros estilos não mudam.',
     ],
   },
 ];
