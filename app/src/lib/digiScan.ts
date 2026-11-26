@@ -75,7 +75,7 @@ export function clearMemory(storage: Storage | null | undefined, slot: number): 
   writeMemories(storage, all);
 }
 
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB' };
 
 /** Riassunto di una memoria per l'elenco: modo, frequenza di ricezione e, in RTTY, spostamento e velocita'. */
 export function memorySummary(m: DigiMemory): string {

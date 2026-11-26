@@ -187,7 +187,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       },
     );
   };
-  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', olivia: 'OLIVIA', contestia: 'OLIVIA', qpsk31: 'PSK31' };
+  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', olivia: 'OLIVIA', contestia: 'OLIVIA', qpsk31: 'PSK31', throb: 'PSK31' };
   /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
   const enterText = () => {
     if (transmitting || route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax')) return;

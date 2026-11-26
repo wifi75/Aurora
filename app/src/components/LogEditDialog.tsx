@@ -8,7 +8,7 @@ import { askConfirm } from './ConfirmHost';
 
 /** I modi di un QSO scritto o corretto a mano, come li scrive l'ADIF (MODE), per tipo. */
 export const MODE_GROUPS: ReadonlyArray<readonly ['exp.mg.digital' | 'exp.mg.voice' | 'exp.mg.cw' | 'exp.mg.other', readonly string[]]> = [
-  ['exp.mg.digital', ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR', 'JS8', 'RTTY', 'PSK31', 'PSK63', 'PSK125', 'QPSK31', 'BPSK', 'QPSK', 'OLIVIA', 'CONTESTIA', 'MFSK', 'DOMINO', 'THOR', 'HELL', 'PACKET', 'PKT', 'VARA', 'ARDOP', 'PACTOR', 'SSTV', 'FAX']],
+  ['exp.mg.digital', ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR', 'JS8', 'RTTY', 'PSK31', 'PSK63', 'PSK125', 'QPSK31', 'BPSK', 'THRB', 'THROB1', 'THROB2', 'THROB4', 'THRBX1', 'THRBX2', 'THRBX4', 'QPSK', 'OLIVIA', 'CONTESTIA', 'MFSK', 'DOMINO', 'THOR', 'HELL', 'PACKET', 'PKT', 'VARA', 'ARDOP', 'PACTOR', 'SSTV', 'FAX']],
   ['exp.mg.voice', ['SSB', 'USB', 'LSB', 'AM', 'FM', 'DIGITALVOICE', 'DSTAR', 'C4FM', 'DMR', 'FREEDV', 'M17']],
   ['exp.mg.cw', ['CW']],
   ['exp.mg.other', ['ATV', 'SATELLITE']],

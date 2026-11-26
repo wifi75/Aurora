@@ -1769,6 +1769,8 @@ export const RU_UI: Record<string, string> = {
   "digi.olivia.syncSnrNow": "Текущее С/Ш синхронизации: {db} дБ",
   "digi.olivia.tones": "Тоны",
   "digi.olivia.tonesN": "тонов: {n}",
+  "digi.throb.variant": "Вариант",
+  "digi.throb.variantTip": "Throb с 1, 2 или 4 символами в секунду (9 тонов) или ThrobX (11 тонов). Другая станция должна использовать тот же вариант; THRBX4 нестандартный.",
   "digi.olivia.tonesTip": "Сколько тонов использует сигнал (4, 8, 16, 32 или 64). Больше тонов: быстрее, но менее устойчиво. Другая станция должна использовать те же тоны.",
   "digi.psk.qualityNow": "Текущее качество: {q}",
   "digi.psk.squelch": "Порог шумоподавителя: качество {q}",

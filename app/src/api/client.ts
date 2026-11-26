@@ -1967,13 +1967,18 @@ export interface OliviaSettings {
   squelch_snr_db: number;
 }
 
+/** Le varianti di Throb: 1, 2, 4 simboli al secondo; ThrobX con 11 toni (ThrobX4 e' fuori standard, come in fldigi). */
+export type ThrobVariant = 'throb1' | 'throb2' | 'throb4' | 'throbx1' | 'throbx2' | 'throbx4';
+
 export interface DigiSettings {
   /** `ssb`: fonia, senza decodifica ne' testo trasmesso (log e contest). */
-  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31';
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb';
   /** Olivia: 8 toni in 250 Hz di base (assente nei motori di prima). */
   olivia?: OliviaSettings;
   /** Contestia: 16 toni in 500 Hz di base (assente nei motori di prima). */
   contestia?: OliviaSettings;
+  /** Throb: la variante (assente nei motori di prima: vale `throb2`). */
+  throb?: ThrobVariant;
   /** Velocita' della CW in parole al minuto. */
   cw_wpm: number;
   /** CW: la velocita' di trasmissione segue quella misurata in ricezione (interruttore «TX = RX»). */

@@ -1769,6 +1769,8 @@ export const NL_UI: Record<string, string> = {
   "digi.olivia.syncSnrNow": "Huidige sync-S/R: {db} dB",
   "digi.olivia.tones": "Tonen",
   "digi.olivia.tonesN": "{n} tonen",
+  "digi.throb.variant": "Variant",
+  "digi.throb.variantTip": "Throb met 1, 2 of 4 symbolen per seconde (9 tonen) of ThrobX (11 tonen). Het andere station moet dezelfde variant gebruiken; THRBX4 is niet standaard.",
   "digi.olivia.tonesTip": "Hoeveel tonen het signaal gebruikt (4, 8, 16, 32 of 64). Meer tonen: sneller maar minder robuust. Het andere station moet dezelfde tonen gebruiken.",
   "digi.psk.qualityNow": "Huidige kwaliteit: {q}",
   "digi.psk.squelch": "Squelchdrempel: kwaliteit {q}",

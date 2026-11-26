@@ -602,6 +602,16 @@ export const digiStrings = {
   'digi.bar.styleBold': ["Grassetto", "Bold", "Fett", "Gras", "Negrita", "Negrito"],
   'digi.bar.styleBoldItalic': ["Grassetto corsivo", "Bold italic", "Fett kursiv", "Gras italique", "Negrita cursiva", "Negrito itálico"],
   'digi.bar.fontDefault': ["Predefinito", "Default", "Standard", "Par défaut", "Predeterminado", "Predefinido"],
+  // Throb: la variante
+  'digi.throb.variant': ['Variante', 'Variant', 'Variante', 'Variante', 'Variante', 'Variante'],
+  'digi.throb.variantTip': [
+    'Throb a 1, 2 o 4 simboli al secondo (9 toni) o ThrobX (11 toni). L’altra stazione deve usare la stessa variante; THRBX4 non è standard.',
+    'Throb at 1, 2 or 4 symbols per second (9 tones) or ThrobX (11 tones). The other station must use the same variant; THRBX4 is not standard.',
+    'Throb mit 1, 2 oder 4 Symbolen pro Sekunde (9 Töne) oder ThrobX (11 Töne). Die Gegenstation muss dieselbe Variante nutzen; THRBX4 ist nicht standardisiert.',
+    'Throb à 1, 2 ou 4 symboles par seconde (9 tons) ou ThrobX (11 tons). L’autre station doit utiliser la même variante ; THRBX4 n’est pas standard.',
+    'Throb a 1, 2 o 4 símbolos por segundo (9 tonos) o ThrobX (11 tonos). La otra estación debe usar la misma variante; THRBX4 no es estándar.',
+    'Throb a 1, 2 ou 4 símbolos por segundo (9 tons) ou ThrobX (11 tons). A outra estação tem de usar a mesma variante; THRBX4 não é padrão.',
+  ],
   // Olivia e Contestia: toni, banda, sincronismo e squelch
   'digi.olivia.tones': ['Toni', 'Tones', 'Töne', 'Tons', 'Tonos', 'Tons'],
   'digi.olivia.tonesN': ['{n} toni', '{n} tones', '{n} Töne', '{n} tons', '{n} tonos', '{n} tons'],

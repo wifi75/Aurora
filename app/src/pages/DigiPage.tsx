@@ -4,7 +4,7 @@ import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
 import { FldigiImportDialog } from '../components/FldigiImportDialog';
 import { applyImport, buildImport, parseFldigiFile, type ImportReport } from '../lib/fldigiMacros';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso, type OliviaSettings } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso, type OliviaSettings, type ThrobVariant } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -87,7 +87,11 @@ import '../styles/digi-log-corta.css';
 import '../styles/digi-band.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31' };
+/** Le varianti di Throb nell'ordine del menu. */
+const THROB_VARIANTS: readonly ThrobVariant[] = ['throb1', 'throb2', 'throb4', 'throbx1', 'throbx2', 'throbx4'];
+/** Il nome di una variante di Throb come lo scrive ADIF (sottomodo di THRB). */
+const throbName = (v: ThrobVariant | undefined): string => ({ throb1: 'THROB1', throb2: 'THROB2', throb4: 'THROB4', throbx1: 'THRBX1', throbx2: 'THRBX2', throbx4: 'THRBX4' })[v ?? 'throb2'];
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -161,6 +165,13 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'PSK63':
     case 'BPSK63': return 'psk63';
     case 'QPSK31': return 'qpsk31';
+    case 'THROB':
+    case 'THROB1':
+    case 'THROB2':
+    case 'THROB4':
+    case 'THRBX1':
+    case 'THRBX2':
+    case 'THRBX4': return 'throb';
     case 'RTTY': return 'rtty';
     case 'CW': return 'cw';
     case 'SSB':
@@ -1207,7 +1218,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       band: logBand(dial, l.manualBand),
       // la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
       freq_hz: dial > 0 ? dial + Math.round(l.rxHz) : 0,
-      mode: MODE_NAMES[l.snap.settings.mode],
+      // Throb: il sottomodo ADIF della variante (THROB2, THRBX1...)
+      mode: l.snap.settings.mode === 'throb' ? throbName(l.snap.settings.throb) : MODE_NAMES[l.snap.settings.mode],
       rst_sent: l.saved.rsts,
       rst_rcvd: l.saved.rstr,
       grid: l.qso.wwloc,
@@ -1838,6 +1850,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 { label: `${t('digi.olivia.bandwidth')}: ${o.bandwidth_hz} Hz`, title: t('digi.olivia.bandwidthTip'), items: OLIVIA_BANDWIDTHS.map((v) => ({ label: `${v} Hz`, checked: v === o.bandwidth_hz, onSelect: () => saveOlivia({ bandwidth_hz: v }) })) },
               ];
             })()
+          : []),
+        // Throb: la variante scelta dal menu
+        ...(s.mode === 'throb'
+          ? [
+              'sep' as const,
+              { label: `${t('digi.throb.variant')}: ${throbName(s.throb)}`, title: t('digi.throb.variantTip'), items: THROB_VARIANTS.map((v) => ({ label: throbName(v), checked: v === (s.throb ?? 'throb2'), onSelect: () => save({ throb: v }) })) },
+            ]
           : []),
         'sep' as const,
         ...MODI_IN_ARRIVO.map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
@@ -2643,6 +2662,7 @@ function passbandWidth(s: DigiSettings): number {
   if ((s.passband_hz ?? 0) > 0) return s.passband_hz ?? 0;
   if (s.mode === 'psk31' || s.mode === 'qpsk31') return 3 * 31.25;
   if (s.mode === 'psk63') return 3 * 62.5;
+  if (s.mode === 'throb') return 120;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   if (s.mode === 'ssb') return 2400;
   // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo, come nel core

@@ -852,7 +852,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -4718,6 +4718,8 @@ digi.bar.styleItalic,Italic,Курсив
 digi.bar.styleBold,Bold,Жирный
 digi.bar.styleBoldItalic,Bold italic,Жирный курсив
 digi.bar.fontDefault,Default,По умолчанию
+digi.throb.variant,Variant,Вариант
+digi.throb.variantTip,"Throb at 1, 2 or 4 symbols per second (9 tones) or ThrobX (11 tones). The other station must use the same variant; THRBX4 is not standard.","Throb с 1, 2 или 4 символами в секунду (9 тонов) или ThrobX (11 тонов). Другая станция должна использовать тот же вариант; THRBX4 нестандартный."
 digi.olivia.tones,Tones,Тоны
 digi.olivia.tonesN,{n} tones,тонов: {n}
 digi.olivia.tonesTip,"How many tones the signal uses (4, 8, 16, 32 or 64). More tones: faster but less robust. The other station must use the same tones.","Сколько тонов использует сигнал (4, 8, 16, 32 или 64). Больше тонов: быстрее, но менее устойчиво. Другая станция должна использовать те же тоны."
@@ -4934,7 +4936,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
+sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°
