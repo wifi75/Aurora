@@ -1030,7 +1030,7 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modifica › Pulisci la finestra di ricezione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Pulisci la finestra di trasmissione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Copia il testo ricevuto | PRC › Modifica | t-digi-menu-fe |
-| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia |
+| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia, QPSK31 (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia, t-digi-qpsk31 |
 | Modo › SSTV | PRC › Modo | t-digi-menu-mode |
 | Modo › Spostamento (Hz) e Velocità (baud) (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Inverti mark/space (Rev) e UOS (solo RTTY) | PRC › Modo | t-digi-menu-mode |
