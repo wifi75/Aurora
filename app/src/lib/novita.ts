@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.358',
-    released: '2026-11-27T10:05:16Z',
+    released: '2026-11-27T10:14:42Z',
     kind: 'new',
     title: [
       'Quattro modi nuovi: QPSK31, Throb, Amtor e MT63',
