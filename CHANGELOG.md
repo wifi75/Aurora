@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.358 - 2026-11-27
 - Guida › FAQ, nuova voce «Su Mac: Aurora non è approvata o non si può aprire» (fm5dn, #122): spiega il blocco di Gatekeeper (la versione per Mac non è firmata né notarizzata) con i passi: clic destro › Apri, «Apri comunque» in Privacy e sicurezza, `xattr -dr com.apple.quarantine`; otto lingue (`guide-faq.ts`, `faq-macos`).
 
 - Nuovo modo QPSK31 nei modi testuali (menu Modo, ricezione, trasmissione dalla finestra TX e dalle macro, <MODE:QPSK31>): PSK31 a quattro fasi con codice convoluzionale (vincolo 5, 1/2) e decodifica di Viterbi, convenzioni di fldigi, fasi invertite da sole con la radio in LSB, coda di 72 zeri perche' anche fldigi stampi l'ultimo carattere. Provato contro il ricevitore QPSK di fldigi (oracolo) e ad anello chiuso con rumore e scostamenti; da provare in onda. FSK31 resta «presto»: nessuna specifica pubblica affidabile dei toni. Guida e «Informazioni» in otto lingue.

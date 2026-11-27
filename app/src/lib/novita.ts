@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.358',
+    released: '2026-11-27T10:05:16Z',
+    kind: 'new',
+    title: [
+      'Quattro modi nuovi: QPSK31, Throb, Amtor e MT63',
+      'Four new modes: QPSK31, Throb, Amtor and MT63',
+      'Vier neue Betriebsarten: QPSK31, Throb, Amtor und MT63',
+      'Quatre nouveaux modes : QPSK31, Throb, Amtor et MT63',
+      'Cuatro modos nuevos: QPSK31, Throb, Amtor y MT63',
+      'Quatro modos novos: QPSK31, Throb, Amtor e MT63',
+    ],
+    text: [
+      'Nei modi testuali ci sono QPSK31, Throb (sei varianti), Amtor FEC (SITOR-B) e MT63 (500, 1000 e 2000 Hz, interleave corto e lungo): menu Modo, ricezione, trasmissione dalla finestra TX e dalle macro, con Guida e crediti. Sono provati con prove automatiche e contro fldigi, ma non ancora in onda con una radio vera: la Guida li segna «da provare in onda». Nella Guida, FAQ, una voce spiega come aprire Aurora su Mac (Gatekeeper). FSK31 resta «presto».',
+      'The text modes now include QPSK31, Throb (six variants), Amtor FEC (SITOR-B) and MT63 (500, 1000 and 2000 Hz, short and long interleave): Mode menu, receive, transmit from the TX window and macros, with Guide and credits. They are tested with automatic tests and against fldigi, but not yet on the air with a real radio: the Guide marks them “to be tried on the air”. In the Guide, FAQ, an entry explains how to open Aurora on a Mac (Gatekeeper). FSK31 is still “coming soon”.',
+      'Bei den Textmodi gibt es jetzt QPSK31, Throb (sechs Varianten), Amtor FEC (SITOR-B) und MT63 (500, 1000 und 2000 Hz, kurzer und langer Interleave): Modusmenü, Empfang, Senden aus dem TX-Fenster und aus Makros, mit Anleitung und Danksagung. Sie sind mit automatischen Tests und gegen fldigi geprüft, aber noch nicht mit einem echten Funkgerät im Funkbetrieb: Die Anleitung markiert sie als „im Funkbetrieb zu testen“. In der Anleitung, FAQ, erklärt ein Eintrag, wie man Aurora auf dem Mac öffnet (Gatekeeper). FSK31 bleibt „bald“.',
+      'Les modes texte comptent maintenant QPSK31, Throb (six variantes), Amtor FEC (SITOR-B) et MT63 (500, 1000 et 2000 Hz, entrelacement court et long) : menu Mode, réception, émission depuis la fenêtre TX et les macros, avec Guide et crédits. Ils sont testés par des tests automatiques et contre fldigi, mais pas encore en onde avec une vraie radio : le Guide les marque « à essayer en onde ». Dans le Guide, FAQ, une entrée explique comment ouvrir Aurora sur Mac (Gatekeeper). FSK31 reste « bientôt ».',
+      'Los modos de texto incluyen ahora QPSK31, Throb (seis variantes), Amtor FEC (SITOR-B) y MT63 (500, 1000 y 2000 Hz, entrelazado corto y largo): menú Modo, recepción, transmisión desde la ventana TX y las macros, con Guía y créditos. Están probados con pruebas automáticas y contra fldigi, pero todavía no en el aire con una radio real: la Guía los marca «por probar en el aire». En la Guía, FAQ, una entrada explica cómo abrir Aurora en Mac (Gatekeeper). FSK31 sigue «próximamente».',
+      'Os modos de texto incluem agora QPSK31, Throb (seis variantes), Amtor FEC (SITOR-B) e MT63 (500, 1000 e 2000 Hz, entrelaçamento curto e longo): menu Modo, receção, transmissão a partir da janela TX e das macros, com Guia e créditos. Estão testados com testes automáticos e contra o fldigi, mas ainda não no ar com um rádio real: o Guia marca-os «a testar no ar». No Guia, FAQ, uma entrada explica como abrir a Aurora num Mac (Gatekeeper). O FSK31 continua «em breve».',
+    ],
+  },
+  {
     version: '0.11.357',
     released: '2026-11-26T21:25:41Z',
     kind: 'new',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'La tonalité de fin (450 Hz) est maintenant reconnue même si elle est faible ou si l’accord est un peu décalé : la carte se ferme et s’enregistre aussitôt, complète. Avant, elle se fermait 25 à 40 secondes plus tard et était marquée incomplète.',
       'El tono de fin (450 Hz) ahora se reconoce aunque sea débil o la sintonía esté algo desviada: el mapa se cierra y se guarda enseguida, completo. Antes se cerraba 25-40 segundos después y quedaba marcado como incompleto.',
       'O tom de fim (450 Hz) agora é reconhecido mesmo que seja fraco ou a sintonia esteja um pouco fora: a carta fecha e fica guardada logo, completa. Antes fechava 25-40 segundos depois e ficava marcada como incompleta.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'changed',
-    title: [
-      'WEFAX: la vista riparte da zero con una cartina nuova',
-      'WEFAX: the view starts from scratch on a new chart',
-      'WEFAX: Die Ansicht beginnt bei einer neuen Karte von vorn',
-      'WEFAX : la vue repart de zéro avec une nouvelle carte',
-      'WEFAX: la vista empieza de cero con un mapa nuevo',
-      'WEFAX: a vista recomeça do zero com uma carta nova',
-    ],
-    text: [
-      'Appena arriva il segnale di una cartina nuova la cartina di prima sparisce dalla vista. Guardando le cartine salvate in grande, un segnalino verde «Ricezione in corso» mostra che la ricezione continua.',
-      'As soon as the signal of a new chart arrives, the previous chart disappears from the view. While looking at saved charts full size, a green “Reception in progress” badge shows that reception continues.',
-      'Sobald das Signal einer neuen Karte eintrifft, verschwindet die vorherige Karte aus der Ansicht. Beim Betrachten gespeicherter Karten in groß zeigt ein grünes Zeichen „Empfang läuft“, dass der Empfang weitergeht.',
-      'Dès que arrive le signal d’une nouvelle carte, la carte précédente disparaît de la vue. En regardant les cartes enregistrées en grand, un petit repère vert « Réception en cours » montre que la réception continue.',
-      'En cuanto llega la señal de un mapa nuevo, el mapa anterior desaparece de la vista. Al mirar los mapas guardados en grande, una marca verde «Recepción en curso» muestra que la recepción continúa.',
-      'Assim que chega o sinal de uma carta nova, a carta anterior desaparece da vista. Ao ver as cartas guardadas em grande, um sinal verde «Receção em curso» mostra que a receção continua.',
     ],
   },
 ];
