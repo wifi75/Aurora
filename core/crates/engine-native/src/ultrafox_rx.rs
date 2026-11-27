@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 
+use ft8::message::CallHashes;
+
 use crate::qpc;
 use crate::ultrafox::{self, NSPS, SYMBOLS, TONES};
 
@@ -62,6 +64,11 @@ pub struct Decoded {
 
 /// Decodifica 15 s di audio a 12 kHz (il periodo intero, dall'inizio). `fsync` e `ftol`: dove cercare il tono di sincronismo.
 pub fn decode(audio: &[f32], fsync: f32, ftol: f32) -> Option<Decoded> {
+    decode_with(audio, fsync, ftol, &CallHashes::default())
+}
+
+/// Come [`decode`] con la memoria degli hash dei nominativi: i nominativi non standard («<IU3ABC/P>») tornano per nome se gia' noti.
+pub fn decode_with(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes) -> Option<Decoded> {
     let n9 = 9 * RATE as usize;
     if audio.len() < n9 {
         return None;
@@ -99,7 +106,7 @@ pub fn decode(audio: &[f32], fsync: f32, ftol: f32) -> Option<Decoded> {
             if snr < MIN_SNR {
                 return None;
             }
-            let mut d = unpack(&x)?;
+            let mut d = unpack_with(&x, hashes)?;
             d.snr = snr.round() as i32;
             d.freq_hz = f;
             d.dt = t;
@@ -243,6 +250,11 @@ impl Decoded {
 
 /// Dai 50 simboli (come escono dal codice polare) al testo (`sfox_unpack.f90`).
 pub fn unpack(symbols: &[u8; SYMBOLS]) -> Option<Decoded> {
+    unpack_with(symbols, &CallHashes::default())
+}
+
+/// Come [`unpack`] con la memoria degli hash (`unpack28_for_state`).
+pub fn unpack_with(symbols: &[u8; SYMBOLS], hashes: &CallHashes) -> Option<Decoded> {
     let mut x = *symbols;
     x.reverse();
     let mut bits = [0u8; 329];
@@ -282,7 +294,7 @@ pub fn unpack(symbols: &[u8; SYMBOLS]) -> Option<Decoded> {
     if i3 != 0 && i3 != 2 {
         return None;
     }
-    fox = ft8::message::unpack28_standard(get(1, 28) as u32)?;
+    fox = ft8::message::unpack28_with(get(1, 28) as u32, hashes)?;
     if i3 == 2 {
         free_text = text(161, 232);
     }
@@ -299,7 +311,7 @@ pub fn unpack(symbols: &[u8; SYMBOLS]) -> Option<Decoded> {
         if n28 == 0 || n28 == NQU1RKS {
             continue;
         }
-        let Some(call) = ft8::message::unpack28_standard(n28) else { continue };
+        let Some(call) = ft8::message::unpack28_with(n28, hashes) else { continue };
         if call.starts_with("CQ") {
             cqs += 1;
             if cqs == 1 {
@@ -363,6 +375,22 @@ mod tests {
         assert_eq!(d.free_text.as_deref(), Some("TNX"));
     }
 
+
+    /// Nominativi non standard come in WSJT-X: fra «<>» vanno nell'hash a 22 bit e tornano per nome solo se l'hash e' noto; senza «<>» sono
+    /// rifiutati (il controllo `valid_sfox_call` rilegge «<K1ABC/P>» e lo trova diverso).
+    #[test]
+    fn non_standard_calls_use_the_22_bit_hash_when_in_angle_brackets() {
+        let c = Content::Hounds { fox: "IU3ABC".into(), rr73: vec!["<K1ABC/P>".into()], reports: vec![("<DL1ABC/QRP>".into(), -5)] };
+        let mut known = CallHashes::default();
+        let x = ultrafox::pack_with(&c, &Extras::default(), &mut known).expect("impacchettato");
+        assert!(ultrafox::crc_ok(&x));
+        assert_eq!(unpack(&x).expect("senza hash").messages, vec!["<...> IU3ABC RR73", "<...> IU3ABC -05"]);
+        assert_eq!(unpack_with(&x, &known).expect("con hash").messages, vec!["<K1ABC/P> IU3ABC RR73", "<DL1ABC/QRP> IU3ABC -05"]);
+        let plain = Content::Hounds { fox: "IU3ABC".into(), rr73: vec!["K1ABC/P".into()], reports: vec![] };
+        assert_eq!(ultrafox::pack(&plain, &Extras::default()), Err(ultrafox::PackError::BadCall));
+        let broken = Content::Hounds { fox: "IU3ABC".into(), rr73: vec!["<K1ABC".into()], reports: vec![] };
+        assert_eq!(ultrafox::pack(&broken, &Extras::default()), Err(ultrafox::PackError::BadCall));
+    }
     #[test]
     fn a_clean_signal_decodes_with_time_offset() {
         let start = 0.5 - NSPS as f32 / RATE + 0.3;

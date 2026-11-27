@@ -3,7 +3,7 @@
 //! si leggono come 47 simboli da 7 bit, si aggiunge il controllo d'integrita' a 21 bit (`nhash2`, cioe' `hashlittle` di Bob Jenkins con
 //! seme 571) in tre simboli e si rovescia l'ordine: i 50 simboli vanno al codice polare ([`crate::qpc`]).
 
-use ft8::message::{pack28_standard, pack_text71};
+use ft8::message::{CallHashes, pack28_sfox, pack_text71};
 
 /// Simboli da 7 bit del messaggio (ingresso del codice polare).
 pub const SYMBOLS: usize = 50;
@@ -60,8 +60,8 @@ impl Bits {
     }
 }
 
-fn call28(call: &str) -> Result<u128, PackError> {
-    pack28_standard(call).map(u128::from).ok_or(PackError::BadCall)
+fn call28(call: &str, hashes: &mut CallHashes) -> Result<u128, PackError> {
+    pack28_sfox(call, hashes).map(u128::from).ok_or(PackError::BadCall)
 }
 
 fn grid15(grid: &str) -> Option<u128> {
@@ -75,6 +75,11 @@ const TEXT_CHARS: &[u8] = b" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ+-./?";
 
 /// I 50 simboli da 7 bit da dare al codice polare.
 pub fn pack(content: &Content, extras: &Extras) -> Result<[u8; SYMBOLS], PackError> {
+    pack_with(content, extras, &mut CallHashes::default())
+}
+
+/// Come [`pack`] con la memoria degli hash del programma: i nominativi non standard fra «<>» si registrano li'.
+pub fn pack_with(content: &Content, extras: &Extras, hashes: &mut CallHashes) -> Result<[u8; SYMBOLS], PackError> {
     if extras.otp >= 1 << 20 {
         return Err(PackError::BadOtp);
     }
@@ -98,7 +103,7 @@ pub fn pack(content: &Content, extras: &Extras) -> Result<[u8; SYMBOLS], PackErr
             i3 = 3;
         }
         Content::Hounds { fox, rr73, reports } => {
-            b.put(1, 28, call28(fox)?);
+            b.put(1, 28, call28(fox, hashes)?);
             let too_many = if send_text { rr73.len() + reports.len() > 4 } else { rr73.len() > MAX_RR73 || reports.len() > MAX_REPORTS || rr73.len() + reports.len() > MAX_HOUNDS };
             if too_many || (send_text && reports.len() > MAX_REPORTS) {
                 return Err(PackError::TooMany);
@@ -107,7 +112,7 @@ pub fn pack(content: &Content, extras: &Extras) -> Result<[u8; SYMBOLS], PackErr
                 b.put(141, 20, (1 << 20) - 1);
             }
             for (k, call) in rr73.iter().enumerate() {
-                b.put(29 + 28 * k, 28, call28(call)?);
+                b.put(29 + 28 * k, 28, call28(call, hashes)?);
             }
             let (mut j, mut j2) = if send_text { (29 + 28 * rr73.len(), 141 + 5 * rr73.len()) } else { (169, 281) };
             if send_text {
@@ -117,7 +122,7 @@ pub fn pack(content: &Content, extras: &Extras) -> Result<[u8; SYMBOLS], PackErr
                 if !(-18..=12).contains(db) {
                     return Err(PackError::BadReport);
                 }
-                b.put(j, 28, call28(call)?);
+                b.put(j, 28, call28(call, hashes)?);
                 b.put(j2, 5, (db + 18) as u128);
                 j += 28;
                 j2 += 5;
@@ -263,7 +268,12 @@ pub fn content_from_fox(msgs: &[String], my_call: &str, my_grid: &str) -> Option
 
 /// Il segnale da trasmettere per il periodo: messaggio, codice polare, toni e GFSK.
 pub fn transmission(content: &Content, extras: &Extras) -> Result<Vec<f32>, PackError> {
-    let symbols = pack(content, extras)?;
+    transmission_with(content, extras, &mut CallHashes::default())
+}
+
+/// Come [`transmission`] con la memoria degli hash del programma.
+pub fn transmission_with(content: &Content, extras: &Extras, hashes: &mut CallHashes) -> Result<Vec<f32>, PackError> {
+    let symbols = pack_with(content, extras, hashes)?;
     Ok(wave(&tones(&crate::qpc::encode(&symbols))))
 }
 

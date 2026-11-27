@@ -1194,7 +1194,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 let otp = self.fox.otp_code(next_start).and_then(|c| c.parse().ok()).unwrap_or(0);
                 let extras = crate::ultrafox::Extras { more_cqs: false, free_text: self.fox.opts.free_text.clone(), otp };
                 match crate::ultrafox::content_from_fox(&msgs, &self.my_call, &self.fox.my_grid()) {
-                    Some((content, more_cqs)) => match crate::ultrafox::transmission(&content, &crate::ultrafox::Extras { more_cqs: more_cqs || self.fox.opts.more_cqs, ..extras }) {
+                    Some((content, more_cqs)) => match crate::ultrafox::transmission_with(&content, &crate::ultrafox::Extras { more_cqs: more_cqs || self.fox.opts.more_cqs, ..extras }, &mut self.hashes) {
                         Ok(w) => {
                             waves.push(w);
                             sent.clone_from(&msgs);

@@ -806,7 +806,7 @@ pub fn start_with_save(
                 }
                 // Hound in FT8: si cerca anche una Fox UltraFOX/SuperFox (un solo segnale largo da 750 Hz); i suoi messaggi arrivano come quelli FT8
                 if mode == Mode::Ft8 && live.as_ref().is_some_and(|l| l.controls.switch_on("hound"))
-                    && let Some(fox) = ultrafox_rx::decode(&slot.samples, ultrafox::F0_HZ as f32, 200.0)
+                    && let Some(fox) = ultrafox_rx::decode_with(&slot.samples, ultrafox::F0_HZ as f32, 200.0, &hashes)
                 {
                     tracing::info!("UltraFOX: {} messaggi da {} ({} dB)", fox.messages.len(), fox.fox, fox.snr);
                     if let Some(l) = live.as_ref() {

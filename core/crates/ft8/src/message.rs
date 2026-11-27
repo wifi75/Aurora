@@ -400,6 +400,29 @@ pub fn pack28_standard(c: &str) -> Option<u32> {
     codifica_standard(c)
 }
 
+/// I 28 bit di una parola di nominativo come li accetta SuperFox di WSJT-X (`pack28_for_state` seguito dal controllo `valid_sfox_call` di
+/// `sfox_pack.f90`, che rilegge il numero e lo confronta col testo): un nominativo standard, oppure uno non standard (con `/`, composto)
+/// scritto fra parentesi angolari, «<IU3ABC/P>», che va nell'hash a 22 bit; il nominativo si registra in `hashes` come fa WSJT-X, cosi'
+/// il controllo torna. Un nominativo non standard senza parentesi tornerebbe «<...>» e WSJT-X lo rifiuta: qui `None`.
+pub fn pack28_sfox(c: &str, hashes: &mut CallHashes) -> Option<u32> {
+    if let Some(inner) = c.strip_prefix('<') {
+        let inner = inner.strip_suffix('>')?;
+        if inner.contains(['<', '>']) || !nominativo_valido(inner) {
+            return None;
+        }
+        hashes.save_call(inner);
+        return Some(NTOKENS + hash_call(inner, 22));
+    }
+    let n28 = codifica_standard(c)?;
+    hashes.save_call(c);
+    Some(n28)
+}
+
+/// Dal numero di 28 bit al nominativo con la memoria degli hash (`unpack28_for_state`): «<IU3ABC/P>» se l'hash e' noto, «<...>» se no.
+pub fn unpack28_with(n28: u32, hashes: &CallHashes) -> Option<String> {
+    unpack28(n28, hashes)
+}
+
 /// I 71 bit di un testo libero di 13 caratteri al massimo (allineato a destra come nel tipo 0.0): `packtext77` di WSJT-X.
 pub fn pack_text71(testo: &str) -> Option<u128> {
     let b = testo.as_bytes();
