@@ -56,3 +56,135 @@ fn fldigi_riceve_il_nostro() {
         }
     }
 }
+
+use mode_digi::mt63::{Mt63Rx, SQUELCH_OFF};
+
+/// Noi riceviamo il trasmettitore di fldigi in tutte le varianti, con rumore, niente prima e niente dopo il testo; e il suo segnale
+/// rovesciato come da una radio in LSB.
+#[test]
+fn riceviamo_fldigi() {
+    for v in Mt63Variant::ALL {
+        for lsb in [false, true] {
+            let f = 1500.0;
+            let tx = FldigiMt63::transmit(v, f, TESTO);
+            let peak = tx.wave.iter().fold(0.0_f32, |m, x| m.max(x.abs()));
+            let a = con_rumore(tx.wave.iter().map(|s| s * 0.5 / peak).collect(), 0.05, 9);
+            let (a, f_rx) = if lsb { (rovescia(&a), 4000.0 - f) } else { (a, f) };
+            let mut rx = Mt63Rx::new(v, f_rx, lsb, false);
+            for b in a.chunks(512) {
+                rx.process(b);
+            }
+            let got = String::from_utf8_lossy(&rx.take()).into_owned();
+            assert_eq!(got.trim(), TESTO, "{v:?} lsb {lsb}");
+        }
+    }
+}
+
+/// Sullo stesso segnale di fldigi con molto rumore il nostro ricevitore, con lo squelch spento come quello di fldigi, da' gli stessi
+/// caratteri, errori compresi (noi non stampiamo i caratteri di controllo; i primi caratteri di rumore possono differire); con lo squelch
+/// acceso, a un livello di rumore piu' basso, arriva il testo senza rumore intorno (al massimo senza i primi due caratteri).
+#[test]
+fn nel_rumore_come_fldigi() {
+    let testo = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789 de IU3ABC IO91WM pse k";
+    let casi = [
+        (Mt63Variant::Mt63_500s, 0.5, false),
+        (Mt63Variant::Mt63_1000l, 0.35, false),
+        (Mt63Variant::Mt63_2000l, 0.2, false),
+        (Mt63Variant::Mt63_1000s, 0.4, true),
+    ];
+    for (v, sigma, long) in casi {
+        let tx = FldigiMt63::transmit(v, 1500.0, testo);
+        let peak = tx.wave.iter().fold(0.0_f32, |m, x| m.max(x.abs()));
+        for seed in 0..3 {
+            let a = con_rumore(tx.wave.iter().map(|s| s * 0.5 / peak).collect(), sigma, 200 + seed);
+            let mut rx = Mt63Rx::new(v, 1500.0, false, long);
+            rx.set_squelch_db(SQUELCH_OFF);
+            let mut fl = FldigiMt63::new(v, 1500.0, if long { 32 } else { 16 });
+            let mut fl_out = Vec::new();
+            for b in a.chunks(512) {
+                rx.process(b);
+                fl_out.extend(fl.process(b));
+            }
+            fl_out.retain(|&c| c >= b' ' || c == b'\n');
+            let ours = rx.take();
+            // i primissimi caratteri (rumore prima dell'aggancio, con i filtri appena partiti) possono differire
+            let same = ours.iter().rev().zip(fl_out.iter().rev()).take_while(|(a, b)| a == b).count();
+            assert!(
+                same + 12 >= ours.len().max(fl_out.len()),
+                "{v:?} sigma {sigma} seme {seed}:
+noi    {:?}
+fldigi {:?}",
+                String::from_utf8_lossy(&ours),
+                String::from_utf8_lossy(&fl_out)
+            );
+        }
+        let a = con_rumore(tx.wave.iter().map(|s| s * 0.5 / peak).collect(), sigma * 0.6, 300);
+        let mut rx = Mt63Rx::new(v, 1500.0, false, long);
+        rx.process(&a);
+        // fldigi parte subito col testo: con un segnale debole si possono perdere i primi due caratteri (vedi `start_ok` nel ricevitore),
+        // ma niente rumore prima o dopo
+        let got = String::from_utf8_lossy(&rx.take()).trim().to_string();
+        assert!(testo.ends_with(&got) && got.len() + 2 >= testo.len(), "{v:?} sigma {} con lo squelch: {got:?}", sigma * 0.6);
+    }
+}
+
+/// Il nostro ricevitore e quello di fldigi sullo stesso segnale rumoroso (di fldigi): errori sui caratteri a vari livelli di rumore.
+/// Solo misura: `cargo test --features fldigi-oracle --test mt63_oracolo -- --ignored --nocapture confronto`.
+#[test]
+#[ignore]
+fn confronto_nel_rumore() {
+    let testo = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789 de IU3ABC IO91WM pse k ".repeat(2);
+    for v in [Mt63Variant::Mt63_500s, Mt63Variant::Mt63_1000l, Mt63Variant::Mt63_2000l] {
+        let tx = FldigiMt63::transmit(v, 1500.0, &testo);
+        let peak = tx.wave.iter().fold(0.0_f32, |m, x| m.max(x.abs()));
+        for sigma in [0.2, 0.35, 0.5, 0.7, 0.9] {
+            let (mut e_ours, mut e_fl) = (0, 0);
+            for seed in 0..3 {
+                let a = con_rumore(tx.wave.iter().map(|s| s * 0.5 / peak).collect(), sigma, 100 + seed);
+                let mut rx = Mt63Rx::new(v, 1500.0, false, false);
+                rx.set_squelch_db(SQUELCH_OFF);
+                let mut fl = FldigiMt63::new(v, 1500.0, 16);
+                let mut fl_out = Vec::new();
+                for b in a.chunks(512) {
+                    rx.process(b);
+                    fl_out.extend(fl.process(b));
+                }
+                let ours = rx.take();
+                e_ours += errori(&ours, testo.as_bytes());
+                e_fl += errori(&fl_out, testo.as_bytes());
+            }
+            eprintln!("{v:?} sigma {sigma}: errori noi {e_ours}, fldigi {e_fl} (su {})", 3 * testo.len());
+        }
+        for sq in [3.0f32, 4.0, 5.0, 5.5, 6.0] {
+            let mut e = 0;
+            for (k, sigma) in [0.2, 0.35, 0.5].into_iter().enumerate() {
+                let a = con_rumore(tx.wave.iter().map(|s| s * 0.5 / peak).collect(), sigma, 300 + k as u64);
+                let mut rx = Mt63Rx::new(v, 1500.0, false, false);
+                rx.set_squelch_db(sq);
+                rx.process(&a);
+                e += errori(&rx.take(), testo.as_bytes());
+            }
+            let mut a = vec![0.0f32; 8000 * 600];
+            let mut rng = common::Rng(sq as u64);
+            common::aggiungi_rumore(&mut a, 0.3, &mut rng);
+            let mut rx = Mt63Rx::new(v, 1500.0, false, false);
+            rx.set_squelch_db(sq);
+            rx.process(&a);
+            eprintln!("{v:?} squelch {sq}: errori con rumore 0.2/0.35/0.5 {e}, caratteri in 600 s di solo rumore {}", rx.take().len());
+        }
+    }
+}
+
+/// Errori rispetto al testo: la distanza di modifica fra il testo e il pezzo ricevuto che gli somiglia di piu' (fldigi stampa anche
+/// rumore prima e dopo, senza squelch): si tagliano le parti fuori dal primo e dall'ultimo carattere giusto.
+fn errori(got: &[u8], want: &[u8]) -> usize {
+    let mut best = common::levenshtein(got, want);
+    for s in 0..got.len().min(40) {
+        for e in 0..got.len().min(40) {
+            if s + e < got.len() {
+                best = best.min(common::levenshtein(&got[s..got.len() - e], want));
+            }
+        }
+    }
+    best
+}

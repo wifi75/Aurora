@@ -21,6 +21,7 @@
 //! - [`olivia`], [`olivia_rx`]: Olivia e Contestia (codificatore FEC, trasmettitore e ricevitore);
 //! - [`amtor`]: Amtor FEC (SITOR-B), trasmettitore e ricevitore;
 //! - [`throb`]: Throb e ThrobX (trasmettitore e ricevitore a 8 kHz);
+//! - [`mt63`]: MT63 a 500, 1000 e 2000 Hz con interleaving corto e lungo (trasmettitore e ricevitore a 8 kHz);
 //! - [`resample_8k`]: i ricampionatori 12 <-> 8 kHz di Olivia e Contestia (FIR a fase lineare);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
