@@ -1,7 +1,7 @@
 # Changelog
 
 ## Non rilasciato
-- Crediti: «Informazioni», `THIRD-PARTY-NOTICES.md` e `qpc.rs` citano Nico Palermo, IV3NWV, per le tabelle del codice polare q-ario di SuperFox, usate in Aurora con il suo permesso.
+- Crediti: «Informazioni», `THIRD-PARTY-NOTICES.md` e `qpc.rs` citano Nico Palermo, IV3NWV, per le tabelle e l'algoritmo del codice polare q-ario di SuperFox, usati in Aurora con il suo permesso.
 
 ## 0.11.359 - 2026-11-27
 - Hound: la riga di una Fox con il secondo Hound non risolto (`IU3ABC RR73; <...> <FOX> -10`) ora chiude e registra il QSO del primo, come WSJT-X 3.3.0 beta 11; il rapporto deve essere valido (da -50 a +49) come in WSJT-X.

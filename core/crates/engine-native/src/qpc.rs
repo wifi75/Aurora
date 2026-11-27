@@ -2,7 +2,8 @@
 //! Implementazione di Tiziano Cassone IU3WJQ.
 //! Le tabelle del codice (`XPOS`, `INFO` = `fsize`) sono di Nico Palermo, IV3NWV (`qpc_n127k50q128.c` di WSJT-X), usate in Aurora con il suo
 //! permesso; il 2026-11-27 sono state confrontate con quelle del file e sono identiche.
-//! Il decodificatore e' lo stesso algoritmo di `np_qpc.c` (cancellazione successiva con trasformata di Walsh-Hadamard): 0,4 ms a decodifica.
+//! Algoritmo di Nico Palermo, IV3NWV (`np_qpc.c`, GPL-3): codifica polare e decodifica a cancellazione successiva con trasformata di
+//! Walsh-Hadamard, scritti qui in Rust da Tiziano Cassone: 0,4 ms a decodifica.
 //! Le posizioni del messaggio (`INFO`) si ricalcolano con `cargo run --release --example tabelle_qpc -- 4 400000`: simulazione del canale
 //! a 128 toni e decodifica col genio; l'ordine dei simboli in `XPOS` e' quello del protocollo SuperFox, da rispettare per la compatibilita'.
 //!
