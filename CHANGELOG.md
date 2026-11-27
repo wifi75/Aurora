@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Guida › FAQ, nuova voce «Su Mac: Aurora non è approvata o non si può aprire» (fm5dn, #122): spiega il blocco di Gatekeeper (la versione per Mac non è firmata né notarizzata) con i passi: clic destro › Apri, «Apri comunque» in Privacy e sicurezza, `xattr -dr com.apple.quarantine`; otto lingue (`guide-faq.ts`, `faq-macos`).
 
 - Nuovo modo QPSK31 nei modi testuali (menu Modo, ricezione, trasmissione dalla finestra TX e dalle macro, <MODE:QPSK31>): PSK31 a quattro fasi con codice convoluzionale (vincolo 5, 1/2) e decodifica di Viterbi, convenzioni di fldigi, fasi invertite da sole con la radio in LSB, coda di 72 zeri perche' anche fldigi stampi l'ultimo carattere. Provato contro il ricevitore QPSK di fldigi (oracolo) e ad anello chiuso con rumore e scostamenti; da provare in onda. FSK31 resta «presto»: nessuna specifica pubblica affidabile dei toni. Guida e «Informazioni» in otto lingue.
 - Nuovo modo Throb nei modi testuali (menu Modo con la variante THROB1/2/4 e THRBX1/2/4, ricezione, trasmissione dalla finestra TX e dalle macro): coppie di toni lentissime come in fldigi, toni rovesciati da soli con la radio in LSB, squelch sempre acceso, AFC fino a mezzo passo fra i toni, ADIF THRB con il sottomodo. La nostra onda e' quella di fldigi campione per campione, fldigi la riceve e noi riceviamo la sua (oracolo); prove ad anello chiuso con rumore e scostamenti; da provare in onda. Guida e «Informazioni» in otto lingue.

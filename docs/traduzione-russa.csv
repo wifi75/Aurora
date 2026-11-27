@@ -852,7 +852,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -4946,7 +4946,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
+sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°
@@ -6130,6 +6130,13 @@ t.1cp0dqnwsi9,"Look for the entries about Aurora files (rigctld.exe, libhamlib-4
 t.13o9qeuerjm,"To avoid starting over every time, add an exclusion: Virus & threat protection › Manage settings › Add or remove exclusions › Add an exclusion › Folder. Pick the folder where Aurora is: usually C:\Users\YOURNAME\AppData\Local\Aurora (%LOCALAPPDATA%\Aurora, where the installer puts it; if you installed it elsewhere, that folder). Then also add C:\Users\YOURNAME\AppData\Roaming\Aurora (%APPDATA%\Aurora, where Aurora keeps its settings and data). YOURNAME is your Windows user name.","Чтобы не начинать заново каждый раз, добавьте исключение: «Защита от вирусов и угроз» › «Управление настройками» › «Добавление или удаление исключений» › «Добавить исключение» › «Папка». Выберите папку, где находится Aurora: обычно C:\Users\YOURNAME\AppData\Local\Aurora (%LOCALAPPDATA%\Aurora, куда её помещает установщик; если вы установили её в другое место, то эту папку). Затем добавьте также C:\Users\YOURNAME\AppData\Roaming\Aurora (%APPDATA%\Aurora, где Aurora хранит настройки и данные). YOURNAME — ваше имя пользователя Windows."
 t.17c7fixo27v,If a file is still missing: for Hamlib press “[[cat.restore]]” (in the bar or in [[nav.settings]] › [[sw.sec.station]] › [[sw.pg.radio]]); for the other files reinstall Aurora with the latest installer from the Releases page on GitHub: your settings stay.,Если файл всё ещё отсутствует: для Hamlib нажмите «[[cat.restore]]» (в полосе или в [[nav.settings]] › [[sw.sec.station]] › [[sw.pg.radio]]); для остальных файлов переустановите Aurora последним установщиком со страницы Releases на GitHub: ваши настройки сохранятся.
 t.1xnqm9v3kam,"When everything is in place restart Aurora: the file check runs at startup and the bar goes away. “[[files.missing.dismiss]]” hides it only for that list of files: if another one goes missing, it comes back.","Когда всё на месте, перезапустите Aurora: проверка файлов выполняется при запуске, и полоса исчезнет. «[[files.missing.dismiss]]» скрывает её только для этого списка файлов: если пропадёт другой файл, она вернётся."
+t.yejj2pnrcp,On a Mac: “Aurora is not approved” or “cannot be opened”,На Mac: «Aurora не одобрена» или «не может быть открыта»
+t.281i3w6c5is,"The Mac version is not signed with an Apple Developer ID and is not notarized, so macOS (Gatekeeper) blocks it the first time you open it. The file is not damaged: you only have to tell macOS that you trust it. You do it once.","Версия для Mac не подписана идентификатором разработчика Apple и не нотаризована, поэтому macOS (Gatekeeper) блокирует её при первом открытии. Файл не повреждён: нужно только сказать macOS, что вы ему доверяете. Это делается один раз."
+t.289ioiy9ga7,"The Mac version is built automatically on GitHub and the author cannot test it on a real Mac: if it does not start even so, write on GitHub with your macOS version, whether the Mac is Intel or Apple Silicon, and the exact message.","Версия для Mac собирается автоматически на GitHub, и автор не может проверить её на настоящем Mac: если и так не запускается, напишите на GitHub с версией macOS, указав, Intel это или Apple Silicon, и точное сообщение."
+t.2xf7aw2p4u,Open the .dmg file and drag Aurora to the Applications folder.,Откройте файл .dmg и перетащите Aurora в папку «Программы».
+t.cikbq3ajog,"In Applications right-click (or Ctrl-click) Aurora › Open, and in the window that appears press Open again.",В «Программах» щёлкните Aurora правой кнопкой мыши (или Ctrl + щелчок) › Открыть и в появившемся окне нажмите «Открыть» ещё раз.
+t.1zra9lss9fg,"If it is still blocked: System Settings › Privacy & Security, scroll down to the line saying Aurora was blocked and press “Open Anyway” (then confirm with your password).","Если всё ещё заблокирована: Системные настройки › Конфиденциальность и безопасность, прокрутите до строки о блокировке Aurora и нажмите «Всё равно открыть» (затем подтвердите паролем)."
+t.1ag35bpk69v,"If macOS says the file is damaged, open Terminal and run: xattr -dr com.apple.quarantine /Applications/Aurora.app — then open Aurora again.","Если macOS пишет, что файл повреждён, откройте Терминал и выполните: xattr -dr com.apple.quarantine /Applications/Aurora.app — затем снова откройте Aurora."
 t.tsieh1ipmc,Radio and audio,Радио и звук
 t.15tagb0nofa,The sound card,Звуковая карта
 t.1n8jooh9mjh,Choosing the radio’s audio input and output.,Выбор аудиовхода и аудиовыхода радио.
