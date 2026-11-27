@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.359',
-    released: '2026-11-27T13:43:51Z',
+    released: '2026-11-27T13:52:06Z',
     kind: 'fixed',
     title: [
       'Pulsanti macro più leggibili e Fox/Hound come WSJT-X 3.3',
