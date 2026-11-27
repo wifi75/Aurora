@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Se la finestra di Aurora non si apre (WebView2 mancante o guasto), il messaggio che spiega cosa fare non fa piu' andare in panic Tauri («event handler is re-entrant», pacchetti `E1E086DE` e `9CFC1E66`, 0.11.358, utente olandese con errore 0x80070002): ora gira su un thread suo.
 
 ## 0.11.360 - 2026-11-27
 - Crediti: «Informazioni», `THIRD-PARTY-NOTICES.md` e `qpc.rs` citano Nico Palermo, IV3NWV, per le tabelle e l'algoritmo del codice polare q-ario di SuperFox, usati in Aurora con il suo permesso.

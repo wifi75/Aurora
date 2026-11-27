@@ -76,7 +76,10 @@ pub fn window_failed(error: &str) {
     let lang = crate::agent::ui_lang8();
     let (title, text) = failed_texts(lang);
     let text = text.replace("{error}", error);
-    if ask_yes_no(title, &text)
+    // il messaggio gira su un thread suo: questa funzione e' chiamata dentro il gestore degli eventi di Tauri e il ciclo di messaggi di
+    // `MessageBoxW` faceva rientrare quel gestore (panic di tao «event handler is re-entrant», pacchetti E1E086DE e 9CFC1E66, 0.11.358)
+    let answer = std::thread::scope(|scope| scope.spawn(|| ask_yes_no(title, &text)).join().unwrap_or(false));
+    if answer
         && let Err(e) = install_and_restart()
     {
         eprintln!("{e}");
