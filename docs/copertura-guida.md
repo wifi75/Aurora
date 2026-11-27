@@ -1030,7 +1030,7 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modifica › Pulisci la finestra di ricezione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Pulisci la finestra di trasmissione | PRC › Modifica | t-digi-menu-fe |
 | Modifica › Copia il testo ricevuto | PRC › Modifica | t-digi-menu-fe |
-| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia, QPSK31, Throb, Amtor (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia, t-digi-qpsk31, t-digi-throb, t-digi-amtor |
+| Modo › PSK31, PSK63, RTTY, CW, Olivia, Contestia, QPSK31, Throb, Amtor, MT63 (scelta del modo) | PRC › Modo | t-digi-menu-mode, t-digi-olivia, t-digi-qpsk31, t-digi-throb, t-digi-amtor, t-digi-mt63 |
 | Modo › SSTV | PRC › Modo | t-digi-menu-mode |
 | Modo › Spostamento (Hz) e Velocità (baud) (solo RTTY) | PRC › Modo | t-digi-menu-mode |
 | Modo › Inverti mark/space (Rev) e UOS (solo RTTY) | PRC › Modo | t-digi-menu-mode |
@@ -1038,7 +1038,8 @@ Le sezioni nuove stanno in `app/src/i18n/guide-testuali.ts` (`GUIDE_TESTUALI`, i
 | Modo › TX alla velocità ricevuta (solo CW) | PRC › Modo | t-digi-menu-mode, digicw |
 | Modo › Toni e Banda (solo Olivia e Contestia) | PRC › Modo, barra di stato | t-digi-olivia |
 | Modo › Variante (solo Throb: THROB1/2/4, THRBX1/2/4) | PRC › Modo | t-digi-throb |
-| Modo › modi «in arrivo» (FSK31, MFSK, MT63, Hellschreiber, Packet, Pactor) | PRC › Modo | t-digi-menu-mode |
+| Modo › Variante e Integrazione lunga (solo MT63: MT63-500S/L, 1000S/L, 2000S/L) | PRC › Modo | t-digi-mt63 |
+| Modo › modi «in arrivo» (FSK31, MFSK, Hellschreiber, Packet, Pactor) | PRC › Modo | t-digi-menu-mode |
 | Modo › Impostazioni del modo… (apre le Impostazioni) | PRC › Modo | t-digi-menu-mode |
 | Modo › Soglia dello squelch… (apre la finestra Impostazioni del modo) | PRC › Modo | t-digi-menu-mode, t-digi-modeset |
 | Opzioni › Ascolto | PRC › Opzioni | t-digi-menu-opt |
