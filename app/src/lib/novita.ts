@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.361',
-    released: '2026-11-27T19:49:16Z',
+    released: '2026-11-27T22:09:22Z',
     kind: 'fixed',
     title: [
       'Correzioni: Split e arresto, UltraFOX come SuperFox, WebView2',
