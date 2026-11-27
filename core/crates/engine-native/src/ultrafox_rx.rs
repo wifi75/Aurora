@@ -367,9 +367,11 @@ pub fn unpack_with(symbols: &[u8; SYMBOLS], hashes: &CallHashes) -> Option<Decod
         }
         return Some(Decoded { messages, fox, free_text, otp, snr: 0, freq_hz: 0.0, dt: 0.0 });
     }
-    if i3 != 0 && i3 != 2 {
+    // `sfox_unpack.f90`: i3 = 1 non e' mai trasmesso e non si legge; gli i3 da 4 a 7 si trattano come i3 = 0 (nove stazioni)
+    if i3 == 1 {
         return None;
     }
+    let i3 = if i3 == 2 { 2 } else { 0 };
     fox = ft8::message::unpack28_with(get(1, 28) as u32, hashes)?;
     if i3 == 2 {
         free_text = text(161, 232);
@@ -388,7 +390,7 @@ pub fn unpack_with(symbols: &[u8; SYMBOLS], hashes: &CallHashes) -> Option<Decod
             continue;
         }
         let Some(call) = ft8::message::unpack28_with(n28, hashes) else { continue };
-        if call.starts_with("CQ") {
+        if call == "CQ" {
             cqs += 1;
             if cqs == 1 {
                 messages.push(format!("{call} {fox}"));
@@ -559,6 +561,45 @@ mod tests {
         remove_birdies(&mut s2);
         assert!(s2.chunks(q).all(|c| c[40] == 1.0));
         assert!(s2.chunks(q).all(|c| c[10] != 1.0));
+    }
+
+    /// Come `sfox_unpack.f90`: i3 da 4 a 7 si leggono come i3 = 0, i3 = 1 non si legge; «CQ_DX» non e' il CQ ma un nominativo come gli altri.
+    #[test]
+    fn i3_from_4_to_7_is_read_as_zero_and_cq_needs_the_exact_word() {
+        let x = ultrafox::pack(&hounds(), &Extras { more_cqs: true, free_text: None, otp: 0 }).expect("impacchettato");
+        // si riscrivono i bit del messaggio (329) e si rifa' il controllo d'integrita' sui simboli
+        let rebuild = |edit: &dyn Fn(&mut [u8; 329])| {
+            let mut y = x;
+            y.reverse();
+            let mut bits = [0u8; 329];
+            for (k, &s) in y.iter().take(47).enumerate() {
+                (0..7).for_each(|b| bits[7 * k + b] = (s >> (6 - b)) & 1);
+            }
+            edit(&mut bits);
+            for (k, s) in y.iter_mut().take(47).enumerate() {
+                *s = (0..7).fold(0, |v, b| (v << 1) | bits[7 * k + b]);
+            }
+            let crc = ultrafox::hashlittle(&y[..47], 571) & ((1 << 21) - 1);
+            y[47] = (crc >> 14) as u8;
+            y[48] = ((crc >> 7) & 127) as u8;
+            y[49] = (crc & 127) as u8;
+            y.reverse();
+            y
+        };
+        let put = |bits: &mut [u8; 329], from: usize, width: usize, v: u32| (0..width).for_each(|i| bits[from - 1 + i] = ((v >> (width - 1 - i)) & 1) as u8);
+        let with_i3 = |i3: u32| rebuild(&|bits| put(bits, 327, 3, i3));
+        let base = unpack(&with_i3(0)).expect("i3 0").messages;
+        for i3 in 4..=7 {
+            assert_eq!(unpack(&with_i3(i3)).expect("i3 da 4 a 7").messages, base, "i3 {i3}");
+        }
+        assert!(unpack(&with_i3(1)).is_none());
+        // primo nominativo «CQ_DX» (3 + 1000 + 132): un nominativo qualunque, con RR73
+        let cq_dx = rebuild(&|bits| put(bits, 29, 28, 3 + 1000 + 132));
+        let m = unpack(&cq_dx).expect("con CQ_DX").messages;
+        assert_eq!(m[0], "CQ_DX IU3ABC RR73", "{m:?}");
+        // il vero «CQ» (n28 = 2) resta un CQ, senza RR73
+        let cq = rebuild(&|bits| put(bits, 29, 28, 2));
+        assert_eq!(unpack(&cq).expect("con CQ").messages[0], "CQ IU3ABC");
     }
     #[test]
     fn noise_alone_gives_nothing() {

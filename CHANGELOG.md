@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- UltraFOX, ricezione: gli `i3` da 4 a 7 si leggono come `i3` = 0 (nove stazioni) e il riconoscimento del CQ confronta la parola esatta «CQ», come `sfox_unpack.f90` (prima «CQ_DX» e simili erano scambiati per CQ).
 - UltraFOX, ricezione: soppressione delle portanti fisse («birdie») come `sfox_demod.f90` (istogramma dei picchi sui 151 simboli: un tono che e' il picco in piu' di 12 simboli, o quattro adiacenti in piu' di 20, si porta al livello del rumore); una portante dentro i 1500 Hz del segnale non impedisce piu' la decodifica. Misurato: soglia invariata (circa -16 dB in 2500 Hz), 0,6 s al massimo per periodo.
 - UltraFOX, ricezione: 100 spostamenti di frequenza e di tempo come `qpc_decode2.f90` (erano 10; misurati 0,5 s al massimo in release per periodo) e prima prova con le energie normalizzate (`pyd=py0`), poi le probabilita', poi quelle scosse, come in WSJT-X.
 - UltraFOX: i nominativi non standard scritti fra «<>» (es. `<K1ABC/P>`) vanno nell'hash a 22 bit come in SuperFox di WSJT-X (`pack28_for_state` e controllo `valid_sfox_call`), e in ricezione tornano per nome se l'hash e' gia' noto (memoria degli hash del motore) invece di «<...>»; senza parentesi restano rifiutati, come in WSJT-X.
