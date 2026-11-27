@@ -87,6 +87,7 @@ export function AboutTab() {
           <p>{t('about.derivedQpsk')}</p>
           <p>{t('about.derivedThrob')}</p>
           <p>{t('about.derivedAmtor')}</p>
+          <p>{t('about.derivedMt63')}</p>
         </section>
         <section className="about-fact">
           <h3>{t('about.thanks')}</h3>
