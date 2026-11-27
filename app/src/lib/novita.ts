@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.361',
+    released: '2026-11-27T19:49:16Z',
+    kind: 'fixed',
+    title: [
+      'Niente più panic se la finestra non si apre',
+      'No more panic when the window does not open',
+      'Kein Absturz mehr, wenn sich das Fenster nicht öffnet',
+      'Plus de panic quand la fenêtre ne s’ouvre pas',
+      'Ya no hay pánico cuando la ventana no se abre',
+      'Já não há pânico quando a janela não abre',
+    ],
+    text: [
+      'Se WebView2 manca o è guasto e la finestra di Aurora non si apre, il messaggio che spiega cosa fare (riavviare Windows o reinstallare WebView2) ora compare senza far chiudere il programma con un errore. Prima poteva andare in panic mentre il messaggio era aperto.',
+      'If WebView2 is missing or broken and the Aurora window does not open, the message that explains what to do (restart Windows or reinstall WebView2) now appears without the program closing with an error. Before, it could panic while the message was open.',
+      'Fehlt WebView2 oder ist es defekt und das Aurora-Fenster öffnet sich nicht, erscheint die Meldung mit der Anleitung (Windows neu starten oder WebView2 neu installieren) jetzt, ohne dass sich das Programm mit einem Fehler beendet. Vorher konnte es bei geöffneter Meldung abstürzen.',
+      'Si WebView2 manque ou est défectueux et que la fenêtre d’Aurora ne s’ouvre pas, le message qui explique quoi faire (redémarrer Windows ou réinstaller WebView2) s’affiche maintenant sans que le programme se ferme avec une erreur. Avant, il pouvait paniquer pendant que le message était ouvert.',
+      'Si WebView2 falta o está dañado y la ventana de Aurora no se abre, el mensaje que explica qué hacer (reiniciar Windows o reinstalar WebView2) aparece ahora sin que el programa se cierre con un error. Antes podía entrar en pánico con el mensaje abierto.',
+      'Se o WebView2 faltar ou estiver avariado e a janela da Aurora não abrir, a mensagem que explica o que fazer (reiniciar o Windows ou reinstalar o WebView2) aparece agora sem que o programa se feche com um erro. Antes podia entrar em pânico com a mensagem aberta.',
+    ],
+  },
+  {
     version: '0.11.360',
     released: '2026-11-27T15:35:02Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Chaque onglet a maintenant une seule fenêtre (avant, le WEFAX en avait une seconde à l’intérieur de la première), et les barres de titre s’ajustent au cadre, avec les coins du haut arrondis. Avant, elles étaient droites et dépassaient, et en SSTV le titre était coupé.',
       'Cada pestaña tiene ahora una sola ventana (antes WEFAX tenía una segunda dentro de la primera), y las barras de título encajan con el recuadro, con las esquinas superiores redondeadas. Antes eran rectas y sobresalían, y en SSTV el título se cortaba.',
       'Cada separador tem agora uma só janela (antes o WEFAX tinha uma segunda dentro da primeira), e as barras de título encaixam no quadro, com os cantos de cima arredondados. Antes eram retas e salientes, e no SSTV o título ficava cortado.',
-    ],
-  },
-  {
-    version: '0.11.333',
-    released: '2026-11-22T18:21:11Z',
-    kind: 'changed',
-    title: [
-      'Barra del WEFAX su una riga e ALC nel display compatto',
-      'WEFAX bar on one line and ALC in the compact display',
-      'WEFAX-Leiste in einer Zeile und ALC in der kompakten Anzeige',
-      'Barre WEFAX sur une seule ligne et ALC dans l’affichage compact',
-      'Barra de WEFAX en una sola línea y ALC en la pantalla compacta',
-      'Barra do WEFAX numa só linha e ALC no mostrador compacto',
-    ],
-    text: [
-      'La barra del WEFAX si allunga quanto la finestra e sta su una riga sola; il menu della stazione ha il carattere più grande ed è allineato a destra, vicino ai pulsanti ▲ ▼. Il display compatto della radio mostra anche l’ALC (un trattino se la radio non lo manda).',
-      'The WEFAX bar stretches to the window width and fits on a single line; the station menu has a larger font and is right-aligned, next to the ▲ ▼ buttons. The compact radio display also shows the ALC (a dash if the radio does not send it).',
-      'Die WEFAX-Leiste dehnt sich auf die Fensterbreite aus und passt in eine Zeile; das Stationsmenü hat eine größere Schrift und ist rechtsbündig, neben den Tasten ▲ ▼. Die kompakte Funkgerät-Anzeige zeigt jetzt auch das ALC (einen Strich, wenn das Funkgerät es nicht sendet).',
-      'La barre WEFAX s’étend sur toute la largeur de la fenêtre et tient sur une seule ligne ; le menu de la station a une police plus grande et est aligné à droite, près des boutons ▲ ▼. L’affichage compact de la radio montre aussi l’ALC (un tiret si la radio ne l’envoie pas).',
-      'La barra de WEFAX se alarga hasta el ancho de la ventana y cabe en una sola línea; el menú de la estación tiene la letra más grande y está alineado a la derecha, junto a los botones ▲ ▼. La pantalla compacta de la radio muestra también el ALC (un guion si la radio no lo envía).',
-      'A barra do WEFAX estica-se até à largura da janela e cabe numa só linha; o menu da estação tem a letra maior e está alinhado à direita, junto aos botões ▲ ▼. O mostrador compacto do rádio mostra também o ALC (um traço se o rádio não o enviar).',
     ],
   },
 ];
