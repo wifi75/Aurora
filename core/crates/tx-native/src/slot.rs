@@ -176,10 +176,15 @@ pub fn slot_start(index: u64, mode: Mode) -> Duration {
 /// altrimenti `TooLate`, perche' aspettare il periodo successivo della stessa parita' vorrebbe dire un messaggio vecchio di un intero ciclo.
 /// Con l'altra parita' si usa il prossimo periodo.
 pub fn choose_slot(now: Duration, mode: Mode, parity: Parity, max_late: Option<Duration>) -> Result<Duration, TxError> {
+    choose_slot_delayed(now, mode, parity, max_late, mode.tx_delay())
+}
+
+/// Come [`choose_slot`] con un ritardo d'inizio dell'audio diverso da quello del modo (UltraFOX: 0,4 s).
+pub fn choose_slot_delayed(now: Duration, mode: Mode, parity: Parity, max_late: Option<Duration>, delay: Duration) -> Result<Duration, TxError> {
     let index = slot_index(now, mode);
     if parity_of(index) == parity {
         let start = slot_start(index, mode);
-        let nominal = start + mode.tx_delay();
+        let nominal = start + delay;
         let in_window = now <= start + mode.tx_window();
         let within_cap = max_late.is_none_or(|cap| now <= nominal + cap);
         if in_window && within_cap {
@@ -240,6 +245,16 @@ mod tests {
         assert_eq!(choose_slot(base + secs(1.4), Mode::Ft8, Parity::Even, Some(secs(1.0))), Ok(base));
         let err = choose_slot(base + secs(2.0), Mode::Ft8, Parity::Even, Some(secs(1.0)));
         assert_eq!(err, Err(TxError::TooLate { late_ms: 1500 }));
+    }
+
+    #[test]
+    fn a_shorter_delay_moves_the_nominal_start() {
+        let base = slot_start(2_000_000, Mode::Ft8);
+        let (d4, d5) = (Duration::from_millis(400), Duration::from_millis(500));
+        // con 0,4 s il tetto di 1 s dall'inizio nominale scade a 1,4 s, con 0,5 s a 1,5 s
+        assert_eq!(choose_slot_delayed(base + secs(1.45), Mode::Ft8, Parity::Even, Some(secs(1.0)), d5), Ok(base));
+        assert_eq!(choose_slot_delayed(base + secs(1.45), Mode::Ft8, Parity::Even, Some(secs(1.0)), d4), Err(TxError::TooLate { late_ms: 1050 }));
+        assert_eq!(choose_slot(base + secs(1.45), Mode::Ft8, Parity::Even, Some(secs(1.0))), Ok(base));
     }
 
     #[test]

@@ -24,7 +24,7 @@ use crate::{
     resample::StreamResampler,
     ptt::{Ptt, PttGuard},
     ptt_release::{ReleaseTiming, ReleaseTracker, StuckHook, StuckInfo, not_released_text},
-    slot::{Mode, Parity, choose_slot},
+    slot::{Mode, Parity, choose_slot_delayed},
     watchdog::Watchdog,
 };
 
@@ -111,6 +111,8 @@ pub struct TxRequest {
     pub wave: Vec<f32>,
     pub mode: Mode,
     pub parity: Parity,
+    /// Ritardo dell'inizio dell'audio al posto di quello del modo (UltraFOX: 0,4 s in FT8, `Modulator.cpp:166`).
+    pub start_delay: Option<Duration>,
 }
 
 /// Quando succedera' cosa (ora UTC come durata dal 1970).
@@ -610,19 +612,20 @@ impl Transmitter {
         if request.wave.iter().any(|v| !v.is_finite()) {
             return Err(TxError::InvalidWave);
         }
+        let delay = request.start_delay.unwrap_or_else(|| request.mode.tx_delay());
         let wave_len = Duration::from_secs_f64(request.wave.len() as f64 / f64::from(WAVE_RATE));
-        let limit = cfg.max_duration.min(request.mode.slot_len().saturating_sub(request.mode.tx_delay()));
+        let limit = cfg.max_duration.min(request.mode.slot_len().saturating_sub(delay));
         if wave_len > limit {
             return Err(TxError::TooLong { wave_ms: wave_len.as_millis() as u64, limit_ms: limit.as_millis() as u64 });
         }
         let now = inner.clock.now();
-        let slot_start = choose_slot(now, request.mode, request.parity, cfg.max_late)?;
-        let audio_at = (slot_start + request.mode.tx_delay()).saturating_sub(cfg.latency_advance);
+        let slot_start = choose_slot_delayed(now, request.mode, request.parity, cfg.max_late, delay)?;
+        let audio_at = (slot_start + delay).saturating_sub(cfg.latency_advance);
         let ptt_at = audio_at.saturating_sub(cfg.ptt_lead);
         // avvio tardivo: la parte dell'onda gia' trascorsa non si trasmette; se e' passata tutta non c'e' piu' niente da fare
         let late = now.saturating_sub(audio_at);
         if late >= wave_len {
-            return Err(TxError::TooLate { late_ms: now.saturating_sub(slot_start + request.mode.tx_delay()).as_millis() as u64 });
+            return Err(TxError::TooLate { late_ms: now.saturating_sub(slot_start + delay).as_millis() as u64 });
         }
 
         {
@@ -1013,7 +1016,7 @@ mod tests {
     }
 
     fn request(seconds: f64) -> TxRequest {
-        TxRequest { wave: tone(seconds), mode: Mode::Ft8, parity: Parity::Even }
+        TxRequest { wave: tone(seconds), mode: Mode::Ft8, parity: Parity::Even, start_delay: None }
     }
 
     fn config() -> TxConfig {
@@ -1182,11 +1185,11 @@ mod tests {
         b.tx.set_config(c).expect("config");
         assert_eq!(b.tx.schedule(request(1.0)), Err(TxError::LevelNotSet));
         b.tx.set_config(config()).expect("config");
-        assert_eq!(b.tx.schedule(TxRequest { wave: Vec::new(), mode: Mode::Ft8, parity: Parity::Even }), Err(TxError::EmptyWave));
-        assert_eq!(b.tx.schedule(TxRequest { wave: vec![f32::NAN; 10], mode: Mode::Ft8, parity: Parity::Even }), Err(TxError::InvalidWave));
+        assert_eq!(b.tx.schedule(TxRequest { wave: Vec::new(), mode: Mode::Ft8, parity: Parity::Even, start_delay: None }), Err(TxError::EmptyWave));
+        assert_eq!(b.tx.schedule(TxRequest { wave: vec![f32::NAN; 10], mode: Mode::Ft8, parity: Parity::Even, start_delay: None }), Err(TxError::InvalidWave));
         assert!(matches!(b.tx.schedule(request(15.0)), Err(TxError::TooLong { .. })));
         // FT4: anche un'onda da FT8 non entra nei 7,5 s
-        assert!(matches!(b.tx.schedule(TxRequest { wave: tone(8.0), mode: Mode::Ft4, parity: Parity::Even }), Err(TxError::TooLong { .. })));
+        assert!(matches!(b.tx.schedule(TxRequest { wave: tone(8.0), mode: Mode::Ft4, parity: Parity::Even, start_delay: None }), Err(TxError::TooLong { .. })));
         assert!(b.rec.events().is_empty());
         assert_eq!(b.tx.state(), TxState::Idle);
         let mut bad = config();
@@ -1218,6 +1221,15 @@ mod tests {
         let ok = TxReport { peak: 0.5, attenuation_tenths: 0, rate: RATE, ptt_target: None, ptt_readback: Some(true) };
         assert!(ok.problems().is_empty());
         assert!((ok.peak_dbfs() + 6.02).abs() < 0.05);
+    }
+
+    /// UltraFOX (SuperFox di WSJT-X) parte a 0,4 s, non a 0,5 s (`Modulator.cpp:166`); gli altri modi restano come prima.
+    #[test]
+    fn a_start_delay_in_the_request_replaces_the_one_of_the_mode() {
+        let b = bench(config());
+        let plan = b.tx.schedule(TxRequest { start_delay: Some(ms(400)), ..request(1.0) }).expect("pianificata");
+        assert_eq!(plan.audio_start, base() + ms(370), "0,4 s meno 30 ms di anticipo");
+        assert_eq!(plan.ptt_on, base() + ms(170));
     }
 
     #[test]
@@ -1300,7 +1312,7 @@ mod tests {
         assert_eq!(b.tx.last_outcome(), Some(TxOutcome::Halted));
         assert!(b.rec.events().is_empty());
         // dopo uno stop si puo' richiedere di nuovo (periodo dispari successivo)
-        let again = b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).expect("di nuovo");
+        let again = b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }).expect("di nuovo");
         assert_eq!(again.slot_start, base() + Duration::from_secs(15));
     }
 
@@ -1309,7 +1321,7 @@ mod tests {
         let b = bench(config());
         b.tx.schedule(request(1.0)).expect("prima");
         assert_eq!(b.tx.schedule(request(1.0)), Err(TxError::Busy));
-        assert_eq!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }), Err(TxError::Busy));
+        assert_eq!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }), Err(TxError::Busy));
         b.run_to(base() + ms(600));
         assert_eq!(b.tx.schedule(request(1.0)), Err(TxError::Busy), "nemmeno mentre trasmette");
     }
@@ -1373,7 +1385,7 @@ mod tests {
         let kinds: Vec<TxEventKind> = b.rec.events().into_iter().map(|(_, k)| k).collect();
         assert_eq!(kinds, [TxEventKind::PttOn, TxEventKind::PttOff]);
         // e il trasmettitore e' ancora utilizzabile
-        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).is_ok());
+        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }).is_ok());
     }
 
     #[test]
@@ -1462,7 +1474,7 @@ mod tests {
         assert!(info.attempts >= 5, "{info:?}");
         assert_eq!(ptt_ons(&b), 1);
         // niente rientro in trasmissione, ne' libera ne' a periodo, ne' a flusso: il PTT non riceve altri comandi di accensione
-        assert!(matches!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }), Err(TxError::PttStuck(_))));
+        assert!(matches!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }), Err(TxError::PttStuck(_))));
         assert!(matches!(b.tx.start_now(tone(1.0), Duration::from_secs(5)), Err(TxError::PttStuck(_))));
         assert!(matches!(b.tx.start_stream(tone(1.0)), Err(TxError::PttStuck(_))));
         assert_eq!(ptt_ons(&b), 1, "nessuna nuova accensione");
@@ -1478,7 +1490,7 @@ mod tests {
         assert!(b.tx.ptt_stuck().is_none());
         assert!(!b.ptt.is_on());
         assert_eq!(lock(&told).last(), Some(&false), "avviso tolto");
-        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).is_ok());
+        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }).is_ok());
     }
 
     /// Il PTT rimasto acceso, poi spento da un'altra via (un TxInhibit UDP passa dall'interblocco): il tracker non lo sa.
@@ -1506,7 +1518,7 @@ mod tests {
     fn a_ptt_turned_off_by_the_interlock_lifts_the_block_at_the_next_request() {
         let (b, told) = stuck_then_off_behind_the_trackers_back();
         assert!(b.tx.ptt_stuck().is_some(), "il tracker non lo sa ancora");
-        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).is_ok(), "non resta bloccata per sempre");
+        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd, start_delay: None }).is_ok(), "non resta bloccata per sempre");
         assert!(b.tx.ptt_stuck().is_none());
         assert_eq!(lock(&told).last(), Some(&false), "avviso tolto");
     }

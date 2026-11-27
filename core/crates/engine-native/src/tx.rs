@@ -524,7 +524,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mode = tx_mode(self.mode);
         let before = self.controls.tx_audio_planned.load(Ordering::Relaxed);
         match self.encode(&text, hz, free) {
-            Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
+            Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity, start_delay: None }) {
                 Ok(true) => {
                     // con lo split della radio l'onda nuova ha l'XIT nuovo: il VFO di trasmissione deve seguirla subito, non al prossimo PTT
                     // (WSJT-X chiama `setXIT` a ogni cambio della frequenza Tx, anche in trasmissione)
@@ -1073,7 +1073,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let parity = if Slot::at(self.mode, now_s).is_even() { Parity::Even } else { Parity::Odd };
         self.controls.begin_tune();
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
-        match self.port.start_now(TxRequest { wave, mode, parity }) {
+        match self.port.start_now(TxRequest { wave, mode, parity, start_delay: None }) {
             Ok(()) => format!("Tune: portante a {hz} Hz"),
             Err(e) => format!("Tune non partito: {e}"),
         }
@@ -1219,7 +1219,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             if !waves.is_empty() {
                 let mode = tx_mode(self.mode);
                 self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
-                match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
+                match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even, start_delay: ultra.then_some(crate::ultrafox::TX_DELAY) }) {
                     Ok(()) => {
                         self.last_planned = Some(next);
                         log.push(format!("Fox: trasmetto {} posti a {tx_hz} Hz: {}", sent.len(), sent.join(" | ")));
@@ -1913,7 +1913,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
                 let mode = tx_mode(self.mode);
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
-                let request = TxRequest { wave, mode, parity };
+                let request = TxRequest { wave, mode, parity, start_delay: None };
                 let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
                 // la decodifica tardiva ha cambiato solo il numero del rapporto (R-15 -> R-16): non si interrompe il messaggio gia' in onda, che
                 // verrebbe sostituito a meta' e il corrispondente debole non lo decodificherebbe (segnalazione di EA3CUU, #92); il nuovo parte al periodo dopo
@@ -1994,7 +1994,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
         match self.encode(&text, freq, false) {
-            Ok((wave, sent)) => match self.port.schedule(TxRequest { wave, mode: tx_mode, parity }) {
+            Ok((wave, sent)) => match self.port.schedule(TxRequest { wave, mode: tx_mode, parity, start_delay: None }) {
                 Ok(()) => {
                     if let Ok(mut on_air) = self.controls.on_air.lock() {
                         *on_air = Some(sent.clone());
@@ -4100,6 +4100,7 @@ mod tests {
         let requests = port.requests.lock().expect("richieste");
         let last = requests.last().expect("una trasmissione");
         assert_eq!(last.wave.len(), (crate::ultrafox::TONES + 2) * crate::ultrafox::NSPS, "{log:?}");
+        assert_eq!(last.start_delay, Some(std::time::Duration::from_millis(400)), "UltraFOX parte a 0,4 s come SuperFox");
         assert!(controls.fox_view.lock().expect("fox").ultra);
     }
 
@@ -4147,7 +4148,7 @@ mod tests {
         let wave = port.requests.lock().expect("richieste").last().expect("una trasmissione").wave.clone();
         let mut audio = vec![0.0f32; 15 * 12_000];
         for (i, w) in wave.iter().enumerate() {
-            if let Some(a) = audio.get_mut(6_000 + i) {
+            if let Some(a) = audio.get_mut(crate::ultrafox::TX_DELAY.as_millis() as usize * 12 + i) {
                 *a += 0.1 * w;
             }
         }

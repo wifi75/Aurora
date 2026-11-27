@@ -10,6 +10,8 @@ pub const SYMBOLS: usize = 50;
 const BITS: usize = 329;
 /// Il nominativo segnaposto nelle caselle vuote («QU1RKS»): cosi' un messaggio con poche stazioni non ha lunghe file di zeri.
 const NQU1RKS: u64 = 203_514_677;
+/// Ritardo dell'inizio dell'audio: 0,4 s (`Modulator.cpp:166`, «SuperFox Qary Polar Code transmission»), non i 0,5 s dell'FT8.
+pub const TX_DELAY: std::time::Duration = std::time::Duration::from_millis(400);
 const MAX_RR73: usize = 5;
 const MAX_REPORTS: usize = 4;
 const MAX_HOUNDS: usize = 9;

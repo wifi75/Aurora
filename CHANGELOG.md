@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- UltraFOX: la trasmissione parte a 0,4 s dall'inizio del periodo, come SuperFox di WSJT-X 3.3 (`Modulator.cpp:166`), non a 0,5 s come l'FT8; gli altri modi restano invariati (`TxRequest::start_delay`).
 
 ## 0.11.361 - 2026-11-27
 - Se la finestra di Aurora non si apre (WebView2 mancante o guasto), il messaggio che spiega cosa fare non fa piu' andare in panic Tauri («event handler is re-entrant», pacchetti `E1E086DE` e `9CFC1E66`, 0.11.358, utente olandese con errore 0x80070002): ora gira su un thread suo.
