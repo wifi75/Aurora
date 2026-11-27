@@ -611,6 +611,14 @@ export const digiStrings = {
     'Throb: el squelch es fijo (con solo ruido no escribe nada) y la variante se elige en el menú Modo.',
     'Throb: o squelch é fixo (só com ruído não escreve nada) e a variante escolhe-se no menu Modo.',
   ],
+  'digi.ms.mt63Note': [
+    'MT63: lo squelch è fisso (scrive solo agganciato a un segnale MT63); variante e integrazione lunga si scelgono nel menu Modo. Il ricevitore cerca il segnale fino a 8 portanti sopra e sotto la frequenza.',
+    'MT63: the squelch is fixed (it only prints when locked onto an MT63 signal); variant and long integration are chosen in the Mode menu. The receiver searches up to 8 carriers above and below the frequency.',
+    'MT63: Der Squelch ist fest (er schreibt nur, wenn er auf ein MT63-Signal eingerastet ist); Variante und lange Integration wählst du im Menü Modus. Der Empfänger sucht bis zu 8 Träger ober- und unterhalb der Frequenz.',
+    'MT63 : le squelch est fixe (il n’écrit qu’accroché à un signal MT63) ; la variante et l’intégration longue se choisissent dans le menu Mode. Le récepteur cherche jusqu’à 8 porteuses au-dessus et au-dessous de la fréquence.',
+    'MT63: el squelch es fijo (solo escribe enganchado a una señal MT63); la variante y la integración larga se eligen en el menú Modo. El receptor busca hasta 8 portadoras por encima y por debajo de la frecuencia.',
+    'MT63: o squelch é fixo (só escreve enganchado a um sinal MT63); a variante e a integração longa escolhem-se no menu Modo. O recetor procura até 8 portadoras acima e abaixo da frequência.',
+  ],
   'digi.ms.amtorNote': [
     'Amtor FEC: niente soglie da regolare, il testo esce solo quando il ricevitore è agganciato ai caratteri.',
     'Amtor FEC: no thresholds to adjust, text only comes out once the receiver has locked onto the characters.',
@@ -618,6 +626,25 @@ export const digiStrings = {
     'Amtor FEC : aucun seuil à régler, le texte ne sort que lorsque le récepteur est accroché aux caractères.',
     'Amtor FEC: no hay umbrales que ajustar, el texto solo sale cuando el receptor está enganchado a los caracteres.',
     'Amtor FEC: não há limiares para ajustar, o texto só sai quando o recetor está enganchado nos caracteres.',
+  ],
+  // MT63: variante e integrazione
+  'digi.mt63.variant': ['Variante', 'Variant', 'Variante', 'Variante', 'Variante', 'Variante'],
+  'digi.mt63.variantTip': [
+    'MT63 largo 500, 1000 o 2000 Hz, con interleaving corto (S) o lungo (L, piu’ robusto ma con piu’ ritardo). L’altra stazione deve usare la stessa variante.',
+    'MT63 500, 1000 or 2000 Hz wide, with short (S) or long (L, more robust but with more delay) interleave. The other station must use the same variant.',
+    'MT63 mit 500, 1000 oder 2000 Hz Breite, mit kurzem (S) oder langem (L, robuster, aber mit mehr Verzögerung) Interleaving. Die Gegenstation muss dieselbe Variante nutzen.',
+    'MT63 large de 500, 1000 ou 2000 Hz, avec entrelacement court (S) ou long (L, plus robuste mais avec plus de retard). L’autre station doit utiliser la même variante.',
+    'MT63 de 500, 1000 o 2000 Hz de ancho, con entrelazado corto (S) o largo (L, más robusto pero con más retardo). La otra estación debe usar la misma variante.',
+    'MT63 com 500, 1000 ou 2000 Hz de largura, com entrelaçamento curto (S) ou longo (L, mais robusto mas com mais atraso). A outra estação tem de usar a mesma variante.',
+  ],
+  'digi.mt63.longInteg': ['Integrazione lunga', 'Long integration', 'Lange Integration', 'Intégration longue', 'Integración larga', 'Integração longa'],
+  'digi.mt63.longIntegTip': [
+    'Il ricevitore si aggancia su 32 simboli invece di 16: regge segnali piu’ deboli, ma si aggancia e scrive piu’ tardi. Vale solo in ricezione.',
+    'The receiver locks over 32 symbols instead of 16: it copes with weaker signals, but locks and prints later. Receive only.',
+    'Der Empfänger synchronisiert über 32 statt 16 Symbole: Er verkraftet schwächere Signale, rastet aber später ein und schreibt später. Nur für den Empfang.',
+    'Le récepteur s’accroche sur 32 symboles au lieu de 16 : il supporte des signaux plus faibles, mais s’accroche et écrit plus tard. Réception seulement.',
+    'El receptor se engancha en 32 símbolos en lugar de 16: aguanta señales más débiles, pero se engancha y escribe más tarde. Solo en recepción.',
+    'O recetor engancha em 32 símbolos em vez de 16: aguenta sinais mais fracos, mas engancha e escreve mais tarde. Só na receção.',
   ],
   // Throb: la variante
   'digi.throb.variant': ['Variante', 'Variant', 'Variante', 'Variante', 'Variante', 'Variante'],

@@ -254,7 +254,7 @@ export function ModeSettingsFields({
             <input type="checkbox" checked={s.squelch_on} onChange={(e) => onSave({ squelch_on: e.target.checked })} />
             {t('digi.mi.squelch')}
           </label>
-          {allModes ? null : isRtty ? rttyRx : isCw ? cwRx : isOlivia && isOliviaMode(s.mode) ? <OliviaFields key="olivia" settings={s} mode={s.mode} snrDb={snrDb} onSave={onSave} /> : s.mode === 'throb' || s.mode === 'amtor' ? <p className="sstv-hint">{t(s.mode === 'throb' ? 'digi.ms.throbNote' : 'digi.ms.amtorNote')}</p> : pskRx}
+          {allModes ? null : isRtty ? rttyRx : isCw ? cwRx : isOlivia && isOliviaMode(s.mode) ? <OliviaFields key="olivia" settings={s} mode={s.mode} snrDb={snrDb} onSave={onSave} /> : s.mode === 'throb' || s.mode === 'amtor' || s.mode === 'mt63' ? <p className="sstv-hint">{t(s.mode === 'throb' ? 'digi.ms.throbNote' : s.mode === 'mt63' ? 'digi.ms.mt63Note' : 'digi.ms.amtorNote')}</p> : pskRx}
         </>,
       )}
       {section(

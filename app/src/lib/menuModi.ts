@@ -1,13 +1,13 @@
 import type { MenuDef, MenuItem } from '../components/digi/MenuBar';
 
 /** I modi della pagina digitale. */
-export type DigiMode = 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor';
+export type DigiMode = 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor' | 'mt63';
 
 /** I modi a testo (ricezione e trasmissione di testo, cascata): tutti tranne la fonia. */
-const TEXT: readonly DigiMode[] = ['psk31', 'psk63', 'rtty', 'cw', 'olivia', 'contestia', 'qpsk31', 'throb', 'amtor'];
+const TEXT: readonly DigiMode[] = ['psk31', 'psk63', 'rtty', 'cw', 'olivia', 'contestia', 'qpsk31', 'throb', 'amtor', 'mt63'];
 
 /** I modi che Aurora non ha ancora: nel menu Modo sono voci grigie «presto». */
-export const MODI_IN_ARRIVO: readonly string[] = ['FSK31', 'MFSK', 'MT63', 'Hellschreiber', 'Packet', 'Pactor'];
+export const MODI_IN_ARRIVO: readonly string[] = ['FSK31', 'MFSK', 'Hellschreiber', 'Packet', 'Pactor'];
 
 /**
  * In quali modi e' attiva ogni voce dei menu della pagina digitale (un solo posto). Una voce che non e' qui vale in tutti i modi.

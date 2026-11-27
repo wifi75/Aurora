@@ -1970,15 +1970,22 @@ export interface OliviaSettings {
 /** Le varianti di Throb: 1, 2, 4 simboli al secondo; ThrobX con 11 toni (ThrobX4 e' fuori standard, come in fldigi). */
 export type ThrobVariant = 'throb1' | 'throb2' | 'throb4' | 'throbx1' | 'throbx2' | 'throbx4';
 
+/** Le varianti di MT63: banda di 500, 1000 o 2000 Hz con interleaving corto (s) o lungo (l). */
+export type Mt63Variant = 'mt63_500s' | 'mt63_500l' | 'mt63_1000s' | 'mt63_1000l' | 'mt63_2000s' | 'mt63_2000l';
+
 export interface DigiSettings {
   /** `ssb`: fonia, senza decodifica ne' testo trasmesso (log e contest). */
-  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor';
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb' | 'olivia' | 'contestia' | 'qpsk31' | 'throb' | 'amtor' | 'mt63';
   /** Olivia: 8 toni in 250 Hz di base (assente nei motori di prima). */
   olivia?: OliviaSettings;
   /** Contestia: 16 toni in 500 Hz di base (assente nei motori di prima). */
   contestia?: OliviaSettings;
   /** Throb: la variante (assente nei motori di prima: vale `throb2`). */
   throb?: ThrobVariant;
+  /** MT63: la variante (assente nei motori di prima: vale `mt63_1000l`). */
+  mt63?: Mt63Variant;
+  /** MT63: integrazione lunga del sincronismo (32 simboli invece di 16: segnali deboli, aggancio piu' lento). */
+  mt63_long_integ?: boolean;
   /** Velocita' della CW in parole al minuto. */
   cw_wpm: number;
   /** CW: la velocita' di trasmissione segue quella misurata in ricezione (interruttore «TX = RX»). */

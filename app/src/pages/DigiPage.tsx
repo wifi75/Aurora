@@ -4,7 +4,7 @@ import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
 import { FldigiImportDialog } from '../components/FldigiImportDialog';
 import { applyImport, buildImport, parseFldigiFile, type ImportReport } from '../lib/fldigiMacros';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso, type OliviaSettings, type ThrobVariant } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso, type OliviaSettings, type ThrobVariant, type Mt63Variant } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -91,7 +91,12 @@ const VIEWS_KEY = 'aurora.digi.viste';
 const THROB_VARIANTS: readonly ThrobVariant[] = ['throb1', 'throb2', 'throb4', 'throbx1', 'throbx2', 'throbx4'];
 /** Il nome di una variante di Throb come lo scrive ADIF (sottomodo di THRB). */
 const throbName = (v: ThrobVariant | undefined): string => ({ throb1: 'THROB1', throb2: 'THROB2', throb4: 'THROB4', throbx1: 'THRBX1', throbx2: 'THRBX2', throbx4: 'THRBX4' })[v ?? 'throb2'];
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB', amtor: 'AMTOR' };
+/** Le varianti di MT63 nell'ordine del menu e il loro nome (come in fldigi). */
+const MT63_VARIANTS: readonly Mt63Variant[] = ['mt63_500s', 'mt63_500l', 'mt63_1000s', 'mt63_1000l', 'mt63_2000s', 'mt63_2000l'];
+const mt63Name = (v: Mt63Variant | undefined): string => (v ?? 'mt63_1000l').replace('mt63_', 'MT63-').toUpperCase();
+/** La banda di una variante di MT63 (Hz). */
+const mt63Bandwidth = (v: Mt63Variant | undefined): number => Number((v ?? 'mt63_1000l').slice(5, -1));
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB', olivia: 'OLIVIA', contestia: 'CONTESTIA', qpsk31: 'QPSK31', throb: 'THROB', amtor: 'AMTOR', mt63: 'MT63' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -175,6 +180,7 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'AMTOR':
     case 'AMTORFEC':
     case 'SITORB': return 'amtor';
+    case 'MT63': return 'mt63';
     case 'RTTY': return 'rtty';
     case 'CW': return 'cw';
     case 'SSB':
@@ -926,7 +932,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const pskHalf = l.snap.settings.mode === 'psk31' || l.snap.settings.mode === 'qpsk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
     // Olivia, Contestia e Throb: il segnale e' largo quanto la banda (Throb: i suoi toni) e la frequenza e' il centro, Snap non aggancia un tono (resta il clic)
     const snapped =
-      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode) && l.snap.settings.mode !== 'throb'
+      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current && !isOliviaMode(l.snap.settings.mode) && l.snap.settings.mode !== 'throb' && l.snap.settings.mode !== 'mt63'
         ? rttyShift > 0
           ? snapToPair(avg.current.values(), lastRow.current, hz, rttyShift)
           : pskHalf > 0
@@ -1387,8 +1393,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           const m = modeFromName(a.mode);
           // <MODE:THRBX1> e simili: Throb con quella variante (<MODE:THROB> lascia la variante scelta)
           const variant = THROB_VARIANTS.find((v) => throbName(v) === a.mode.toUpperCase());
+          // <MODE:MT63-2000L> e simili: MT63 con quella variante
+          const mt63 = MT63_VARIANTS.find((v) => mt63Name(v) === a.mode.toUpperCase());
           if (named) save(named);
           else if (variant) save({ mode: 'throb', throb: variant });
+          else if (mt63) save({ mode: 'mt63', mt63 });
           else if (m) save({ mode: m });
           else toast(t('digi.run.modeUnsupported', { mode: a.mode }), 'info');
           break;
@@ -1858,6 +1867,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               ];
             })()
           : []),
+        // MT63: la variante (banda e interleaving) e l'integrazione lunga
+        ...(s.mode === 'mt63'
+          ? [
+              'sep' as const,
+              { label: `${t('digi.mt63.variant')}: ${mt63Name(s.mt63)}`, title: t('digi.mt63.variantTip'), items: MT63_VARIANTS.map((v) => ({ label: mt63Name(v), checked: v === (s.mt63 ?? 'mt63_1000l'), onSelect: () => save({ mt63: v }) })) },
+              { label: t('digi.mt63.longInteg'), title: t('digi.mt63.longIntegTip'), checked: s.mt63_long_integ === true, onSelect: () => save({ mt63_long_integ: s.mt63_long_integ !== true }) },
+            ]
+          : []),
         // Throb: la variante scelta dal menu
         ...(s.mode === 'throb'
           ? [
@@ -2226,7 +2243,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   );
   /** La cascata; con `cardHeight` (dentro una scheda) prende quell'altezza e niente maniglie di misura: la misura la da' la scheda. */
   const waterfallFor = (cardHeight?: number) => (
-    <DigiWaterfall height={cardHeight ?? wfHeight} onHeight={cardHeight === undefined ? changeWfHeight : undefined} widthPx={cardHeight === undefined ? wfWidth : null} onWidth={cardHeight === undefined ? changeWfWidth : undefined} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'amtor' ? 170 : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
+    <DigiWaterfall height={cardHeight ?? wfHeight} onHeight={cardHeight === undefined ? changeWfHeight : undefined} widthPx={cardHeight === undefined ? wfWidth : null} onWidth={cardHeight === undefined ? changeWfWidth : undefined} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'amtor' ? 170 : s.mode === 'mt63' ? mt63Bandwidth(s.mt63) : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
       extraRx={extras}
       onExtraMove={(id, hz, commit) => {
         const next = extras.map((x) => (x.id === id ? { ...x, freq_hz: hz } : x));
@@ -2671,6 +2688,8 @@ function passbandWidth(s: DigiSettings): number {
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'throb') return 120;
   if (s.mode === 'amtor') return 370;
+  // MT63: la banda del modo piu' le portanti che il ricevitore cerca ai lati, come nel core
+  if (s.mode === 'mt63') return mt63Bandwidth(s.mt63) * 1.3;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   if (s.mode === 'ssb') return 2400;
   // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo, come nel core
