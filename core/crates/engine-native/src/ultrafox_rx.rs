@@ -22,6 +22,11 @@ const MIN_SNR: f32 = -16.5;
 
 const DITHERS: usize = 100;
 
+/// Spostamenti di frequenza (in mezzi hertz) e di tempo (in passi di 8 campioni) attorno al primo aggancio: i 100 di `qpc_decode2.f90`
+/// (`idf` e `idt`), nello stesso ordine; il primo e' l'aggancio stesso.
+const IDF: [i8; 100] = [0,0,-1,0,-1,1,0,-1,1,-2,0,-1,1,-2,2,0,-1,1,-2,2,-3,0,-1,1,-2,2,-3,3,0,-1,1,-2,2,-3,3,-4,0,-1,1,-2,2,-3,3,-4,4,0,-1,1,-2,2,-3,3,-4,4,-5,-1,1,-2,2,-3,3,-4,4,-5,1,-2,2,-3,3,-4,4,-5,-2,2,-3,3,-4,4,-5,2,-3,3,-4,4,-5,-3,3,-4,4,-5,3,-4,4,-5,-4,4,-5,4,-5,-5];
+const IDT: [i8; 100] = [0,-1,0,1,-1,0,-2,1,-1,0,2,-2,1,-1,0,-3,2,-2,1,-1,0,3,-3,2,-2,1,-1,0,-4,3,-3,2,-2,1,-1,0,4,-4,3,-3,2,-2,1,-1,0,-5,4,-4,3,-3,2,-2,1,-1,0,-5,4,-4,3,-3,2,-2,1,-1,-5,4,-4,3,-3,2,-2,1,-5,4,-4,3,-3,2,-2,-5,4,-4,3,-3,2,-5,4,-4,3,-3,-5,4,-4,3,-5,4,-4,-5,4,-5];
+
 /// Probabilita' scosse (`qpc_decode2`): quelle grandi (> 0,5) restano, le altre si moltiplicano per 1 + r con r a caso tra -1 e 1
 /// (`random` spento: r = 0), poi ogni riga si riporta a somma 1.
 fn dither(py: &[f32], random: bool, rng: &mut u64) -> Vec<f32> {
@@ -37,13 +42,18 @@ fn dither(py: &[f32], random: bool, rng: &mut u64) -> Vec<f32> {
             if p > 0.5 { p } else { p * (1.0 + r) }
         })
         .collect();
-    for row in out.chunks_mut(qpc::Q) {
+    normalize_rows(&mut out);
+    out
+}
+
+/// Ogni riga (i 128 valori di un simbolo) si riporta a somma 1; una riga a somma zero resta com'e'.
+fn normalize_rows(p: &mut [f32]) {
+    for row in p.chunks_mut(qpc::Q) {
         let total: f32 = row.iter().sum();
         if total > 0.0 {
             row.iter_mut().for_each(|v| *v /= total);
         }
     }
-    out
 }
 
 /// Una trasmissione UltraFOX/SuperFox decodificata.
@@ -77,13 +87,13 @@ pub fn decode_with(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes) ->
     let f_sync = find_sync_tone(audio, n9, fsync, ftol, &mut planner)?;
     let (t, snr_sync) = find_start(audio, f_sync);
     let fft = planner.plan_fft_forward(NSPS);
-    // piccoli spostamenti di frequenza (mezzo hertz) e di tempo (8 campioni) attorno al primo aggancio, se il sincronismo e' buono
-    let tries: &[(f32, f32)] = if snr_sync < 4.0 { &[(0.0, 0.0)] } else { &[(0.0, 0.0), (0.0, -1.0), (-0.5, 0.0), (0.0, 1.0), (-0.5, -1.0), (0.5, 0.0), (0.0, -2.0), (-0.5, 1.0), (0.5, -1.0), (-1.0, 0.0)] };
-    for (attempt, &(df, dt_steps)) in tries.iter().enumerate() {
-        let f = f_sync + df;
-        let t = t + dt_steps * 8.0 / NSPS as f32;
+    // fino a 100 spostamenti di frequenza (mezzo hertz) e di tempo (8 campioni) attorno al primo aggancio, se il sincronismo e' buono
+    let max_tries = if snr_sync < 4.0 { 1 } else { IDF.len() };
+    for attempt in 0..max_tries {
+        let f = f_sync + f32::from(IDF[attempt]) * 0.5;
+        let t = t + f32::from(IDT[attempt]) * 8.0 / NSPS as f32;
         let s3 = spectra(audio, f, t, &fft)?;
-        // al primo aggancio si provano anche probabilita' leggermente scosse (`qpc_decode2`, profondita' 3: 100 prove)
+        // al primo aggancio si provano anche probabilita' scosse (`qpc_decode2`, profondita' 3: 100 prove)
         let dithers = if attempt == 0 { DITHERS } else { 1 };
         for b in [0.0f32, 0.4, 0.5, 0.6] {
             let mut s = s3.clone();
@@ -96,7 +106,16 @@ pub fn decode_with(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes) ->
             let py = likelihoods(&s);
             let mut rng = 0x5eed_u64;
             let Some((x, word)) = (0..dithers).find_map(|k| {
-                let pyd = if k == 0 { py.clone() } else { dither(&py, k > 1, &mut rng) };
+                // come `qpc_decode2`: la prima prova usa le energie normalizzate (`pyd=py0`), la seconda le probabilita', poi quelle scosse
+                let pyd = match k {
+                    0 => {
+                        let mut p = s.clone();
+                        normalize_rows(&mut p);
+                        p
+                    }
+                    1 => py.clone(),
+                    _ => dither(&py, true, &mut rng),
+                };
                 qpc::decode(&pyd).filter(|(x, _)| ultrafox::crc_ok(x))
             }) else {
                 continue;
@@ -429,6 +448,33 @@ mod tests {
         }
     }
 
+
+    /// Misura del tempo peggiore: sincronismo buono ma messaggio non decodificabile, cosi' si fanno tutte le 100 prove.
+    #[test]
+    #[ignore = "misura del tempo: cargo test --release -p engine-native -- --ignored tempo --nocapture"]
+    fn tempo() {
+        let start = 0.5 - NSPS as f32 / RATE;
+        for amp in [0.2f32, 0.1, 0.07, 0.06, 0.05] {
+            let audio = period(&hounds(), &Extras::default(), start, amp, 1.0);
+            let t0 = std::time::Instant::now();
+            let r = decode(&audio, 750.0, 100.0);
+            let f = find_sync_tone(&audio, 9 * RATE as usize, 750.0, 100.0, &mut FftPlanner::<f32>::new()).unwrap_or(0.0);
+            println!("amp {amp}: {:?} in {} ms, snr sync {:.1}", r.map(|d| d.snr), t0.elapsed().as_millis(), find_start(&audio, f).1);
+        }
+    }
+
+    /// Le 100 prove di frequenza e di tempo sono quelle di `qpc_decode2.f90`: la prima e' l'aggancio, nessuna coppia si ripete.
+    #[test]
+    fn the_hundred_frequency_and_time_tries_are_the_wsjtx_ones() {
+        assert_eq!((IDF.len(), IDT.len()), (100, 100));
+        assert_eq!((IDF[0], IDT[0]), (0, 0));
+        assert_eq!((IDF[99], IDT[99]), (-5, -5));
+        let mut pairs: Vec<(i8, i8)> = IDF.iter().copied().zip(IDT.iter().copied()).collect();
+        pairs.sort_unstable();
+        pairs.dedup();
+        assert_eq!(pairs.len(), 100);
+        assert!(IDF.iter().all(|f| (-5..=4).contains(f)) && IDT.iter().all(|t| (-5..=4).contains(t)));
+    }
     #[test]
     fn noise_alone_gives_nothing() {
         assert!(decode(&noise(15 * 12_000, 1.0, 3), 750.0, 100.0).is_none());

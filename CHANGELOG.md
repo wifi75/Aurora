@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- UltraFOX, ricezione: 100 spostamenti di frequenza e di tempo come `qpc_decode2.f90` (erano 10; misurati 0,5 s al massimo in release per periodo) e prima prova con le energie normalizzate (`pyd=py0`), poi le probabilita', poi quelle scosse, come in WSJT-X.
 - UltraFOX: i nominativi non standard scritti fra «<>» (es. `<K1ABC/P>`) vanno nell'hash a 22 bit come in SuperFox di WSJT-X (`pack28_for_state` e controllo `valid_sfox_call`), e in ricezione tornano per nome se l'hash e' gia' noto (memoria degli hash del motore) invece di «<...>»; senza parentesi restano rifiutati, come in WSJT-X.
 - UltraFOX: nel testo libero uno spazio in posizione 13 passa davanti alla prima meta' (`packtext77` di WSJT-X fa `adjustr`), cosi' il messaggio e' quello che trasmette SuperFox; un testo di soli spazi non porta piu' punti.
 - UltraFOX: la trasmissione parte a 0,4 s dall'inizio del periodo, come SuperFox di WSJT-X 3.3 (`Modulator.cpp:166`), non a 0,5 s come l'FT8; gli altri modi restano invariati (`TxRequest::start_delay`).
