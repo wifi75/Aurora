@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.359',
+    released: '2026-11-27T13:43:51Z',
+    kind: 'fixed',
+    title: [
+      'Pulsanti macro più leggibili e Fox/Hound come WSJT-X 3.3',
+      'Clearer macro buttons and Fox/Hound as in WSJT-X 3.3',
+      'Besser lesbare Makro-Tasten und Fox/Hound wie in WSJT-X 3.3',
+      'Boutons de macro plus lisibles et Fox/Hound comme WSJT-X 3.3',
+      'Botones de macro más legibles y Fox/Hound como en WSJT-X 3.3',
+      'Botões de macro mais legíveis e Fox/Hound como no WSJT-X 3.3',
+    ],
+    text: [
+      'Nei pulsanti delle macro F1-F8 il testo sale un poco e il numero del tasto in basso a destra è più piccolo, così non si sovrappongono più. In modo Hound, la riga di una Fox con il secondo Hound non risolto («TUOCALL RR73; <...> <FOX> -10») ora chiude e registra il tuo QSO, come WSJT-X 3.3.0 beta 11; il rapporto deve essere valido.',
+      'In the F1-F8 macro buttons the text moves up a little and the key number at the bottom right is smaller, so they no longer overlap. In Hound mode, a Fox line whose second Hound is unresolved (“YOURCALL RR73; <...> <FOX> -10”) now closes and logs your QSO, as in WSJT-X 3.3.0 beta 11; the report must be valid.',
+      'Bei den Makro-Tasten F1-F8 rutscht der Text etwas nach oben und die Tastennummer unten rechts ist kleiner, sodass sie sich nicht mehr überlagern. Im Hound-Modus schließt und loggt die Zeile eines Fox mit nicht aufgelöstem zweitem Hound („DEINRUF RR73; <...> <FOX> -10“) jetzt dein QSO, wie in WSJT-X 3.3.0 beta 11; der Rapport muss gültig sein.',
+      'Dans les boutons de macro F1-F8 le texte monte un peu et le numéro de touche en bas à droite est plus petit, ils ne se chevauchent plus. En mode Hound, la ligne d’une Fox dont le second Hound n’est pas résolu (« TONINDICATIF RR73; <...> <FOX> -10 ») clôt et enregistre maintenant ton QSO, comme WSJT-X 3.3.0 beta 11 ; le report doit être valide.',
+      'En los botones de macro F1-F8 el texto sube un poco y el número de la tecla abajo a la derecha es más pequeño, así que ya no se superponen. En modo Hound, la línea de un Fox con el segundo Hound sin resolver («TUINDICATIVO RR73; <...> <FOX> -10») ahora cierra y registra tu QSO, como WSJT-X 3.3.0 beta 11; el reporte debe ser válido.',
+      'Nos botões de macro F1-F8 o texto sobe um pouco e o número da tecla em baixo à direita é mais pequeno, por isso já não se sobrepõem. No modo Hound, a linha de uma Fox com o segundo Hound por resolver («OTEUINDICATIVO RR73; <...> <FOX> -10») fecha e regista agora o teu QSO, como o WSJT-X 3.3.0 beta 11; o relatório tem de ser válido.',
+    ],
+  },
+  {
     version: '0.11.358',
     released: '2026-11-27T10:14:42Z',
     kind: 'new',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Les spots dans les segments des modes numériques du plan de bandes IARU Région 1, sans autre indice, affichent maintenant « DIGI » (et le filtre « Digi » les trouve). Avant, le mode restait vide. Le commentaire et les fréquences de travail connues (FT8, FT4, WSPR…) l’emportent toujours.',
       'Los spots en los tramos de los modos digitales del plan de bandas IARU Región 1, sin otra pista, ahora muestran «DIGI» (y el filtro «Digi» los encuentra). Antes el modo quedaba vacío. El comentario y las frecuencias de trabajo conocidas (FT8, FT4, WSPR…) siguen teniendo prioridad.',
       'Os spots nos segmentos dos modos digitais do plano de bandas IARU Região 1, sem outra pista, mostram agora «DIGI» (e o filtro «Digi» encontra-os). Antes o modo ficava vazio. O comentário e as frequências de trabalho conhecidas (FT8, FT4, WSPR…) continuam a ter prioridade.',
-    ],
-  },
-  {
-    version: '0.11.332',
-    released: '2026-11-22T14:03:08Z',
-    kind: 'fixed',
-    title: [
-      'WEFAX: la cartina si chiude quando finisce davvero',
-      'WEFAX: the chart closes when it really ends',
-      'WEFAX: Die Karte schließt, wenn sie wirklich endet',
-      'WEFAX : la carte se ferme quand elle se termine vraiment',
-      'WEFAX: el mapa se cierra cuando termina de verdad',
-      'WEFAX: a carta fecha quando termina mesmo',
-    ],
-    text: [
-      'Il tono di fine (450 Hz) ora si riconosce anche se è debole o la sintonia è un po’ fuori: la cartina si chiude e si salva subito, completa. Prima si chiudeva 25-40 secondi dopo e veniva segnata incompleta.',
-      'The end tone (450 Hz) is now recognised even when it is weak or the tuning is slightly off: the chart closes and is saved at once, complete. Before, it closed 25-40 seconds later and was marked incomplete.',
-      'Der Endton (450 Hz) wird jetzt auch erkannt, wenn er schwach ist oder die Abstimmung leicht danebenliegt: die Karte schließt sofort und wird vollständig gespeichert. Vorher schloss sie 25-40 Sekunden später und wurde als unvollständig markiert.',
-      'La tonalité de fin (450 Hz) est maintenant reconnue même si elle est faible ou si l’accord est un peu décalé : la carte se ferme et s’enregistre aussitôt, complète. Avant, elle se fermait 25 à 40 secondes plus tard et était marquée incomplète.',
-      'El tono de fin (450 Hz) ahora se reconoce aunque sea débil o la sintonía esté algo desviada: el mapa se cierra y se guarda enseguida, completo. Antes se cerraba 25-40 segundos después y quedaba marcado como incompleto.',
-      'O tom de fim (450 Hz) agora é reconhecido mesmo que seja fraco ou a sintonia esteja um pouco fora: a carta fecha e fica guardada logo, completa. Antes fechava 25-40 segundos depois e ficava marcada como incompleta.',
     ],
   },
 ];

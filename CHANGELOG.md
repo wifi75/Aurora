@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.359 - 2026-11-27
 - Hound: la riga di una Fox con il secondo Hound non risolto (`IU3ABC RR73; <...> <FOX> -10`) ora chiude e registra il QSO del primo, come WSJT-X 3.3.0 beta 11; il rapporto deve essere valido (da -50 a +49) come in WSJT-X.
 - Pulsanti macro F1-F8: il testo sale un poco e il numero del tasto in basso a destra e' piu' piccolo, cosi' non si sovrappongono piu'.
 
