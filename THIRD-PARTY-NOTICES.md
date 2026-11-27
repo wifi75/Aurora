@@ -29,6 +29,8 @@ Parti di Aurora sono traduzioni in Rust, con modifiche, di algoritmi di programm
 
 Le tabelle e l'algoritmo del codice polare q-ario (127, 50) di SuperFox (`engine-native/src/qpc.rs`: codifica e decodifica a cancellazione successiva, da `np_qpc.c`, GPL-3) sono di © Nico Palermo, IV3NWV; le tabelle sono usate in Aurora con il suo permesso, la scrittura in Rust e' di Tiziano Cassone.
 
+Permesso scritto di Nico Palermo, IV3NWV (27 novembre 2026), in italiano come ricevuto: «Con questo messaggio ti autorizzo ad usare le tabelle citate e contenute nel file `qpc_n127k50q128.c` nel tuo programma Aurora e solamente all'interno di esso. E' sufficiente che tu citi solo me, Nico Palermo IV3NWV.»
+
 `hashlittle` (`engine-native/src/ultrafox.rs`) viene da `lookup3.c` di Bob Jenkins, dominio pubblico.
 
 ## PSK, RTTY, CW e SSTV (GPL-3) e satelliti
