@@ -369,8 +369,43 @@ async function battito(req: Request, env: Env): Promise<Response> {
 const intero = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || 0);
 const unDecimale = (v: unknown): number => Math.round(intero(v) * 10) / 10;
 
+/**
+ * Cache delle risposte pesanti dell'amministratore, nello stesso D1: una sola riga letta (e una scritta) invece delle centinaia di migliaia di
+ * righe che le scansioni di `battiti`, `attivi` e `installazioni` leggono a ogni richiesta (tetto gratuito di D1: 5.000.000 di righe lette al
+ * giorno). Se la tabella manca o D1 sbaglia, si calcola come prima senza cache.
+ */
+async function conCache(env: Env, chiave: string, ttlMs: number, calcola: () => Promise<unknown>): Promise<unknown> {
+  const adesso = Date.now();
+  try {
+    const riga = await env.INDICE.prepare('SELECT scade_ms, corpo FROM cache_risposte WHERE chiave = ?1').bind(chiave).first<{ scade_ms: number; corpo: string }>();
+    if (riga && riga.scade_ms > adesso) return JSON.parse(riga.corpo);
+  } catch {
+    // niente cache: si calcola
+  }
+  const nuovo = await calcola();
+  try {
+    await env.INDICE.prepare('INSERT INTO cache_risposte (chiave, scade_ms, corpo) VALUES (?1, ?2, ?3) ON CONFLICT (chiave) DO UPDATE SET scade_ms = excluded.scade_ms, corpo = excluded.corpo')
+      .bind(chiave, adesso + ttlMs, JSON.stringify(nuovo))
+      .run();
+  } catch {
+    // la cache non deve impedire la risposta
+  }
+  return nuovo;
+}
+
+/** Per quanto tempo si tengono le risposte di `/v1/utilizzo` e `/v1/attivi`: i dati cambiano piano e il portale li legge raramente. */
+const CACHE_UTILIZZO_MS = 20 * 60_000;
+const CACHE_ATTIVI_MS = 30 * 60_000;
+
 /** Uso di oggi e dei giorni passati dai battiti: aperte, usate, ore medie, online ora, per versione, paese e installazione (niente IP ne' nominativi). */
 async function utilizzo(url: URL, env: Env): Promise<Response> {
+  const richiesti = Number.parseInt(url.searchParams.get('giorni') ?? '30', 10);
+  const giorniChiesti = Number.isFinite(richiesti) ? Math.min(90, Math.max(1, richiesti)) : 30;
+  const corpo = await conCache(env, `utilizzo:${giorniChiesti}:${new Date().toISOString().slice(0, 10)}`, CACHE_UTILIZZO_MS, () => calcolaUtilizzo(url, env));
+  return risposta(200, corpo);
+}
+
+async function calcolaUtilizzo(url: URL, env: Env): Promise<unknown> {
   const richiesti = Number.parseInt(url.searchParams.get('giorni') ?? '30', 10);
   const giorni = Number.isFinite(richiesti) ? Math.min(90, Math.max(1, richiesti)) : 30;
   const ora = Date.now();
@@ -399,7 +434,7 @@ async function utilizzo(url: URL, env: Env): Promise<Response> {
   const righe = (r: D1Result<unknown> | undefined) => (r?.results ?? []) as Riga[];
   const giorniOut = righe(perGiorno).map((r) => ({ giorno: String(r.giorno), aperte: intero(r.aperte), usate: intero(r.usate), ore_medie: unDecimale(r.ore_medie) }));
   const diOggi = giorniOut.find((g) => g.giorno === oggiG);
-  return risposta(200, {
+  return {
     generato: new Date(ora).toISOString(),
     online_ora: intero((righe(online)[0] ?? {}).n),
     oggi: { aperte: diOggi?.aperte ?? 0, usate: diOggi?.usate ?? 0, ore_medie: diOggi?.ore_medie ?? 0 },
@@ -417,11 +452,15 @@ async function utilizzo(url: URL, env: Env): Promise<Response> {
       battiti_oggi: intero(r.battiti_oggi),
       giorni_attivi_30: intero(r.giorni_attivi_30),
     })),
-  });
+  };
 }
 
 /** Quante installazioni sono attive: oggi, ultimi 7 e 30 giorni, per versione e per giorno. */
 async function attivi(env: Env): Promise<Response> {
+  return risposta(200, await conCache(env, `attivi:${new Date().toISOString().slice(0, 10)}`, CACHE_ATTIVI_MS, () => calcolaAttivi(env)));
+}
+
+async function calcolaAttivi(env: Env): Promise<unknown> {
   const giorni = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
   // le persone, non i PC: chi ha il nominativo conta una volta sola anche con piu' installazioni
   const conta = async (dal: string) => (await env.INDICE.prepare('SELECT COUNT(DISTINCT COALESCE(persona, installazione)) AS n FROM attivi WHERE giorno >= ?1').bind(dal).first<{ n: number }>())?.n ?? 0;
@@ -434,7 +473,7 @@ async function attivi(env: Env): Promise<Response> {
   const storico = await env.INDICE.prepare('SELECT giorno, SUM(attivi) AS n FROM storico GROUP BY giorno ORDER BY giorno DESC').all();
   const nuove = await env.INDICE.prepare('SELECT prima AS giorno, COUNT(*) AS n FROM installazioni WHERE prima >= ?1 GROUP BY prima ORDER BY prima DESC').bind(giorni(30)).all();
   const perPaese = await env.INDICE.prepare("SELECT COALESCE(paese, 'XX') AS paese, COUNT(*) AS n FROM installazioni GROUP BY paese ORDER BY n DESC").all();
-  return risposta(200, { totale, installazioni: installazioniTotali, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results });
+  return { totale, installazioni: installazioniTotali, per_paese: perPaese.results, storico_per_giorno: storico.results, oggi: await conta(oggi()), settimana: await conta(giorni(6)), mese: await conta(giorni(29)), nuove_per_giorno: nuove.results, per_giorno: perGiorno.results, per_versione: perVersione.results };
 }
 
 const CORS_ADMIN: Record<string, string> = {
