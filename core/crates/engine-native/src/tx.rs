@@ -1322,7 +1322,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let list: Vec<QDecoded> = decoded
             .iter()
             .flat_map(|(text, snr, freq)| match qso_native::message::split_fox(text) {
-                Some((a, b)) => vec![QDecoded::new(&a, *snr, *freq), QDecoded::new(&b, *snr, *freq)],
+                Some((a, b)) => std::iter::once(QDecoded::new(&a, *snr, *freq)).chain(b.map(|b| QDecoded::new(&b, *snr, *freq))).collect(),
                 None => vec![QDecoded::new(text, *snr, *freq)],
             })
             .collect();

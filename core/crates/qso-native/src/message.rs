@@ -45,17 +45,29 @@ pub enum Message {
 /// La riga DXpedition di una Fox (`K1ABC RR73; W9XYZ <KH1/KH7Z> -08`, `i3=0 n3=1`) vale due messaggi diretti, come li legge WSJT-X:
 /// `K1ABC KH1/KH7Z RR73` (chiusura del QSO del primo Hound) e `W9XYZ KH1/KH7Z -08` (rapporto al secondo). Senza questa divisione
 /// la riga sembrava testo libero e un Hound non registrava mai il QSO all'RR73 della Fox (issue #103).
-pub fn split_fox(text: &str) -> Option<(String, String)> {
+/// Come WSJT-X 3.3.0 beta 11 («accept RR73 with an unresolved report recipient»): il rapporto deve essere valido (da -50 a +49) e, se il
+/// nominativo del secondo Hound e' un hash non risolto (`<...>`), resta valida la sola chiusura del primo e il secondo messaggio e' `None`.
+pub fn split_fox(text: &str) -> Option<(String, Option<String>)> {
     let tokens: Vec<&str> = text.split_whitespace().collect();
     if tokens.len() != 5 || !tokens[1].eq_ignore_ascii_case("RR73;") {
         return None;
     }
+    let report_ok = tokens[4].parse::<i32>().is_ok_and(|n| (-50..50).contains(&n)) && matches!(tokens[4].as_bytes().first(), Some(b'+' | b'-'));
     let fox = tokens[3].trim_start_matches('<').trim_end_matches('>');
-    let (first, second) = (tokens[0].trim_matches(['<', '>']), tokens[2].trim_matches(['<', '>']));
-    if fox.is_empty() || fox == "..." || !is_callsign(first) || !is_callsign(second) || !is_callsign(fox) {
+    let first = tokens[0].trim_matches(['<', '>']);
+    if !report_ok || fox.is_empty() || fox == "..." || !is_callsign(first) || !is_callsign(fox) {
         return None;
     }
-    Some((format!("{first} {fox} RR73"), format!("{second} {fox} {}", tokens[4])))
+    let second = if tokens[2] == "<...>" {
+        None
+    } else {
+        let second = tokens[2].trim_matches(['<', '>']);
+        if !is_callsign(second) {
+            return None;
+        }
+        Some(format!("{second} {fox} {}", tokens[4]))
+    };
+    Some((format!("{first} {fox} RR73"), second))
 }
 
 /// Legge un messaggio. Il testo e' reso maiuscolo; i nominativi tra `<>` perdono le parentesi.
@@ -244,8 +256,15 @@ mod tests {
     #[test]
     fn a_fox_line_splits_into_two_directed_messages() {
         use super::split_fox;
-        assert_eq!(split_fox("IU3ABC RR73; W9XYZ <KH1/KH7Z> -08"), Some(("IU3ABC KH1/KH7Z RR73".to_string(), "W9XYZ KH1/KH7Z -08".to_string())));
+        assert_eq!(split_fox("IU3ABC RR73; W9XYZ <KH1/KH7Z> -08"), Some(("IU3ABC KH1/KH7Z RR73".to_string(), Some("W9XYZ KH1/KH7Z -08".to_string()))));
+        // beta 11: il secondo Hound e' un hash non risolto, vale la chiusura del primo
+        assert_eq!(split_fox("IU3ABC RR73; <...> <KH1/KH7Z> -10"), Some(("IU3ABC KH1/KH7Z RR73".to_string(), None)));
+        // rifiutati come in WSJT-X: Fox non risolto, rapporto non valido, doppie parentesi, primo non risolto
         assert_eq!(split_fox("IU3ABC RR73; W9XYZ <...> -08"), None);
+        assert_eq!(split_fox("IU3ABC RR73; <...> <KH1/KH7Z> -10X"), None);
+        assert_eq!(split_fox("IU3ABC RR73; <<...>> <KH1/KH7Z> -10"), None);
+        assert_eq!(split_fox("IU3ABC RR73; <...> <...> -10"), None);
+        assert_eq!(split_fox("<...> RR73; W9XYZ <KH1/KH7Z> -10"), None);
         assert_eq!(split_fox("IU3ABC K1ABC RR73"), None);
     }
 
