@@ -1337,8 +1337,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.note_heard(slot, decoded);
         self.note_exchanges(decoded);
         self.auto_hound(decoded, &mut log);
-        // con Split acceso (pile-up) il DX che risponde a un altro non ferma la trasmissione (#113)
-        let split_now = self.controls.switch_on("split");
+        // con Split acceso (pile-up) il DX che risponde a un altro non ferma la trasmissione (#113): vale solo se la radio e' DAVVERO in split. Lo
+        // Split di Aurora e' acceso di fabbrica (come `LockTxFreq` falso di JTDX): con il solo interruttore l'arresto non scattava mai per nessuno
+        let split_now = self.controls.switch_on("split") && self.controls.radio_split_active();
         if self.opts.split_active != split_now {
             self.opts.split_active = split_now;
             self.seq.set_options(self.opts.clone());
