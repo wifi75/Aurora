@@ -114,3 +114,17 @@ rapporti e quante installazioni attive lo usano (un PC con due prodotti conta pe
 npx wrangler d1 execute aurora-rapporti --remote --file=migrations/0003_antivirus.sql
 npx wrangler deploy
 ```
+
+## Cache delle risposte pesanti (dal 2026-11-27)
+
+D1 gratuito concede 5.000.000 di righe LETTE al giorno (azzeramento a mezzanotte UTC); oltre, battiti e rapporti falliscono. Le due risposte
+dell'amministratore che scansionano piu' tabelle, `GET /v1/utilizzo?giorni=N` e `GET /v1/attivi`, passano da `conCache` (`src/index.ts`): la
+risposta si salva come JSON nella tabella `cache_risposte` (chiave, scadenza, corpo) e vale 20 minuti (`utilizzo`) o 30 (`attivi`); una
+richiesta nel frattempo legge UNA riga. La chiave contiene la data UTC, quindi a mezzanotte si ricalcola. Se la tabella manca o D1 sbaglia,
+il Worker calcola come prima, senza cache. Il portale (sito del progetto) scarica questi dati ogni 30 minuti, non a ogni visita.
+Sul database gia' creato, PRIMA del deploy (fatto il 2026-11-27):
+
+```powershell
+npx wrangler d1 execute aurora-rapporti --remote --file=migrations/0006_cache.sql
+npx wrangler deploy
+```

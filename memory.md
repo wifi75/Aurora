@@ -413,3 +413,5 @@ Stato al 2026-11-27: versione 0.11.358 (modi QPSK31, Throb, Amtor FEC e MT63, FA
 - Accesso senza codice acceso di base sulla rete di casa (`accesso-libero.txt` lo spegne solo con «0"); da internet il codice resta.
 - All'avvio la radio va sulla frequenza principale (`spawn_start_on_main_frequency`).
 - Il proprietario vede la grafica dal vivo: `vite build` e copia in `%LOCALAPPDATA%\Aurora\dist`. Compilazione con 9 processi.
+
+- Cache D1 del Worker (2026-11-27): `/v1/utilizzo` e `/v1/attivi` salvano la risposta in `cache_risposte` (20 e 30 minuti, chiave con la data UTC) per restare sotto le 5.000.000 righe lette al giorno del piano gratuito (a fine 26/11 era all'81%). Migrazione `0006_cache.sql` e deploy applicati in produzione il 27/11 con il via libera del proprietario. Il portale scarica ogni 30 minuti (v0.11.73) e comunica con Aurora tramite sessione separata «Aurora Portal»: a ogni release Aurora le scrive «X pubblicata» e lei rigenera manuali e voce Novita'.
