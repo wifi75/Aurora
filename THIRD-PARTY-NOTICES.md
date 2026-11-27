@@ -27,6 +27,8 @@ Parti di Aurora sono traduzioni in Rust, con modifiche, di algoritmi di programm
 | [WSJT-X](https://wsjt.sourceforge.io) | © Joe Taylor K1JT e il WSJT Development Group | messaggi a 77 bit, LDPC, modulazione e decodifica FT8/FT4 (`core/crates/ft8`, `core/crates/ft4`), JT65/JT9 (`core/crates/jt`), Fox classico (`engine-native/src/fox.rs`), UltraFOX compatibile con SuperFox (`engine-native/src/ultrafox.rs`, `ultrafox_rx.rs`) |
 | [JTDX](https://www.jtdx.tech) | © gli autori di JTDX (derivato da WSJT-X) | decodifica FT8/FT4 a piu' passate, sequenza dei QSO (`core/crates/qso-native`), regole di risposta e di chiusura |
 
+Le tabelle del codice polare q-ario (127, 50) di SuperFox (`engine-native/src/qpc.rs`) sono di © Nico Palermo, IV3NWV, usate in Aurora con il suo permesso.
+
 `hashlittle` (`engine-native/src/ultrafox.rs`) viene da `lookup3.c` di Bob Jenkins, dominio pubblico.
 
 ## PSK, RTTY, CW e SSTV (GPL-3) e satelliti

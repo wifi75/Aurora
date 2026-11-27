@@ -1,5 +1,6 @@
 //! **AQP-127** (Aurora Q-ary Polar): codice polare q-ario (127, 50) su simboli da 7 bit (q = 128), compatibile con SuperFox di WSJT-X.
 //! Implementazione di Tiziano Cassone IU3WJQ.
+//! Le tabelle del codice (posizioni `XPOS` e `INFO`) sono di Nico Palermo, IV3NWV, usate in Aurora con il suo permesso.
 //! Le posizioni del messaggio (`INFO`) si ricalcolano con `cargo run --release --example tabelle_qpc -- 4 400000`: simulazione del canale
 //! a 128 toni e decodifica col genio; l'ordine dei simboli in `XPOS` e' quello del protocollo SuperFox, da rispettare per la compatibilita'.
 //!
