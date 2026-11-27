@@ -202,18 +202,18 @@ fn find_start(audio: &[f32], f: f32) -> (f32, f32) {
 }
 
 /// L'energia dei 128 toni di dati (dal tono 1) in ognuno dei 127 simboli di dati: `s[j * 128 + v]` per il valore `v` del simbolo `j`.
+/// Come `sfox_demod.f90`: gli spettri di tutti i 151 simboli (sincronismo compreso) si normalizzano con la mediana e si cercano le portanti
+/// fisse («birdie»), che si azzerano.
 fn spectra(audio: &[f32], f: f32, t: f32, fft: &Arc<dyn Fft<f32>>) -> Option<Vec<f32>> {
     let j0 = (RATE * (t + 0.5)).round() as i64;
     let w = -std::f32::consts::TAU * f / RATE;
-    let mut out = Vec::with_capacity(qpc::NP * qpc::Q);
+    let q = qpc::Q;
+    // colonna 0: il simbolo bucato, sempre a zero; poi i 151 simboli (anche quelli di sincronismo)
+    let mut s2 = vec![0.0f32; (TONES + 1) * q];
     let mut buf = vec![Complex32::new(0.0, 0.0); NSPS];
     for n in 1..=TONES {
-        if ISYNC.contains(&n) {
-            continue;
-        }
         let start = j0 + (n as i64 - 1) * NSPS as i64;
         if start < 0 || start as usize + NSPS > audio.len() {
-            out.extend(std::iter::repeat_n(1.0, qpc::Q));
             continue;
         }
         let start = start as usize;
@@ -221,9 +221,66 @@ fn spectra(audio: &[f32], f: f32, t: f32, fft: &Arc<dyn Fft<f32>>) -> Option<Vec
             *z = Complex32::from_polar(audio[start + k], w * (start + k) as f32);
         }
         fft.process(&mut buf);
-        out.extend(buf[1..=qpc::Q].iter().map(|z| z.norm_sqr()));
+        for (o, z) in s2[n * q..(n + 1) * q].iter_mut().zip(&buf[1..=q]) {
+            *o = z.norm_sqr();
+        }
     }
-    (out.len() == qpc::NP * qpc::Q).then_some(out)
+    // mediana dei primi 151 simboli (`pctile(s2,NQ*151,50,base2)`: la colonna 0 e i simboli da 1 a 150)
+    let base2 = median(&s2[..TONES * q]);
+    if base2 > 0.0 {
+        s2.iter_mut().for_each(|v| *v /= base2);
+    }
+    remove_birdies(&mut s2);
+    let mut out = Vec::with_capacity(qpc::NP * q);
+    for n in 1..=TONES {
+        if !ISYNC.contains(&n) {
+            out.extend_from_slice(&s2[n * q..(n + 1) * q]);
+        }
+    }
+    (out.len() == qpc::NP * q).then_some(out)
+}
+
+/// La mediana come `pctile(x, n, 50)`.
+fn median(x: &[f32]) -> f32 {
+    let mut sorted = x.to_vec();
+    sorted.sort_by(f32::total_cmp);
+    sorted.get((sorted.len() / 2).saturating_sub(1)).copied().unwrap_or(0.0)
+}
+
+/// Soppressione delle portanti fisse (`sfox_demod.f90:35-66`): per ogni simbolo si prende il tono piu' forte (da 1 a 127: l'indice del
+/// Fortran, che conta da 0, e' uno meno), si fa l'istogramma e si porta a 1,0 (il livello del rumore) la colonna di un tono che e' il
+/// picco in piu' di 12 simboli, e le 8 colonne a partire da quattro adiacenti che lo sono in piu' di 20.
+fn remove_birdies(s2: &mut [f32]) {
+    let q = qpc::Q;
+    let mut hist1 = [0u32; 128];
+    for col in s2.chunks(q) {
+        // `maxloc(s2(1:NQ-1,j))`: la prima posizione del massimo
+        let mut pos = 1;
+        for i in 2..q {
+            if col[i] > col[pos] {
+                pos = i;
+            }
+        }
+        hist1[pos - 1] += 1;
+    }
+    hist1[0] = 0; // il tono di sincronismo non e' una portante
+    let hist2: Vec<u32> = (0..=123).map(|i| hist1[i..i + 4].iter().sum()).collect();
+    let m1 = hist1.iter().copied().max().unwrap_or(0);
+    let (mut i2, m2) = hist2.iter().enumerate().fold((0usize, 0u32), |b, (i, &v)| if v > b.1 { (i, v) } else { b });
+    if m1 > 12 {
+        for (i, &h) in hist1.iter().enumerate() {
+            if h > 12 {
+                s2.chunks_mut(q).for_each(|col| col[i] = 1.0);
+            }
+        }
+    }
+    if m2 > 20 {
+        if i2 >= 1 {
+            i2 -= 1;
+        }
+        i2 = i2.min(120);
+        s2.chunks_mut(q).for_each(|col| col[i2..i2 + 8].fill(1.0));
+    }
 }
 
 /// Media mobile 1-2-1 pesata (`smo121a`): `a` al centro, `b` ai lati.
@@ -474,6 +531,34 @@ mod tests {
         pairs.dedup();
         assert_eq!(pairs.len(), 100);
         assert!(IDF.iter().all(|f| (-5..=4).contains(f)) && IDT.iter().all(|t| (-5..=4).contains(t)));
+    }
+
+    /// Una portante fissa dentro i 1500 Hz del segnale sarebbe il picco di quasi ogni simbolo: la soppressione dei «birdie» di
+    /// `sfox_demod.f90` la toglie e il messaggio si decodifica.
+    #[test]
+    fn a_steady_carrier_in_the_band_does_not_stop_the_decoding() {
+        let start = 0.5 - NSPS as f32 / RATE;
+        let mut audio = period(&hounds(), &Extras::default(), start, 0.3, 0.05);
+        // 1,0 di ampiezza contro 0,3 del segnale, su un tono dei dati (circa 750 + 40 baud)
+        let hz = 750.0 + 40.4 * BAUD;
+        for (k, a) in audio.iter_mut().enumerate() {
+            *a += (std::f32::consts::TAU * hz * k as f32 / RATE).sin();
+        }
+        let d = decode(&audio, 750.0, 100.0).expect("decodificato con la portante");
+        assert_eq!(d.messages[0], "K1ABC IU3ABC RR73");
+    }
+
+    #[test]
+    fn birdie_columns_are_set_to_the_noise_level() {
+        let q = qpc::Q;
+        let mut s2 = vec![0.5f32; 152 * q];
+        // il tono 40 e' il picco in 30 simboli
+        for n in 1..=30 {
+            s2[n * q + 40] = 9.0;
+        }
+        remove_birdies(&mut s2);
+        assert!(s2.chunks(q).all(|c| c[40] == 1.0));
+        assert!(s2.chunks(q).all(|c| c[10] != 1.0));
     }
     #[test]
     fn noise_alone_gives_nothing() {
