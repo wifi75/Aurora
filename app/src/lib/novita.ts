@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.360',
-    released: '2026-11-27T15:30:11Z',
+    released: '2026-11-27T15:35:02Z',
     kind: 'changed',
     title: [
       'Crediti a Nico Palermo (IV3NWV) per SuperFox',
