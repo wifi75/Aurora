@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.361 - 2026-11-27
 - Corretto un difetto della 0.11.354 (#113): lo Split di Aurora e' acceso di fabbrica, quindi l'arresto della trasmissione quando il DX risponde a un altro non scattava mai per nessuno. Ora l'eccezione del pile-up vale solo se anche la radio e' davvero in split (`engine-native/src/tx.rs`); tornano verdi le prove `a_dx_answering_someone_else_halts_the_transmission_in_progress` e `the_reason_for_an_automatic_stop_is_shown_as_an_alert`.
 - UltraFOX, ricezione: gli `i3` da 4 a 7 si leggono come `i3` = 0 (nove stazioni) e il riconoscimento del CQ confronta la parola esatta «CQ», come `sfox_unpack.f90` (prima «CQ_DX» e simili erano scambiati per CQ).
 - UltraFOX, ricezione: soppressione delle portanti fisse («birdie») come `sfox_demod.f90` (istogramma dei picchi sui 151 simboli: un tono che e' il picco in piu' di 12 simboli, o quattro adiacenti in piu' di 20, si porta al livello del rumore); una portante dentro i 1500 Hz del segnale non impedisce piu' la decodifica. Misurato: soglia invariata (circa -16 dB in 2500 Hz), 0,6 s al massimo per periodo.
@@ -8,8 +10,6 @@
 - UltraFOX: i nominativi non standard scritti fra «<>» (es. `<K1ABC/P>`) vanno nell'hash a 22 bit come in SuperFox di WSJT-X (`pack28_for_state` e controllo `valid_sfox_call`), e in ricezione tornano per nome se l'hash e' gia' noto (memoria degli hash del motore) invece di «<...>»; senza parentesi restano rifiutati, come in WSJT-X.
 - UltraFOX: nel testo libero uno spazio in posizione 13 passa davanti alla prima meta' (`packtext77` di WSJT-X fa `adjustr`), cosi' il messaggio e' quello che trasmette SuperFox; un testo di soli spazi non porta piu' punti.
 - UltraFOX: la trasmissione parte a 0,4 s dall'inizio del periodo, come SuperFox di WSJT-X 3.3 (`Modulator.cpp:166`), non a 0,5 s come l'FT8; gli altri modi restano invariati (`TxRequest::start_delay`).
-
-## 0.11.361 - 2026-11-27
 - Se la finestra di Aurora non si apre (WebView2 mancante o guasto), il messaggio che spiega cosa fare non fa piu' andare in panic Tauri («event handler is re-entrant», pacchetti `E1E086DE` e `9CFC1E66`, 0.11.358, utente olandese con errore 0x80070002): ora gira su un thread suo.
 
 ## 0.11.360 - 2026-11-27
