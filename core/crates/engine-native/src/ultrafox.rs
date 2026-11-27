@@ -125,13 +125,21 @@ pub fn pack(content: &Content, extras: &Extras) -> Result<[u8; SYMBOLS], PackErr
         }
     }
     if let Some(text) = &extras.free_text {
-        let t = text.trim_end().as_bytes();
-        if t.len() > 26 || !t.iter().all(|x| TEXT_CHARS.contains(x)) {
+        // come `sfox_pack.f90`: i caratteri dopo l'ultimo non spazio diventano punti (nessun punto se il testo e' tutto spazi) e ognuna
+        // delle due meta' di 13 caratteri passa da `packtext77`, che fa `adjustr`: gli spazi in fondo alla meta' vanno davanti
+        let mut full = [b' '; 26];
+        let given = text.trim_end().as_bytes();
+        if given.len() > 26 || !given.iter().all(|x| TEXT_CHARS.contains(x)) {
             return Err(PackError::BadFreeText);
         }
-        let mut full = [b'.'; 26];
-        full[..t.len()].copy_from_slice(t);
-        let half = |h: &[u8]| pack_text71(std::str::from_utf8(h).unwrap_or("")).ok_or(PackError::BadFreeText);
+        full[..given.len()].copy_from_slice(given);
+        if let Some(last) = full.iter().rposition(|&c| c != b' ') {
+            full[last + 1..].fill(b'.');
+        }
+        let half = |h: &[u8]| {
+            let s = std::str::from_utf8(h).unwrap_or("").trim_end_matches(' ');
+            pack_text71(s).ok_or(PackError::BadFreeText)
+        };
         let (a, z) = (half(&full[..13])?, half(&full[13..])?);
         if i3 == 3 {
             b.put(74, 71, a);
@@ -375,6 +383,22 @@ mod tests {
         let x = pack(&cq, &Extras { more_cqs: false, free_text: Some("QSL VIA LOTW".into()), otp: 0 }).expect("CQ con testo");
         assert!(crc_ok(&x));
         assert_eq!(pack(&cq, &Extras { free_text: Some("minuscole".into()), ..Extras::default() }), Err(PackError::BadFreeText));
+    }
+
+    /// Lo spazio in posizione 13 passa davanti alla prima meta' (`packtext77` fa `adjustr`): «ABCDEFGHIJKL MNOPQ» e « ABCDEFGHIJKLMNOPQ»
+    /// sono lo stesso messaggio, come in WSJT-X.
+    #[test]
+    fn free_text_with_a_space_at_position_13_is_right_justified_like_wsjtx() {
+        let cq = Content::Cq { call: "IU3ABC".into(), grid: "IO91".into() };
+        let with = |t: &str| pack(&cq, &Extras { free_text: Some(t.into()), ..Extras::default() }).expect("CQ con testo");
+        assert_eq!(with("ABCDEFGHIJKL MNOPQ"), with(" ABCDEFGHIJKLMNOPQ"));
+        assert_ne!(with("ABCDEFGHIJKL MNOPQ"), with("ABCDEFGHIJKLMNOPQ"));
+        let d = crate::ultrafox_rx::unpack(&with("ABCDEFGHIJKL MNOPQ")).expect("spacchettato");
+        assert_eq!(d.free_text.as_deref(), Some("ABCDEFGHIJKLMNOPQ"));
+        // un testo di soli spazi non porta punti: due meta' vuote
+        assert_eq!(with("   "), with(""));
+        let all_blank = with("   ");
+        assert!(crate::ultrafox_rx::unpack(&all_blank).and_then(|d| d.free_text).is_none());
     }
 
     /// Energia di una frequenza in un tratto (Goertzel).

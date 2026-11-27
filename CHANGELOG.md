@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- UltraFOX: nel testo libero uno spazio in posizione 13 passa davanti alla prima meta' (`packtext77` di WSJT-X fa `adjustr`), cosi' il messaggio e' quello che trasmette SuperFox; un testo di soli spazi non porta piu' punti.
 - UltraFOX: la trasmissione parte a 0,4 s dall'inizio del periodo, come SuperFox di WSJT-X 3.3 (`Modulator.cpp:166`), non a 0,5 s come l'FT8; gli altri modi restano invariati (`TxRequest::start_delay`).
 
 ## 0.11.361 - 2026-11-27
