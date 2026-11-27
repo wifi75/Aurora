@@ -27,6 +27,7 @@ pub enum TxModulator {
     Olivia(Box<OliviaTx>),
     Throb(Box<ThrobStream>),
     Amtor(Box<crate::amtor::AmtorTx>),
+    Mt63(Box<Mt63Stream>),
 }
 
 impl TxModulator {
@@ -61,6 +62,11 @@ impl TxModulator {
         TxModulator::Throb(Box::new(ThrobStream::new(v, freq_hz, reverse)))
     }
 
+    /// MT63 centrato a `freq_hz`; `reverse`: la radio in LSB (spettro rovesciato).
+    pub fn mt63(v: crate::mt63::Mt63Variant, freq_hz: f32, reverse: bool) -> Self {
+        TxModulator::Mt63(Box::new(Mt63Stream::new(v, freq_hz, reverse)))
+    }
+
     /// Amtor FEC centrato a `freq_hz`; `reverse`: la radio in LSB (mark e space scambiati).
     pub fn amtor(freq_hz: f32, reverse: bool) -> Self {
         TxModulator::Amtor(Box::new(crate::amtor::tx_12k(freq_hz, AMP, reverse)))
@@ -70,6 +76,7 @@ impl TxModulator {
     pub fn preamble(&mut self) -> Vec<f32> {
         match self {
             TxModulator::Amtor(m) => m.preamble(),
+            TxModulator::Mt63(m) => m.preamble(),
             TxModulator::Throb(m) => m.preamble(),
             TxModulator::Rtty(m) => m.preamble(),
             TxModulator::Psk(m) => m.preamble(),
@@ -87,6 +94,7 @@ impl TxModulator {
             TxModulator::Olivia(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Throb(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Amtor(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
+            TxModulator::Mt63(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
         }
     }
 
@@ -108,6 +116,7 @@ impl TxModulator {
             TxModulator::Olivia(m) => m.idle(),
             TxModulator::Throb(m) => m.idle(),
             TxModulator::Amtor(m) => m.idle(),
+            TxModulator::Mt63(m) => m.idle(),
         }
     }
 
@@ -120,6 +129,7 @@ impl TxModulator {
             TxModulator::Olivia(m) => m.postamble(),
             TxModulator::Throb(m) => m.postamble(),
             TxModulator::Amtor(m) => m.postamble(),
+            TxModulator::Mt63(m) => m.postamble(),
         }
     }
 
@@ -427,6 +437,48 @@ impl ThrobStream {
     }
 }
 
+/// MT63 a flusso: ogni carattere (o attesa, un NUL) e' un simbolo a 8 kHz che l'interpolatore 2:3 porta a 12 kHz; all'inizio
+/// l'interleaving si riempie e partono 16 simboli di attesa, alla fine si svuota, parte il simbolo di disturbo ed esce la coda del filtro.
+/// Il trasmettitore ha gia' la sua ampiezza (picco sotto 1): qui solo il margine comune `AMP`.
+pub struct Mt63Stream {
+    tx: crate::mt63::Mt63Tx,
+    interp: Interpolator,
+}
+
+impl Mt63Stream {
+    fn new(v: crate::mt63::Mt63Variant, freq_hz: f32, reverse: bool) -> Self {
+        Self { tx: crate::mt63::Mt63Tx::new(v, f64::from(freq_hz), f64::from(AMP), reverse), interp: Interpolator::new() }
+    }
+
+    fn to_12k(&mut self, audio: &[f32]) -> Vec<f32> {
+        let mut out = Vec::with_capacity(audio.len() * 3 / 2 + 2);
+        self.interp.process(audio, &mut out);
+        out
+    }
+
+    fn preamble(&mut self) -> Vec<f32> {
+        let a = self.tx.preamble();
+        self.to_12k(&a)
+    }
+
+    fn char(&mut self, c: u8) -> Vec<f32> {
+        let a = self.tx.char(c);
+        self.to_12k(&a)
+    }
+
+    fn idle(&mut self) -> Vec<f32> {
+        let a = self.tx.idle();
+        self.to_12k(&a)
+    }
+
+    fn postamble(&mut self) -> Vec<f32> {
+        let a = self.tx.postamble();
+        let mut out = self.to_12k(&a);
+        self.interp.flush(&mut out);
+        out
+    }
+}
+
 /// Olivia e Contestia a flusso: i caratteri si raccolgono finche' non riempiono un blocco FEC (uno per bit del simbolo), poi il blocco
 /// diventa audio a 8 kHz e l'interpolatore 2:3 lo porta a 12 kHz. Finche' il blocco non e' pieno un carattere non da' audio. In attesa
 /// (nessun testo) il blocco a meta' si completa con caratteri nulli (chi riceve non li stampa) e parte, o parte un blocco tutto nullo; alla
@@ -550,6 +602,37 @@ mod tests {
             i.flush(&mut want);
             let want: Vec<f32> = want.into_iter().map(|x| x * AMP).collect();
             assert_eq!(got, want, "{v:?}");
+        }
+    }
+
+    /// MT63 a pezzi (con l'attesa in mezzo) e' l'onda del trasmettitore con gli stessi passi portata a 12 kHz, e il picco resta sotto 1.
+    #[test]
+    fn mt63_a_pezzi_e_come_l_onda_intera() {
+        use crate::mt63::{Mt63Tx, Mt63Variant};
+        for (v, rev) in [(Mt63Variant::Mt63_2000l, false), (Mt63Variant::Mt63_500s, true)] {
+            let mut m = TxModulator::mt63(v, 1500.0, rev);
+            let mut got = m.preamble();
+            got.extend(m.token("IU3"));
+            got.extend(m.idle());
+            got.extend(m.token("ABC"));
+            got.extend(m.postamble());
+            let mut t = Mt63Tx::new(v, 1500.0, f64::from(AMP), rev);
+            let mut a = t.preamble();
+            for c in b"IU3".iter() {
+                a.extend(t.char(*c));
+            }
+            a.extend(t.idle());
+            for c in b"ABC".iter() {
+                a.extend(t.char(*c));
+            }
+            a.extend(t.postamble());
+            let mut want = Vec::new();
+            let mut i = Interpolator::new();
+            i.process(&a, &mut want);
+            i.flush(&mut want);
+            assert_eq!(got.len(), want.len(), "{v:?}");
+            assert!(got.iter().zip(&want).all(|(x, y)| (x - y).abs() < 1e-6), "{v:?}");
+            assert!(got.iter().all(|x| x.abs() < 1.0), "{v:?}: picco oltre 1");
         }
     }
 

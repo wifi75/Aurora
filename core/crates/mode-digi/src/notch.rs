@@ -176,6 +176,8 @@ pub fn default_passband(mode: crate::DigiMode, shift_hz: f32, rtty_baud: f32) ->
         crate::DigiMode::Throb => 120.0,
         // Amtor: spostamento di 170 Hz piu' due volte i 100 baud
         crate::DigiMode::Amtor => 370.0,
+        // MT63: la banda di base (1000 Hz) piu' le portanti cercate ai lati
+        crate::DigiMode::Mt63 => 1300.0,
     }
 }
 

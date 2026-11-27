@@ -127,10 +127,12 @@ pub enum DigiMode {
     Throb,
     /// Amtor FEC (SITOR-B, vedi `amtor`): FSK 100 baud, 170 Hz; in LSB mark e space si scambiano.
     Amtor,
+    /// MT63 (64 portanti, vedi `mt63`): la variante in [`DigiSettings::mt63`]; in LSB lo spettro si rovescia.
+    Mt63,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 10] = [
+    pub const ALL: [DigiMode; 11] = [
         DigiMode::Psk31,
         DigiMode::Psk63,
         DigiMode::Rtty,
@@ -141,6 +143,7 @@ impl DigiMode {
         DigiMode::Qpsk31,
         DigiMode::Throb,
         DigiMode::Amtor,
+        DigiMode::Mt63,
     ];
 
     pub fn id(self) -> &'static str {
@@ -155,6 +158,7 @@ impl DigiMode {
             DigiMode::Qpsk31 => "qpsk31",
             DigiMode::Throb => "throb",
             DigiMode::Amtor => "amtor",
+            DigiMode::Mt63 => "mt63",
         }
     }
 
@@ -170,6 +174,7 @@ impl DigiMode {
             DigiMode::Qpsk31 => "QPSK31",
             DigiMode::Throb => "Throb",
             DigiMode::Amtor => "Amtor",
+            DigiMode::Mt63 => "MT63",
         }
     }
 
@@ -182,7 +187,7 @@ impl DigiMode {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
             DigiMode::Qpsk31 => Some(PskMode::Qpsk31),
-            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia | DigiMode::Throb | DigiMode::Amtor => None,
+            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb | DigiMode::Olivia | DigiMode::Contestia | DigiMode::Throb | DigiMode::Amtor | DigiMode::Mt63 => None,
         }
     }
 
@@ -436,6 +441,10 @@ pub struct DigiSettings {
     pub contestia: OliviaSettings,
     /// Throb: la variante (Throb a 1, 2, 4 simboli al secondo o ThrobX).
     pub throb: crate::throb::ThrobVariant,
+    /// MT63: la variante (banda di 500, 1000 o 2000 Hz, interleaving corto o lungo).
+    pub mt63: crate::mt63::Mt63Variant,
+    /// MT63: integrazione lunga del sincronismo (32 simboli invece di 16).
+    pub mt63_long_integ: bool,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -534,6 +543,8 @@ impl Default for DigiSettings {
             olivia: OliviaSettings::olivia(),
             contestia: OliviaSettings::contestia(),
             throb: crate::throb::ThrobVariant::default(),
+            mt63: crate::mt63::Mt63Variant::default(),
+            mt63_long_integ: false,
         }
     }
 }
@@ -739,6 +750,8 @@ impl DigiSettings {
             // Olivia e Contestia: la banda del modo con un po' di margine per il sincronismo
             (false, Some((_, o))) => o.bandwidth_hz as f32 * 1.2,
             // Throb: dal primo all'ultimo tono piu' il margine dell'AFC
+            // MT63: la banda del modo piu' le portanti cercate ai lati dal ricevitore
+            (false, None) if self.mode == DigiMode::Mt63 => (self.mt63.bandwidth_hz() * 1.3) as f32,
             (false, None) if self.mode == DigiMode::Throb => (self.throb.bandwidth_hz() + 2.0 * crate::throb::afc_limit_hz(self.throb) + 20.0) as f32,
             (false, None) => crate::notch::default_passband(self.mode, self.rtty_shift_hz, self.rtty_baud),
         };
@@ -757,6 +770,8 @@ impl DigiSettings {
             DigiMode::Olivia | DigiMode::Contestia => 0.0,
             DigiMode::Throb => crate::throb::afc_limit_hz(self.throb) as f32,
             DigiMode::Amtor => crate::amtor::AFC_LIMIT_HZ as f32,
+            // il ricevitore MT63 cerca da solo il segnale fino a 8 portanti sopra e sotto: l'AFC non lo sposta
+            DigiMode::Mt63 => 0.0,
         }
     }
 
@@ -1343,7 +1358,7 @@ impl DigiService {
     /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
     /// Olivia e Contestia con toni e banda fuori dalla banda audio danno un'onda vuota.
     pub fn wave_of(text: &str, s: &DigiSettings, lsb: bool) -> Vec<f32> {
-        if s.olivia_settings().is_some() || matches!(s.mode, DigiMode::Throb | DigiMode::Amtor) {
+        if s.olivia_settings().is_some() || matches!(s.mode, DigiMode::Throb | DigiMode::Amtor | DigiMode::Mt63) {
             return live::modulator(s, lsb).map(|mut m| crate::tx_stream::whole(&mut m, text)).unwrap_or_default();
         }
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
@@ -1515,6 +1530,8 @@ enum Demod {
     Throb(Box<crate::throb::ThrobLink>),
     /// Amtor FEC (12 kHz, nessun ricampionamento).
     Amtor(Box<crate::amtor::AmtorLink>),
+    /// MT63 (ricevitore a 8 kHz dietro il decimatore).
+    Mt63(Box<crate::mt63::Mt63Link>),
     /// SSB: nessuna decodifica, solo la frequenza scelta.
     Off(f32),
 }
@@ -1542,6 +1559,10 @@ impl Demod {
         if s.mode == DigiMode::Amtor {
             // in LSB mark e space si scambiano; esce testo solo agganciati ai caratteri (nel rumore niente)
             return Demod::Amtor(Box::new(crate::amtor::AmtorLink::new(s.rx_freq_hz, lsb, s.afc_on)));
+        }
+        if s.mode == DigiMode::Mt63 {
+            // in LSB lo spettro arriva rovesciato; lo squelch e' sempre acceso (aggancio e rapporto del decodificatore)
+            return Demod::Mt63(Box::new(crate::mt63::Mt63Link::new(s.mt63, s.rx_freq_hz, lsb, s.mt63_long_integ)));
         }
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
@@ -1594,6 +1615,7 @@ impl Demod {
             Demod::Olivia(d) => d.frequency(),
             Demod::Throb(d) => d.frequency(),
             Demod::Amtor(d) => d.frequency(),
+            Demod::Mt63(d) => d.frequency(),
             Demod::Off(hz) => *hz,
         }
     }
@@ -1608,6 +1630,7 @@ impl Demod {
             Demod::Olivia(d) => Some(d.snr_db()),
             Demod::Throb(d) => Some(d.snr_db()),
             Demod::Amtor(d) => Some(d.snr_db()),
+            Demod::Mt63(d) => Some(d.snr_db()),
             Demod::Off(_) => None,
         }
     }
@@ -1618,7 +1641,7 @@ impl Demod {
             Demod::Psk(d) => (d.imd_db(), Some(d.metric()), None),
             Demod::Cw(d) => (None, None, Some(d.wpm())),
             Demod::CwFast(h, _) => (None, None, Some(h.fine().wpm())),
-            Demod::Rtty(_) | Demod::Olivia(_) | Demod::Throb(_) | Demod::Amtor(_) | Demod::Off(_) => (None, None, None),
+            Demod::Rtty(_) | Demod::Olivia(_) | Demod::Throb(_) | Demod::Amtor(_) | Demod::Mt63(_) | Demod::Off(_) => (None, None, None),
         }
     }
 
@@ -1641,6 +1664,8 @@ impl Demod {
             Demod::Olivia(_) => {}
             Demod::Throb(d) => d.steer(hz),
             Demod::Amtor(d) => d.steer(hz),
+            // il ricevitore cerca da solo il segnale entro il suo margine
+            Demod::Mt63(_) => {}
             Demod::Off(f) => *f = hz,
         }
     }
@@ -1657,6 +1682,7 @@ impl Demod {
             Demod::Throb(d) => (Some(d.snr_db()), (crate::throb::ThrobRx::threshold_db(), crate::throb::ThrobRx::threshold_db() - 3.0)),
             // Amtor: la quota di coppie buone in dB (0 = tutte buone)
             Demod::Amtor(d) => (Some(d.snr_db()), (-3.0, -9.0)),
+            Demod::Mt63(d) => (Some(d.snr_db()), (crate::mt63::Mt63Rx::threshold_db(), crate::mt63::Mt63Rx::threshold_db() - 3.0)),
             Demod::Off(_) => (None, (0.0, 0.0)),
         }
     }
@@ -1671,6 +1697,7 @@ impl Demod {
             Demod::Olivia(d) => d.signal(),
             Demod::Throb(d) => d.signal(),
             Demod::Amtor(d) => d.signal(),
+            Demod::Mt63(d) => d.signal(),
             Demod::Off(_) => (-90.0, false),
         }
     }
@@ -1704,6 +1731,7 @@ impl Demod {
             Demod::Olivia(d) => (d.process(audio), Vec::new()),
             Demod::Throb(d) => (d.process(audio), Vec::new()),
             Demod::Amtor(d) => (d.process(audio), Vec::new()),
+            Demod::Mt63(d) => (d.process(audio), Vec::new()),
             Demod::Off(_) => (String::new(), Vec::new()),
         }
     }
@@ -2066,6 +2094,29 @@ mod tests {
                 let mut wave = vec![0.0; 6000];
                 wave.extend(DigiService::wave_of("CQ DE IU3ABC K", &s, lsb));
                 wave.extend(vec![0.0; 24_000]);
+                let out: String = wave.chunks(1200).map(|b| d.process(b).0).collect();
+                assert_eq!(out.trim(), "CQ DE IU3ABC K", "{v:?} lsb {lsb}");
+                let bad = Demod::new(&s, !lsb).process(&wave).0;
+                assert!(!bad.contains("IU3ABC"), "{v:?} lsb {lsb}, banda sbagliata: {bad:?}");
+            }
+        }
+    }
+
+    /// MT63 dal servizio in USB e in LSB (1000L di base e 500S); le impostazioni di prima senza il campo valgono MT63-1000L.
+    #[test]
+    fn mt63_trasmesso_e_ricevuto_dal_servizio_in_usb_e_in_lsb() {
+        let old: DigiSettings = serde_json::from_str(r#"{"mode":"psk31"}"#).expect("json");
+        assert_eq!((old.mt63, old.mt63_long_integ), (crate::mt63::Mt63Variant::Mt63_1000l, false));
+        let t: DigiSettings = serde_json::from_str(r#"{"mode":"mt63","mt63":"mt63_500s","mt63_long_integ":true}"#).expect("json");
+        assert_eq!((t.mode, t.mt63, t.mt63_long_integ), (DigiMode::Mt63, crate::mt63::Mt63Variant::Mt63_500s, true));
+        for v in [crate::mt63::Mt63Variant::Mt63_1000l, crate::mt63::Mt63Variant::Mt63_500s] {
+            let s = DigiSettings { mode: DigiMode::Mt63, mt63: v, rx_freq_hz: 1500.0, tx_freq_hz: 1500.0, ..DigiSettings::default() };
+            for lsb in [false, true] {
+                let mut d = Demod::new(&s, lsb);
+                assert!(matches!(d, Demod::Mt63(..)));
+                let mut wave = vec![0.0; 6000];
+                wave.extend(DigiService::wave_of("CQ DE IU3ABC K", &s, lsb));
+                wave.extend(vec![0.0; v.symbol_samples() * 3 / 2 * 40]);
                 let out: String = wave.chunks(1200).map(|b| d.process(b).0).collect();
                 assert_eq!(out.trim(), "CQ DE IU3ABC K", "{v:?} lsb {lsb}");
                 let bad = Demod::new(&s, !lsb).process(&wave).0;

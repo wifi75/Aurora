@@ -61,6 +61,8 @@ pub(super) fn modulator(s: &DigiSettings, lsb: bool) -> Result<TxModulator, Digi
         (None, DigiMode::Throb) => TxModulator::throb(s.throb, s.tx_freq(), lsb),
         // Amtor FEC: in LSB mark e space si scambiano
         (None, DigiMode::Amtor) => TxModulator::amtor(s.tx_freq(), lsb),
+        // MT63: in LSB lo spettro si rovescia
+        (None, DigiMode::Mt63) => TxModulator::mt63(s.mt63, s.tx_freq(), lsb),
         (None, DigiMode::Cw) => TxModulator::cw(s.tx_freq(), s.cw_wpm),
         (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset).with_diddle(s.rtty_diddle),
     })
@@ -541,6 +543,19 @@ mod tests {
         wave.extend(vec![0.0; 24_000]);
         let out = d.process(&wave).0;
         assert_eq!(out.trim(), "IU3ABC");
+    }
+
+    /// MT63 (1000L di base) a flusso: la trasmissione dal servizio si rilegge.
+    #[test]
+    fn mt63_a_flusso_si_rilegge() {
+        let (svc, port, events, _dir) = service(DigiMode::Mt63);
+        svc.transmit("CQ DE IU3ABC").expect("partita");
+        assert!(wait_state(&svc, "done", 30), "stato: {:?}", svc.snapshot().tx);
+        assert_eq!(sent(&events), "CQ DE IU3ABC");
+        let mut d = super::super::Demod::new(&svc.settings(), false);
+        let mut wave = lock(&port.wave).clone();
+        wave.extend(vec![0.0; 60_000]);
+        assert_eq!(d.process(&wave).0.trim(), "CQ DE IU3ABC");
     }
 
     /// Amtor FEC a flusso: la trasmissione dal servizio si rilegge.

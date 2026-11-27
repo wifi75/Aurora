@@ -88,7 +88,7 @@ pub fn band_of_khz(khz: f64) -> Option<&'static str> {
 }
 
 const MODES: &[&str] = &[
-    "FT8", "FT4", "MSK144", "JT65", "JT9", "JT4", "Q65", "FST4", "FST4W", "WSPR", "JS8", "JS8CALL", "RTTY", "PSK31", "PSK63", "PSK", "BPSK31", "QPSK31", "OLIVIA", "THROB", "THRB", "AMTOR", "SITOR",
+    "FT8", "FT4", "MSK144", "JT65", "JT9", "JT4", "Q65", "FST4", "FST4W", "WSPR", "JS8", "JS8CALL", "RTTY", "PSK31", "PSK63", "PSK", "BPSK31", "QPSK31", "OLIVIA", "THROB", "THRB", "MT63", "AMTOR", "SITOR",
     "MFSK", "CONTESTIA", "HELL", "VARA", "VARAC", "PACTOR", "ARDOP", "FREEDV", "CW", "SSB", "USB", "LSB", "FM", "AM", "SSTV",
 ];
 
