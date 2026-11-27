@@ -114,6 +114,9 @@ html:root:root .digi-txhist { border-bottom: 0; padding-bottom: 0; }
 html:root:root .digi-key-hint { font-size: 10px; font-weight: 700; opacity: 0.85; right: 4px; bottom: 2px; }
 html:root:root[data-theme='light'] .digi-key-hint { opacity: 0.8; }
 html:root:root .digi-key--blank .digi-key-hint { opacity: 0.55; }
+/* il numero del tasto (F1..F8) sta in basso a destra, piccolo; il testo del pulsante sale un poco cosi' non si sovrappongono */
+html:root:root .digi-key-hint { font-size: 9px; bottom: 1px; }
+html:root:root .digi-key-label:has(+ .digi-key-hint) { position: relative; top: -4px; }
 
 /* maniglia sottile sul bordo destro della cascata dei modi testuali: ne cambia la larghezza */
 html:root:root .digi-wf-wgrip { position: absolute; top: 0; bottom: 0; right: 0; width: 7px; cursor: col-resize; z-index: 6; touch-action: none; background: none; }

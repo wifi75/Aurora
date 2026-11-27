@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Pulsanti macro F1-F8: il testo sale un poco e il numero del tasto in basso a destra e' piu' piccolo, cosi' non si sovrappongono piu'.
 
 ## 0.11.358 - 2026-11-27
 - Guida › FAQ, nuova voce «Su Mac: Aurora non è approvata o non si può aprire» (fm5dn, #122): spiega il blocco di Gatekeeper (la versione per Mac non è firmata né notarizzata) con i passi: clic destro › Apri, «Apri comunque» in Privacy e sicurezza, `xattr -dr com.apple.quarantine`; otto lingue (`guide-faq.ts`, `faq-macos`).
