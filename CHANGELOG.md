@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.360 - 2026-11-27
 - Crediti: «Informazioni», `THIRD-PARTY-NOTICES.md` e `qpc.rs` citano Nico Palermo, IV3NWV, per le tabelle e l'algoritmo del codice polare q-ario di SuperFox, usati in Aurora con il suo permesso.
 
 ## 0.11.359 - 2026-11-27

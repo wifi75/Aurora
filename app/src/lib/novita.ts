@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.360',
+    released: '2026-11-27T15:30:11Z',
+    kind: 'changed',
+    title: [
+      'Crediti a Nico Palermo (IV3NWV) per SuperFox',
+      'Credits to Nico Palermo (IV3NWV) for SuperFox',
+      'Danksagung an Nico Palermo (IV3NWV) für SuperFox',
+      'Remerciements à Nico Palermo (IV3NWV) pour SuperFox',
+      'Créditos a Nico Palermo (IV3NWV) por SuperFox',
+      'Créditos a Nico Palermo (IV3NWV) pelo SuperFox',
+    ],
+    text: [
+      'In «Informazioni» e nelle note di terze parti Aurora cita Nico Palermo, IV3NWV, autore delle tabelle e dell’algoritmo del codice polare q-ario di SuperFox, usati con il suo permesso. Nient’altro cambia nel programma.',
+      'In “About” and in the third-party notices Aurora now credits Nico Palermo, IV3NWV, author of the tables and the algorithm of the SuperFox q-ary polar code, used with his permission. Nothing else changes in the program.',
+      'Unter „Info“ und in den Hinweisen zu Drittanbietern nennt Aurora jetzt Nico Palermo, IV3NWV, den Autor der Tabellen und des Algorithmus des q-ären Polarcodes von SuperFox, mit seiner Erlaubnis verwendet. Sonst ändert sich nichts im Programm.',
+      'Dans « À propos » et dans les mentions de tiers, Aurora cite maintenant Nico Palermo, IV3NWV, auteur des tables et de l’algorithme du code polaire q-aire de SuperFox, utilisés avec son autorisation. Rien d’autre ne change dans le programme.',
+      'En «Acerca de» y en los avisos de terceros, Aurora cita ahora a Nico Palermo, IV3NWV, autor de las tablas y del algoritmo del código polar q-ario de SuperFox, usados con su permiso. No cambia nada más en el programa.',
+      'Em «Acerca de» e nos avisos de terceiros, a Aurora cita agora Nico Palermo, IV3NWV, autor das tabelas e do algoritmo do código polar q-ário do SuperFox, usados com a sua permissão. Nada mais muda no programa.',
+    ],
+  },
+  {
     version: '0.11.359',
     released: '2026-11-27T13:52:06Z',
     kind: 'fixed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'La barre WEFAX s’étend sur toute la largeur de la fenêtre et tient sur une seule ligne ; le menu de la station a une police plus grande et est aligné à droite, près des boutons ▲ ▼. L’affichage compact de la radio montre aussi l’ALC (un tiret si la radio ne l’envoie pas).',
       'La barra de WEFAX se alarga hasta el ancho de la ventana y cabe en una sola línea; el menú de la estación tiene la letra más grande y está alineado a la derecha, junto a los botones ▲ ▼. La pantalla compacta de la radio muestra también el ALC (un guion si la radio no lo envía).',
       'A barra do WEFAX estica-se até à largura da janela e cabe numa só linha; o menu da estação tem a letra maior e está alinhado à direita, junto aos botões ▲ ▼. O mostrador compacto do rádio mostra também o ALC (um traço se o rádio não o enviar).',
-    ],
-  },
-  {
-    version: '0.11.333',
-    released: '2026-11-22T18:21:11Z',
-    kind: 'fixed',
-    title: [
-      'DX Cluster: modo «DIGI» nei tratti dei digimodi',
-      'DX Cluster: “DIGI” mode in the digimode segments',
-      'DX-Cluster: Betriebsart „DIGI“ in den Digimode-Abschnitten',
-      'DX Cluster : mode « DIGI » dans les segments des modes numériques',
-      'DX Cluster: modo «DIGI» en los tramos de los modos digitales',
-      'DX Cluster: modo «DIGI» nos segmentos dos modos digitais',
-    ],
-    text: [
-      'Gli spot nei tratti dei digimodi del piano IARU Regione 1, senza altro indizio, ora mostrano «DIGI» (e il filtro «Digi» li trova). Prima il modo restava vuoto. Il commento e le frequenze di lavoro note (FT8, FT4, WSPR…) vincono ancora.',
-      'Spots in the digimode segments of the IARU Region 1 band plan, with no other clue, now show “DIGI” (and the “Digi” filter finds them). Before, the mode was left empty. The comment and the known working frequencies (FT8, FT4, WSPR…) still take precedence.',
-      'Spots in den Digimode-Abschnitten des IARU-Bandplans Region 1 zeigen ohne weiteren Hinweis jetzt „DIGI“ (und der Filter „Digi“ findet sie). Vorher blieb die Betriebsart leer. Der Kommentar und die bekannten Arbeitsfrequenzen (FT8, FT4, WSPR…) haben weiterhin Vorrang.',
-      'Les spots dans les segments des modes numériques du plan de bandes IARU Région 1, sans autre indice, affichent maintenant « DIGI » (et le filtre « Digi » les trouve). Avant, le mode restait vide. Le commentaire et les fréquences de travail connues (FT8, FT4, WSPR…) l’emportent toujours.',
-      'Los spots en los tramos de los modos digitales del plan de bandas IARU Región 1, sin otra pista, ahora muestran «DIGI» (y el filtro «Digi» los encuentra). Antes el modo quedaba vacío. El comentario y las frecuencias de trabajo conocidas (FT8, FT4, WSPR…) siguen teniendo prioridad.',
-      'Os spots nos segmentos dos modos digitais do plano de bandas IARU Região 1, sem outra pista, mostram agora «DIGI» (e o filtro «Digi» encontra-os). Antes o modo ficava vazio. O comentário e as frequências de trabalho conhecidas (FT8, FT4, WSPR…) continuam a ter prioridade.',
     ],
   },
 ];
