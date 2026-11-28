@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.363 - 2026-11-28
 - Barra in basso delle pagine testuali: la frequenza, la larghezza del filtro CW, lo spostamento e il baud dell'RTTY non hanno piu' due bordi uno dentro l'altro (il contenitore `label.digi-st` ne disegnava uno attorno alla casella che ha gia' il suo); regola in `bozze.css`.
 
 - CW, nuovo menu «Larghezza del BPF» (Opzioni, 50, 80, 120, 150, 250 o 500 Hz, di fabbrica 80 come prima): il passabanda acceso con BPF e' un filtro a parte davanti al ricevitore, diverso dalla banda del filtro CW, ed era fisso a 80 Hz senza nessun comando (la banda gialla nella cascata restava stretta anche con il filtro a 1000 Hz). Guida e traduzioni.
