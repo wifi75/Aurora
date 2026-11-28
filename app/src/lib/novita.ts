@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.363',
-    released: '2026-11-28T09:25:52Z',
+    released: '2026-11-28T09:44:24Z',
     kind: 'fixed',
     title: [
       'Zoom delle mappe senza sfondo blu e barra in basso più pulita',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.363',
-    released: '2026-11-28T09:25:52Z',
+    released: '2026-11-28T09:44:24Z',
     kind: 'new',
     title: [
       'Larghezza del BPF in CW e tutti i modi nello splash',
