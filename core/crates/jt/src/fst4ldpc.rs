@@ -415,7 +415,12 @@ impl Ldpc {
                 row[i] = g[c];
             }
         }
+        // Se una riga non trova il pivot (le colonne piu' sicure sono dipendenti) la matrice non e' sistematica: si salta la riga
+        // e le distanze si calcolano su tutti i bit (correzione di WSJT-X 3.3.0 beta 11: prima il pivot mancante lasciava
+        // usare la scorciatoia valida solo in forma sistematica).
+        let mut systematic = true;
         for id in 0..k {
+            let mut trovato = false;
             for icol in id..(k + 20).min(N) {
                 if genmrb[id][icol] == 1 {
                     if icol != id {
@@ -432,8 +437,12 @@ impl Ldpc {
                             }
                         }
                     }
+                    trovato = true;
                     break;
                 }
+            }
+            if !trovato {
+                systematic = false;
             }
         }
         let hdec_r: [u8; N] = std::array::from_fn(|i| hdec[indices[i]]);
@@ -508,7 +517,9 @@ impl Ldpc {
                     }
                     if nd1kpt <= ntheta {
                         let ce = encode(&me);
-                        let dd = if n1 == iflag {
+                        let dd = if !systematic {
+                            (0..N).filter(|&i| ce[i] != hdec[i]).map(|i| absrx[i]).sum::<f32>()
+                        } else if n1 == iflag {
                             d1 + (0..N - k).filter(|&i| e2sub[i] == 1).map(|i| absrx[k + i]).sum::<f32>()
                         } else {
                             d1 + if ce[n1i] != hdec[n1i] { absrx[n1i] } else { 0.0 }
