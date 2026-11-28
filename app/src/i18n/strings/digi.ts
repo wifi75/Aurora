@@ -331,6 +331,7 @@ export const digiStrings = {
     'En CW el squelch mira la relación señal/ruido medida en el espectro alrededor del tono, en 3 kHz como WSJT-X y promediada en el tiempo (un CW manipulado la mitad del tiempo lee unos 3 dB menos). Con solo ruido está hacia -25 dB; por debajo de -16 dB no se imprime nada ni con el squelch apagado.',
     'Em CW o squelch olha para a relação sinal/ruído medida no espetro à volta do tom, em 3 kHz como o WSJT-X e com média no tempo (um CW manipulado metade do tempo lê cerca de 3 dB menos). Só com ruído fica perto de -25 dB; abaixo de -16 dB não se imprime nada, mesmo com o squelch desligado.',
   ],
+  'digi.cw.bpfWidth': ['Larghezza del BPF (con BPF acceso)', 'BPF width (when BPF is on)', 'BPF-Breite (bei eingeschaltetem BPF)', 'Largeur du BPF (BPF activé)', 'Ancho del BPF (con BPF encendido)', 'Largura do BPF (com BPF ligado)'],
   'digi.cw.bandwidth': ['Banda del filtro CW', 'CW filter bandwidth', 'CW-Filterbandbreite', 'Bande du filtre CW', 'Ancho del filtro CW', 'Largura do filtro CW'],
   'digi.cw.bandwidthTip': [
     'Più stretta toglie più rumore e più stazioni vicine ma vuole il tono centrato (l’AFC lo insegue); 150 Hz come fldigi va bene quasi sempre, 50-100 Hz per i segnali deboli e affollati, 250-500 Hz per cercare.',

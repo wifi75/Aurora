@@ -1858,6 +1858,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           ? [
               'sep' as const,
               { label: `${t('digi.cw.bandwidth')}: ${s.cw_bandwidth_hz} Hz`, items: withCurrent(CW_BANDWIDTHS, s.cw_bandwidth_hz).map((v) => ({ label: v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`, checked: v === s.cw_bandwidth_hz, onSelect: () => save({ cw_bandwidth_hz: v }) })) },
+              // il BPF e' un altro filtro, davanti al ricevitore: di base 80 Hz in CW, qui si sceglie quanto e' largo
+              { label: `${t('digi.cw.bpfWidth')}: ${passbandWidth(s)} Hz`, items: withCurrent(CW_BPF_WIDTHS, passbandWidth(s)).map((v) => ({ label: `${v} Hz`, checked: v === passbandWidth(s), onSelect: () => save({ passband_hz: v }) })) },
               { label: rxWpm != null ? t('digi.mi.txAtRx', { wpm: rxWpm }) : t('digi.mi.txAtRxNone'), title: t('digi.mi.txAtRxTip'), disabled: rxWpm == null, onSelect: txAtRx },
             ]
           : []),
@@ -2687,6 +2689,9 @@ function txProblem(code: string, s: DigiSettings, t: T): string {
 }
 
 /** La larghezza del filtro BPF (Hz), come la calcola il core: la sua se impostata, altrimenti secondo il modo. */
+/** Le larghezze del BPF che si offrono in CW (Hz); di base 80. */
+const CW_BPF_WIDTHS: number[] = [50, 80, 120, 150, 250, 500];
+
 function passbandWidth(s: DigiSettings): number {
   if ((s.passband_hz ?? 0) > 0) return s.passband_hz ?? 0;
   if (s.mode === 'psk31' || s.mode === 'qpsk31') return 3 * 31.25;

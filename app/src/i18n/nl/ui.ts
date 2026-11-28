@@ -1573,6 +1573,7 @@ export const NL_UI: Record<string, string> = {
   "digi.bar.undo": "Ongedaan maken",
   "digi.cw.bandwidth": "Bandbreedte CW-filter",
   "digi.cw.bandwidthTip": "Smaller haalt meer ruis en nabije stations weg, maar wil de toon in het midden (de AFC volgt hem); 150 Hz zoals in fldigi past bijna altijd, 50-100 Hz voor zwakke signalen in de drukte, 250-500 Hz om te zoeken.",
+  "digi.cw.bpfWidth": "BPF-breedte (met BPF aan)",
   "digi.cw.receiver": "CW-ontvanger",
   "digi.cw.receiverFast": "Snel",
   "digi.cw.receiverPrecise": "Precies",

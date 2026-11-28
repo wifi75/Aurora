@@ -2426,6 +2426,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.nvlesdka3p": "Voor wie een DXpeditie bedient: de klassieke Fox-modus, in test. Geen SuperFox.",
   "t.ny812tiou9": "Squelchdrempel: S/N van -30 tot +20 dB (standaard -15), gemeten in 3 kHz zoals in WSJT-X. Je stelt hem in in het venster “[[digi.ms.title]]”; onder ongeveer -16 dB wordt niets getoond, ook niet met squelch uit.",
   "t.nzoufjxdsj": "waterval: 1 normale breedte, 2 of meer brede waterval",
+  "t.o2ps1ybrsu": "Alleen in CW: «[[digi.cw.bpfWidth]]» (50, 80, 120, 150, 250 of 500 Hz, standaard 80): dit is de breedte van het banddoorlaatfilter dat je inschakelt met BPF, een apart filter vóór de ontvanger, anders dan de CW-filterbandbreedte hierboven. De gele band in de waterval toont precies deze breedte: hoort de decoder weinig bij een brede filterbandbreedte, maak dan ook het BPF breder of schakel het uit.",
   "t.o2wnagggwo": "Dubbelklik op een bericht: je antwoordt (“[[gen.dblReply]]” is nodig). Rechtsklik op een bericht: in de wachtrij. Rechtsklik op een roepnaam: menu “Openen op QRZ.com”. Dubbelklik op “RX” in het paneel Zenden: maakt de DX vrij. Dubbelklik op een QSO in het Logboek-paneel: corrigeren of verwijderen.",
   "t.o56g43slqs": "Eerste start na de update",
   "t.o6jgv7ztqw": "PSK en RTTY: pagina en weergaveopties",

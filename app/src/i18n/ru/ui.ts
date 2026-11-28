@@ -1573,6 +1573,7 @@ export const RU_UI: Record<string, string> = {
   "digi.bar.undo": "Отменить",
   "digi.cw.bandwidth": "Полоса фильтра CW",
   "digi.cw.bandwidthTip": "Более узкая полоса лучше подавляет шум и соседние станции, но требует, чтобы тон был по центру (AFC его удерживает); 150 Hz, как в fldigi, подходит почти во всех случаях, 50-100 Hz для слабых сигналов в толпе, 250-500 Hz для поиска.",
+  "digi.cw.bpfWidth": "Ширина BPF (при включённом BPF)",
   "digi.cw.receiver": "Приёмник CW",
   "digi.cw.receiverFast": "Быстрый",
   "digi.cw.receiverPrecise": "Точный",
