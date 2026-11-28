@@ -1086,7 +1086,15 @@ impl NativeControls {
     /// spenta) e lascia un avviso. Vero se ha fermato.
     pub fn check_swr(&self, swr: f32) -> bool {
         let Some(limit) = self.swr_limit() else { return false };
-        if !self.transmitting.load(Ordering::Relaxed) || !swr.is_finite() || swr <= limit {
+        if !self.transmitting.load(Ordering::Relaxed) || !swr.is_finite() {
+            return false;
+        }
+        if swr <= limit {
+            // una lettura buona in trasmissione (per esempio durante il Tune dopo aver sistemato l'accordatore) toglie subito l'avviso del ROS alto:
+            // il problema e' risolto, non serve aspettare i due minuti. Sotto 1,0 non e' una lettura vera (ROS = 1 e' il minimo).
+            if swr >= 1.0 {
+                self.clear_alert(aurora_core::TxAlertKind::HighSwr);
+            }
             return false;
         }
         tracing::warn!("ROS {swr:.2} oltre la soglia {limit:.2}: trasmissione fermata, controlla l'antenna");
@@ -1909,6 +1917,27 @@ mod tests {
         assert_eq!(controls.swr_limit(), None);
         controls.clear_alert(aurora_core::TxAlertKind::HighSwr);
         assert!(controls.tx_alerts().is_empty());
+    }
+
+    #[test]
+    fn a_good_swr_reading_while_transmitting_clears_the_high_swr_alert_at_once() {
+        let controls = NativeControls::default();
+        controls.set_swr_limit(2.5);
+        controls.set_halt_now(Arc::new(|| {}));
+        controls.transmitting.store(true, Ordering::Relaxed);
+        controls.set_meters(Some(rig_control::meters::Meters { power_w: Some(20.0), swr: Some(5.0), ..Default::default() }));
+        assert_eq!(controls.tx_alerts().len(), 1, "ROS 5,0: avviso");
+        // in ricezione una lettura buona (o vecchia) non lo toglie: il ROS vale solo con la radio in trasmissione
+        controls.transmitting.store(false, Ordering::Relaxed);
+        controls.set_meters(Some(rig_control::meters::Meters { swr: Some(1.2), ..Default::default() }));
+        assert_eq!(controls.tx_alerts().len(), 1);
+        // Tune dopo l'accordatura: ROS 1,3 in trasmissione, l'avviso sparisce subito
+        controls.transmitting.store(true, Ordering::Relaxed);
+        controls.set_meters(Some(rig_control::meters::Meters { power_w: Some(10.0), swr: Some(1.3), ..Default::default() }));
+        assert!(controls.tx_alerts().is_empty(), "ROS a posto: avviso tolto");
+        // un ROS ancora alto lo rimette
+        controls.set_meters(Some(rig_control::meters::Meters { power_w: Some(10.0), swr: Some(4.0), ..Default::default() }));
+        assert_eq!(controls.tx_alerts().len(), 1);
     }
 
     #[test]

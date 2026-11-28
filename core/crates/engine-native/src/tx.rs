@@ -4008,6 +4008,7 @@ mod tests {
             call_prio_cq: true,
             max_distance: true,
             autolog: false,
+            log_after_73: true,
             clear_dx: true,
         };
         // all'avvio
