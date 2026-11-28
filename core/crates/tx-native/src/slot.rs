@@ -112,7 +112,9 @@ impl Mode {
     /// Ritardo dell'inizio dell'audio dall'inizio del periodo: 0,5 s in FT8 e FT4, 1 s in JT65 e JT9.
     pub fn tx_delay(self) -> Duration {
         match self {
-            Mode::Ft8 | Mode::Ft4 | Mode::Msk144 => Duration::from_millis(500),
+            Mode::Ft8 | Mode::Msk144 => Duration::from_millis(500),
+            // FT4: 0,3 s (`Modulator.cpp`: `m_nsps == 576`), come WSJT-X
+            Mode::Ft4 => Duration::from_millis(300),
             // Q65: 0,5 s a 15 e 30 s, 1 s dai 60 s in su
             Mode::Q65 if q65_period_s() < 60 => Duration::from_millis(500),
             // FST4: 0,5 s in FST4-15, 1 s negli altri e in FST4W (`Modulator.cpp:163-164`)
@@ -200,6 +202,12 @@ pub fn choose_slot_delayed(now: Duration, mode: Mode, parity: Parity, max_late: 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ft4_starts_at_0_3_s_like_wsjtx() {
+        assert_eq!(Mode::Ft4.tx_delay(), Duration::from_millis(300));
+        assert_eq!(Mode::Ft8.tx_delay(), Duration::from_millis(500));
+    }
 
     fn secs(s: f64) -> Duration {
         Duration::from_secs_f64(s)
