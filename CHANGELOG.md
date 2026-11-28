@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Nuova opzione «CQ speciali» (Impostazioni › Modi › FT8 · FT4, #115 di ctobio), spenta di fabbrica: riconosce in FT8 e FT4 i CQ POTA, SOTA, IOTA, WWFF e QRP («CQ POTA IU3ABC IO91», anche con /P o fra < >) e li segna con una pillola nella colonna Etichetta dell'attivita' di banda (prima del messaggio se la riga ha gia' un'etichetta). Per ogni tipo si sceglie se mostrare l'etichetta e se suonare (evento «CQ speciale» degli avvisi sonori: al primo CQ di un nominativo, non piu' di una volta ogni 10 minuti per lo stesso nominativo, con volume e silenzio in trasmissione rispettati). Con «Cerca il parco negli spot POTA» (spento di fabbrica) il core legge ogni 90 s gli spot pubblici di api.pota.app senza mandare dati personali (`GET /api/v1/online/pota`) e l'etichetta mostra il parco, per esempio «POTA IT-0001». Niente risposta automatica e niente invio di spot.
 
 ## 0.11.363 - 2026-11-28
 - Barra in basso delle pagine testuali: la frequenza, la larghezza del filtro CW, lo spostamento e il baud dell'RTTY non hanno piu' due bordi uno dentro l'altro (il contenitore `label.digi-st` ne disegnava uno attorno alla casella che ha gia' il suo); regola in `bozze.css`.

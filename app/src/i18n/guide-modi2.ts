@@ -405,6 +405,52 @@ export const GUIDE_MODI2: readonly GuideSection[] = [
     ],
   },
   {
+    id: 's-modi2-specialcq',
+    title: ['[[sw.sub.ft8]] · [[sw.pg.specialCq]]', '[[sw.sub.ft8]] · [[sw.pg.specialCq]]', '[[sw.sub.ft8]] · [[sw.pg.specialCq]]', '[[sw.sub.ft8]] · [[sw.pg.specialCq]]', '[[sw.sub.ft8]] · [[sw.pg.specialCq]]', '[[sw.sub.ft8]] · [[sw.pg.specialCq]]'],
+    text: [
+      'In [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] Aurora riconosce i CQ «speciali» di FT8 e FT4, come «CQ POTA IU3ABC IO91», e li segna nell’attività di banda. Di fabbrica è tutto spento e Aurora non cambia niente. Non risponde da sola e non manda spot.',
+      'In [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] Aurora recognises the “special” CQs of FT8 and FT4, like “CQ POTA IU3ABC IO91”, and marks them in Band activity. Everything is off by default and Aurora changes nothing. It does not answer by itself and sends no spots.',
+      'Unter [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] erkennt Aurora die „speziellen“ CQs von FT8 und FT4, etwa „CQ POTA IU3ABC IO91“, und markiert sie in der Bandaktivität. Standardmäßig ist alles aus und Aurora ändert nichts. Es antwortet nicht selbst und sendet keine Spots.',
+      'Dans [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] Aurora reconnaît les CQ « spéciaux » de FT8 et FT4, comme « CQ POTA IU3ABC IO91 », et les signale dans l’activité de bande. Par défaut tout est désactivé et Aurora ne change rien. Elle ne répond pas toute seule et n’envoie pas de spots.',
+      'En [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] Aurora reconoce los CQ «especiales» de FT8 y FT4, como «CQ POTA IU3ABC IO91», y los marca en la actividad de banda. De fábrica todo está apagado y Aurora no cambia nada. No responde sola y no envía spots.',
+      'Em [[nav.settings]] › [[sw.fam.modes]] › [[sw.sub.ft8]] › [[sw.pg.specialCq]] a Aurora reconhece os CQ «especiais» de FT8 e FT4, como «CQ POTA IU3ABC IO91», e marca-os na atividade de banda. De origem está tudo desligado e a Aurora não muda nada. Não responde sozinha e não envia spots.',
+    ],
+    steps: [
+      [
+        '1. Accendi «[[scq.enabled]]». Nell’attività di banda, nella colonna dell’etichetta, compare una pillola con POTA, SOTA, IOTA, WWFF o QRP; se la riga ha già un’etichetta (per esempio una novità), la pillola piccola sta prima del messaggio.',
+        '1. Turn on “[[scq.enabled]]”. In Band activity, in the label column, a pill with POTA, SOTA, IOTA, WWFF or QRP appears; if the row already has a label (for example a new one), the small pill sits before the message.',
+        '1. Schalte „[[scq.enabled]]“ ein. In der Bandaktivität erscheint in der Etikettspalte eine Pille mit POTA, SOTA, IOTA, WWFF oder QRP; hat die Zeile schon ein Etikett (zum Beispiel eine Neuheit), steht die kleine Pille vor der Nachricht.',
+        '1. Active « [[scq.enabled]] ». Dans l’activité de bande, dans la colonne de l’étiquette, une pastille POTA, SOTA, IOTA, WWFF ou QRP apparaît ; si la ligne a déjà une étiquette (par exemple une nouveauté), la petite pastille se place avant le message.',
+        '1. Enciende «[[scq.enabled]]». En la actividad de banda, en la columna de la etiqueta, aparece una píldora con POTA, SOTA, IOTA, WWFF o QRP; si la fila ya tiene una etiqueta (por ejemplo una novedad), la píldora pequeña va antes del mensaje.',
+        '1. Liga «[[scq.enabled]]». Na atividade de banda, na coluna da etiqueta, aparece uma pílula com POTA, SOTA, IOTA, WWFF ou QRP; se a linha já tem uma etiqueta (por exemplo uma novidade), a pílula pequena fica antes da mensagem.',
+      ],
+      [
+        '2. In «[[scq.grpShow]]» togli la spunta ai tipi che non ti interessano: le loro righe restano come prima.',
+        '2. In “[[scq.grpShow]]” untick the types you do not care about: their rows stay as before.',
+        '2. Entferne unter „[[scq.grpShow]]“ das Häkchen bei den Arten, die dich nicht interessieren: ihre Zeilen bleiben wie vorher.',
+        '2. Dans « [[scq.grpShow]] » décoche les types qui ne t’intéressent pas : leurs lignes restent comme avant.',
+        '2. En «[[scq.grpShow]]» quita la marca a los tipos que no te interesan: sus filas quedan como antes.',
+        '2. Em «[[scq.grpShow]]» tira o visto aos tipos que não te interessam: as suas linhas ficam como antes.',
+      ],
+      [
+        '3. In «[[scq.grpSound]]» spunta i tipi che devono suonare: suona il primo CQ di ogni nominativo, al massimo una volta ogni 10 minuti per lo stesso nominativo. Servono «Avvisi sonori» accesi; il suono si cambia in [[sw.sec.look]] › [[sw.pg.alerts]], riga «[[snd.ev.special_cq]]».',
+        '3. In “[[scq.grpSound]]” tick the types that should play a sound: a callsign’s first CQ plays, at most once every 10 minutes for the same callsign. “Sound alerts” must be on; the sound is changed in [[sw.sec.look]] › [[sw.pg.alerts]], row “[[snd.ev.special_cq]]”.',
+        '3. Hake unter „[[scq.grpSound]]“ die Arten an, die einen Ton spielen sollen: der erste CQ eines Rufzeichens ertönt, höchstens alle 10 Minuten für dasselbe Rufzeichen. „Tonhinweise“ müssen an sein; der Ton wird unter [[sw.sec.look]] › [[sw.pg.alerts]] in der Zeile „[[snd.ev.special_cq]]“ geändert.',
+        '3. Dans « [[scq.grpSound]] » coche les types qui doivent sonner : le premier CQ de chaque indicatif sonne, au plus une fois toutes les 10 minutes pour le même indicatif. Les « Alertes sonores » doivent être actives ; le son se change dans [[sw.sec.look]] › [[sw.pg.alerts]], ligne « [[snd.ev.special_cq]] ».',
+        '3. En «[[scq.grpSound]]» marca los tipos que deben sonar: suena el primer CQ de cada indicativo, como mucho una vez cada 10 minutos para el mismo indicativo. Hacen falta los «Avisos sonoros» encendidos; el sonido se cambia en [[sw.sec.look]] › [[sw.pg.alerts]], fila «[[snd.ev.special_cq]]».',
+        '3. Em «[[scq.grpSound]]» marca os tipos que devem tocar: toca o primeiro CQ de cada indicativo, no máximo uma vez a cada 10 minutos para o mesmo indicativo. É preciso ter os «Avisos sonoros» ligados; o som muda-se em [[sw.sec.look]] › [[sw.pg.alerts]], linha «[[snd.ev.special_cq]]».',
+      ],
+      [
+        '4. Se vuoi il parco accanto ai CQ POTA, accendi «[[scq.pota]]»: Aurora legge ogni 90 secondi gli spot pubblici di api.pota.app e l’etichetta diventa, per esempio, «POTA IT-0001», con il nome del parco nel suggerimento. Non manda niente di personale.',
+        '4. If you want the park next to POTA CQs, turn on “[[scq.pota]]”: Aurora reads the public spots of api.pota.app every 90 seconds and the label becomes, for example, “POTA IT-0001”, with the park name in the tooltip. Nothing personal is sent.',
+        '4. Wenn du den Park neben den POTA-CQs sehen willst, schalte „[[scq.pota]]“ ein: Aurora liest alle 90 Sekunden die öffentlichen Spots von api.pota.app und das Etikett wird zum Beispiel „POTA IT-0001“, mit dem Parknamen im Tooltip. Es wird nichts Persönliches gesendet.',
+        '4. Si tu veux le parc à côté des CQ POTA, active « [[scq.pota]] » : Aurora lit toutes les 90 secondes les spots publics d’api.pota.app et l’étiquette devient, par exemple, « POTA IT-0001 », avec le nom du parc dans l’infobulle. Rien de personnel n’est envoyé.',
+        '4. Si quieres el parque junto a los CQ POTA, enciende «[[scq.pota]]»: Aurora lee cada 90 segundos los spots públicos de api.pota.app y la etiqueta pasa a ser, por ejemplo, «POTA IT-0001», con el nombre del parque en la ayuda. No se envía nada personal.',
+        '4. Se queres o parque junto aos CQ POTA, liga «[[scq.pota]]»: a Aurora lê a cada 90 segundos os spots públicos de api.pota.app e a etiqueta passa a ser, por exemplo, «POTA IT-0001», com o nome do parque na dica. Não se envia nada pessoal.',
+      ],
+    ],
+  },
+  {
     id: 's-modi2-contest',
     title: ['[[sw.sub.ft8]] · [[sw.sub.contest]]', '[[sw.sub.ft8]] · [[sw.sub.contest]]', '[[sw.sub.ft8]] · [[sw.sub.contest]]', '[[sw.sub.ft8]] · [[sw.sub.contest]]', '[[sw.sub.ft8]] · [[sw.sub.contest]]', '[[sw.sub.ft8]] · [[sw.sub.contest]]'],
     text: [
