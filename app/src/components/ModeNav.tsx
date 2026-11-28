@@ -5,13 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteSplitDx, getDigi, getFrequencies, postMode, ApiError } from '../api/client';
 import { toast } from '../lib/toast';
-import type { TextMode } from '../lib/bandplan';
 import { useT } from '../i18n';
 import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
 import { lastTextPage } from '../lib/lastPage';
 import { useStation } from '../state/station';
-import { rememberDial, retuneForMode, retuneForText } from '../lib/modeRetune';
+import { rememberDial, retuneForMode, retuneForText, textPlanOf } from '../lib/modeRetune';
 import { modeBase } from '../lib/period';
 
 /** I modi in alto: ognuno ha le sue pagine; i gruppi FT8 e VHF dividono i modi del motore. Gli altri modi arrivano uno alla volta. */
@@ -187,7 +186,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       },
     );
   };
-  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', olivia: 'OLIVIA', contestia: 'OLIVIA', qpsk31: 'PSK31', throb: 'PSK31', amtor: 'RTTY', mt63: 'OLIVIA' };
   /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
   const enterText = () => {
     if (transmitting || route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax')) return;
@@ -197,7 +195,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
       // in SSB la radio resta dov'e': il piano delle frequenze dei modi testuali non vale per la fonia
       if (digi.settings.mode === 'ssb') return;
-      const text = TEXT_MODES[digi.settings.mode] ?? 'PSK31';
+      const text = textPlanOf(digi.settings.mode) ?? 'PSK31';
       name = text;
       await retuneForText(client, text);
     })().catch((e: unknown) => toast(retuneText(e, name), 'error'));

@@ -8,6 +8,7 @@ import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFil
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
+import { retuneForText, textPlanOf } from '../lib/modeRetune';
 import { effectiveTxHz, isOliviaMode, OLIVIA_BANDWIDTHS, OLIVIA_TONES, oliviaLabel, oliviaModePatch, oliviaOf, oliviaPatch, oliviaProblem } from '../lib/olivia';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
@@ -632,10 +633,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   const save = useCallback(
     (patch: Partial<DigiSettings>) => {
+      const before = live.current.snap.settings.mode;
       void putDigi({ ...live.current.snap.settings, ...patch }).then(
         (next) => {
           client.setQueryData(['digi'], next);
           onChanged();
+          // cambiando modo (menu, macro, pulsanti) la radio va sulla frequenza del piano di banda del nuovo modo, nella banda di adesso
+          const plan = patch.mode !== undefined && patch.mode !== before ? textPlanOf(next.settings.mode) : null;
+          if (plan) void retuneForText(client, plan).catch(() => toast(t('mode.retuneFail', { mode: plan }), 'error'));
         },
         () => setProblem(t('digi.saveError')),
       );

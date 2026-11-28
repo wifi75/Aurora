@@ -126,6 +126,12 @@ export async function retuneForMode(client: QueryClient, mode: string): Promise<
   return retuneTo(client, table.filter((r) => r.mode.toUpperCase() === base));
 }
 
+/** Il piano di banda (`bandPlanRows`) da usare per ogni modo della pagina dei modi testuali; `null` per la fonia e i modi senza piano. */
+export function textPlanOf(mode: string): TextMode | null {
+  const plans: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', qpsk31: 'PSK31', throb: 'PSK31', rtty: 'RTTY', amtor: 'RTTY', cw: 'CW', olivia: 'OLIVIA', contestia: 'OLIVIA', mt63: 'OLIVIA' };
+  return plans[mode.toLowerCase()] ?? null;
+}
+
 /** Lo stesso per i modi testuali e l'SSTV, che hanno il piano di banda IARU (`bandPlanRows`). */
 export async function retuneForText(client: QueryClient, mode: TextMode): Promise<number | null> {
   return retuneTo(client, bandPlanRows(mode));
