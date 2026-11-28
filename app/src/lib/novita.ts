@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.364',
+    released: '2026-11-28T12:55:09Z',
+    kind: 'new',
+    title: [
+      'CQ speciali: POTA, SOTA, IOTA, WWFF e QRP (opzione)',
+      'Special CQs: POTA, SOTA, IOTA, WWFF and QRP (option)',
+      'Spezielle CQ: POTA, SOTA, IOTA, WWFF und QRP (Option)',
+      'CQ spéciaux : POTA, SOTA, IOTA, WWFF et QRP (option)',
+      'CQ especiales: POTA, SOTA, IOTA, WWFF y QRP (opción)',
+      'CQ especiais: POTA, SOTA, IOTA, WWFF e QRP (opção)',
+    ],
+    text: [
+      'Nuova pagina Impostazioni › Modi › FT8 · FT4 › CQ speciali, tutto spento di fabbrica. Aurora riconosce i CQ POTA, SOTA, IOTA, WWFF e QRP e li segna nell’attività di banda; per ogni tipo puoi scegliere l’etichetta, un avviso sonoro e la risposta automatica (Wait and Pounce, tramite l’Automazione). Per POTA può cercare il parco negli spot pubblici di api.pota.app (solo se lo accendi, senza mandare niente di personale). L’invio degli spot non c’è ancora.',
+      'New page Settings › Modes › FT8 · FT4 › Special CQs, everything off by default. Aurora recognises CQ POTA, SOTA, IOTA, WWFF and QRP and marks them in the band activity; for each type you can choose the tag, a sound alert and the automatic reply (Wait and Pounce, through Automation). For POTA it can look up the park in the public spots of api.pota.app (only if you switch it on, nothing personal is sent). Sending spots is not there yet.',
+      'Neue Seite Einstellungen › Betriebsarten › FT8 · FT4 › Spezielle CQ, alles werkseitig aus. Aurora erkennt CQ POTA, SOTA, IOTA, WWFF und QRP und markiert sie in der Bandaktivität; für jeden Typ kannst du das Etikett, einen Signalton und die automatische Antwort (Wait and Pounce über die Automatik) wählen. Für POTA kann es den Park in den öffentlichen Spots von api.pota.app nachschlagen (nur wenn du es einschaltest, es wird nichts Persönliches gesendet). Das Senden von Spots gibt es noch nicht.',
+      'Nouvelle page Réglages › Modes › FT8 · FT4 › CQ spéciaux, tout désactivé par défaut. Aurora reconnaît les CQ POTA, SOTA, IOTA, WWFF et QRP et les signale dans l’activité de bande ; pour chaque type vous pouvez choisir l’étiquette, une alerte sonore et la réponse automatique (Wait and Pounce, via l’Automatisation). Pour POTA, il peut chercher le parc dans les spots publics d’api.pota.app (seulement si vous l’activez, rien de personnel n’est envoyé). L’envoi de spots n’existe pas encore.',
+      'Nueva página Ajustes › Modos › FT8 · FT4 › CQ especiales, todo apagado de fábrica. Aurora reconoce los CQ POTA, SOTA, IOTA, WWFF y QRP y los marca en la actividad de banda; para cada tipo puedes elegir la etiqueta, un aviso sonoro y la respuesta automática (Wait and Pounce, mediante la Automatización). Para POTA puede buscar el parque en los spots públicos de api.pota.app (solo si lo enciendes, no se envía nada personal). El envío de spots todavía no existe.',
+      'Nova página Definições › Modos › FT8 · FT4 › CQ especiais, tudo desligado de fábrica. A Aurora reconhece os CQ POTA, SOTA, IOTA, WWFF e QRP e assinala-os na atividade de banda; para cada tipo podes escolher a etiqueta, um aviso sonoro e a resposta automática (Wait and Pounce, através da Automação). Para POTA pode procurar o parque nos spots públicos de api.pota.app (só se o ligares, não se envia nada pessoal). O envio de spots ainda não existe.',
+    ],
+  },
+  {
     version: '0.11.363',
     released: '2026-11-28T09:44:24Z',
     kind: 'fixed',
@@ -840,27 +861,6 @@ export const NOVITA: readonly Novita[] = [
       'Comme dans WSJT-X 3.3 : un RR73 du DX qui t’est adressé reprend le QSO ; Wait and Call se déclenche sur tout CQ du DX (aussi CQ EU ou CQ TEST) et ne rappelle plus le DX après un 73/RR73 qui t’est adressé ; l’indicatif est aussi reconnu avec /P. Un STOP, un autre DX choisi à la main ou un changement de bande remettent à zéro la limite de Wait and Call ; éteindre Wait features désarme Wait and Pounce ; avec Tune allumé aucune émission ne part et Wait ne réagit pas.',
       'Como en WSJT-X 3.3: un RR73 del DX dirigido a ti retoma el QSO; Wait and Call salta con cualquier CQ del DX (también CQ EU o CQ TEST) y ya no vuelve a llamar al DX tras un 73/RR73 dirigido a ti; el indicativo se reconoce también con /P. Un STOP, otro DX elegido a mano o un cambio de banda ponen a cero el límite de Wait and Call; apagar Wait features desarma Wait and Pounce; con Tune encendido no sale ninguna transmisión y Wait no reacciona.',
       'Como no WSJT-X 3.3: um RR73 do DX dirigido a ti retoma o QSO; o Wait and Call dispara com qualquer CQ do DX (também CQ EU ou CQ TEST) e já não volta a chamar o DX depois de um 73/RR73 dirigido a ti; o indicativo reconhece-se também com /P. Um STOP, outro DX escolhido à mão ou uma mudança de banda repõem a zero o limite do Wait and Call; desligar Wait features desarma o Wait and Pounce; com o Tune ligado não sai nenhuma transmissão e o Wait não reage.',
-    ],
-  },
-  {
-    version: '0.11.336',
-    released: '2026-11-23T11:27:28Z',
-    kind: 'changed',
-    title: [
-      'FT8 più veloce e ritrasmissione meno fragile',
-      'Faster FT8 and a sturdier retransmission',
-      'Schnelleres FT8 und robustere Neuübertragung',
-      'FT8 plus rapide et retransmission plus robuste',
-      'FT8 más rápido y retransmisión más robusta',
-      'FT8 mais rápido e retransmissão mais robusta',
-    ],
-    text: [
-      'La sottrazione dei segnali già decodificati usa un filtro più veloce (somme scorrevoli al posto di due FFT lunghe): aiuta i PC lenti. Quando la decodifica tardiva cambia solo il numero del rapporto (R-15 diventa R-16) il messaggio già in onda non si interrompe più per sostituirlo a metà, perché un corrispondente debole non lo decodificava; il nuovo parte al periodo dopo.',
-      'The subtraction of already decoded signals uses a faster filter (running sums instead of two long FFTs): it helps slow PCs. When the late decode changes only the report number (R-15 becomes R-16) the message already on the air is no longer cut to replace it halfway, because a weak station could not decode it; the new one goes out in the next period.',
-      'Die Subtraktion bereits decodierter Signale nutzt einen schnelleren Filter (gleitende Summen statt zwei langer FFTs): das hilft langsamen PCs. Ändert die späte Decodierung nur die Rapportzahl (R-15 wird R-16), wird die bereits gesendete Nachricht nicht mehr mittendrin ersetzt, weil eine schwache Gegenstation sie nicht decodieren konnte; die neue geht im nächsten Zeitfenster hinaus.',
-      'La soustraction des signaux déjà décodés utilise un filtre plus rapide (sommes glissantes au lieu de deux longues FFT) : cela aide les PC lents. Quand le décodage tardif ne change que le numéro du report (R-15 devient R-16), le message déjà en l’air n’est plus coupé pour être remplacé à mi-chemin, car une station faible ne le décodait pas ; le nouveau part à la période suivante.',
-      'La resta de las señales ya decodificadas usa un filtro más rápido (sumas deslizantes en lugar de dos FFT largas): ayuda a los PC lentos. Cuando la decodificación tardía cambia solo el número del informe (R-15 pasa a R-16), el mensaje que ya está en el aire ya no se corta para sustituirlo a mitad, porque una estación débil no lo decodificaba; el nuevo sale en el periodo siguiente.',
-      'A subtração dos sinais já descodificados usa um filtro mais rápido (somas deslizantes em vez de duas FFT longas): ajuda os PC lentos. Quando a descodificação tardia muda só o número do relatório (R-15 passa a R-16), a mensagem que já está no ar deixa de ser cortada para a substituir a meio, porque uma estação fraca não a descodificava; a nova sai no período seguinte.',
     ],
   },
 ];

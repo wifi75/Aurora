@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.364 - 2026-11-28
 - Nuova opzione «CQ speciali» (Impostazioni › Modi › FT8 · FT4, #115 di ctobio), spenta di fabbrica: riconosce in FT8 e FT4 i CQ POTA, SOTA, IOTA, WWFF e QRP («CQ POTA IU3ABC IO91», anche con /P o fra < >) e li segna con una pillola nella colonna Etichetta dell'attivita' di banda (prima del messaggio se la riga ha gia' un'etichetta). Per ogni tipo si sceglie se mostrare l'etichetta e se suonare (evento «CQ speciale» degli avvisi sonori: al primo CQ di un nominativo, non piu' di una volta ogni 10 minuti per lo stesso nominativo, con volume e silenzio in trasmissione rispettati). Con «Cerca il parco negli spot POTA» (spento di fabbrica) il core legge ogni 90 s gli spot pubblici di api.pota.app senza mandare dati personali (`GET /api/v1/online/pota`) e l'etichetta mostra il parco, per esempio «POTA IT-0001». La pagina e' ordinata in riquadri brevi con una frase di spiegazione (riconoscimento ed etichetta, avvisi sonori, parco dagli spot POTA con la nota sulla privacy, risposta automatica, invio spot «in preparazione») e una tabella per tipo con le colonne etichetta, avviso sonoro e risposta automatica; l'interruttore generale in cima spegne tutto. Nuova regola dell'Automazione «CQ speciale» (`reply_to_special`, vuota di fabbrica), che si sceglie dalla colonna «Risposta automatica» e si salva con Applica: quando e' libera l'Automazione risponde ai CQ dei tipi scelti, mai a una stazione gia' lavorata su quella banda, con le stesse condizioni e protezioni delle altre risposte (modo reale e Abilita Tx per trasmettere, tentativi, tetti, fascia oraria, esclusioni, filtri). Niente invio di spot.
 
 ## 0.11.363 - 2026-11-28
