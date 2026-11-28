@@ -793,6 +793,7 @@ fn sequence_settings(r: &remote_api::engine_settings::Reports) -> engine_native:
     s.call_prio_cq = r.call_prio_cq;
     s.max_distance = r.max_distance;
     s.autolog = r.autolog;
+    s.log_after_73 = r.log_after_73;
     s.clear_dx = r.clear_dx;
     s
 }

@@ -137,6 +137,8 @@ pub struct SequenceSettings {
     pub max_distance: bool,
     /// «Messa a log automatica del QSO» (`AutoQSOLogging`): a fine QSO la trasmissione si ferma e il DX si libera.
     pub autolog: bool,
+    /// «Registra solo dopo il 73» (`LogAfter73`, spenta di fabbrica).
+    pub log_after_73: bool,
     /// «Cancella i dati dopo aver loggato il QSO» (`ClearCallGrid`).
     pub clear_dx: bool,
 }
@@ -146,7 +148,7 @@ impl SequenceSettings {
     /// `counters` sono, nell'ordine, «risposta al CQ», «chiamata CQ e risposta», «rapporto R» e «RR73/73».
     pub fn new(counters: [Option<u32>; 4], halt_on_reply_other: bool, strict_directional_cq: bool, watchdog_min: u32, tx_qsy_allowed: bool) -> SequenceSettings {
         let [answer_cq, answer_in_call, sent_r_report, closing] = counters;
-        SequenceSettings { limits: qso_native::RepeatLimits { answer_cq, answer_in_call, sent_r_report, closing }, halt_on_reply_other, strict_directional_cq, watchdog_min, tx_qsy_allowed, rr73_marker: true, call_prio_cq: false, max_distance: false, autolog: true, clear_dx: false }
+        SequenceSettings { limits: qso_native::RepeatLimits { answer_cq, answer_in_call, sent_r_report, closing }, halt_on_reply_other, strict_directional_cq, watchdog_min, tx_qsy_allowed, rr73_marker: true, call_prio_cq: false, max_distance: false, autolog: true, log_after_73: false, clear_dx: false }
     }
 
     /// Le opzioni della sequenza con queste impostazioni.
@@ -159,6 +161,7 @@ impl SequenceSettings {
         opts.call_prio_cq = self.call_prio_cq;
         opts.max_distance = self.max_distance;
         opts.autolog = self.autolog;
+        opts.log_after_73 = self.log_after_73;
         opts.clear_dx = self.clear_dx;
     }
 }

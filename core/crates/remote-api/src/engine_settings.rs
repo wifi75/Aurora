@@ -405,6 +405,8 @@ pub fn support(key: &str) -> Support {
         "toRTTY" | "dBtoComments" | "distanceToComments" | "ClearCallGrid" => Support::Live(Apply::Now),
         // finestra di conferma prima di registrare (dal 0.11.123): vale subito, per il prossimo QSO concluso
         "PromptToLog" => Support::Live(Apply::Now),
+        // «Registra solo dopo il 73» (opzione di Aurora, spenta di fabbrica): vale dal prossimo QSO
+        "LogAfter73" => Support::Live(Apply::Now),
         // la registrazione a mano senza conferma resta da fare: il QSO si registra da solo o, con la conferma, dalla finestra
 
         "AutoQSOLogging" => Support::Hidden("log_auto"),
@@ -571,6 +573,8 @@ pub struct Reports {
     pub max_distance: bool,
     /// «Richiedimi di loggare il QSO» (`PromptToLog`): finestra di conferma prima di registrare. Esclude `autolog`.
     pub prompt_to_log: bool,
+    /// «Registra solo dopo il 73» (`LogAfter73`, opzione di Aurora, spenta di fabbrica): se chiudiamo noi con l'RR73 il QSO si registra all'arrivo del 73 dell'altro.
+    pub log_after_73: bool,
     /// «Messa a log automatica del QSO» (`AutoQSOLogging`): il QSO si registra da solo e a fine QSO la trasmissione si ferma. Senza questa e senza la
     /// conferma il QSO si registra solo dal pulsante «Registra QSO».
     pub autolog: bool,
@@ -713,6 +717,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("ClearCallGrid", "false"),
         // nessuna finestra di conferma: il QSO concluso va a log da solo (come JTDX di fabbrica)
         ("PromptToLog", "false"),
+        // di fabbrica come WSJT-X: il QSO si registra al primo 73/RR73 trasmesso
+        ("LogAfter73", "false"),
         // Server TCP (JTDX: 127.0.0.1, porta 52001, spento)
         ("TCPServer", "127.0.0.1"),
         ("TCPServerPort", "52001"),
@@ -1133,6 +1139,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         call_prio_cq: truthy(values.get("CallPriorityCQ")),
         max_distance: truthy(values.get("MaxDistance")),
         prompt_to_log: truthy(values.get("PromptToLog")),
+        log_after_73: truthy(values.get("LogAfter73")),
         // JTDX: `AutoQSOLogging` vale falso se manca; Aurora ha sempre registrato da sola, quindi senza la voce vale vero
         autolog: values.get("AutoQSOLogging").is_none_or(|v| v == "true"),
         to_rtty: truthy(values.get("toRTTY")),

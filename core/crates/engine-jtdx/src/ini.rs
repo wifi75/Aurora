@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, path::Path};
 
 /// Le voci di JTDX che Aurora mostra, per nome (uniche tra le sezioni `Common` e `Configuration`).
 pub const SHOWN: &[&str] = &[
-    "MyCall", "MyGrid", "Language", "PromptToLog", "AutoQSOLogging", "ClearCallGrid", "TxWatchdogTimer", "TuneTimer",
+    "MyCall", "MyGrid", "Language", "PromptToLog", "LogAfter73", "AutoQSOLogging", "ClearCallGrid", "TxWatchdogTimer", "TuneTimer",
     "Miles", "showDistance", "countryName", "UseDarkStyle", "MonitorOFF", "MonitorLastUsed", "Rig", "PTTport",
     "CATSerialPort", "CATSerialRate", "Polling", "CATForceDTR", "CATForceRTS", "TCIAudio", "SoundInName",
     "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav", "UDPServer", "UDPServerPort",
@@ -35,6 +35,7 @@ pub const FIELDS: &[(&str, &str)] = &[
     ("MyGrid", "text"),
     ("Language", "text"),
     ("PromptToLog", "bool"),
+    ("LogAfter73", "bool"),
     ("AutoQSOLogging", "bool"),
     ("ClearCallGrid", "bool"),
     ("TxWatchdogTimer", "num"),
