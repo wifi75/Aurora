@@ -47,7 +47,7 @@ jobs:
             catch { Write-Host "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; Start-Sleep 20 }
           }
           # sito irraggiungibile: copia di riserva del repository
-          if (-not (Test-Path desktop/src-tauri/cty/cty.dat)) {
+          if ((-not (Test-Path desktop/src-tauri/cty/cty.dat)) -or ((Get-Item desktop/src-tauri/cty/cty.dat).Length -lt 50000)) {
             Write-Host '::warning::country-files.com non risponde: uso la copia di riserva di cty.dat'
             Copy-Item desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat
           }

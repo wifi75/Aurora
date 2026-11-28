@@ -59,7 +59,7 @@ jobs:
             echo "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; sleep 20
           done
           # sito irraggiungibile: si usa la copia di riserva del repository (desktop/cty-riserva), invece di fermare la compilazione
-          if [ ! -s desktop/src-tauri/cty/cty.dat ]; then echo "::warning::country-files.com non risponde: uso la copia di riserva di cty.dat"; cp desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat; fi
+          if [ ! -s desktop/src-tauri/cty/cty.dat ] || [ "$(stat -f %z desktop/src-tauri/cty/cty.dat)" -le 50000 ]; then echo "::warning::country-files.com non risponde: uso la copia di riserva di cty.dat"; cp desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat; fi
           test "$(stat -f %z desktop/src-tauri/cty/cty.dat)" -gt 50000
 
       - name: Interfaccia
