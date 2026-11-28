@@ -719,6 +719,38 @@ fn rr73_is_sent_once_and_logged_like_wsjtx() {
     assert!(b.abandons().is_empty());
 }
 
+/// «Registra solo dopo il 73» (spenta di fabbrica): il nostro RR73 non registra, il QSO si registra quando arriva il 73 dell'altro.
+#[test]
+fn log_after_73_waits_for_the_other_stations_73() {
+    let mut b = Bench::ft8(Options { autolog: true, log_after_73: true, limits: RepeatLimits { closing: Some(3), ..RepeatLimits::default() }, ..opts() });
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    b.tx(2);
+    b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+    assert!(b.records().is_empty(), "l'RR73 e' in onda ma il 73 non e' ancora arrivato: niente log");
+    b.rx(5, &[("IU3ABC LZ2KSQ 73", -12)]);
+    assert_eq!(b.records().len(), 1, "arrivato il 73 il QSO si registra");
+}
+
+/// Con l'opzione accesa e il 73 che non arriva mai, il QSO non si registra e la trasmissione si ferma dopo i tentativi.
+#[test]
+fn log_after_73_without_the_73_never_logs() {
+    let mut b = Bench::ft8(Options { autolog: true, log_after_73: true, limits: RepeatLimits { closing: Some(3), ..RepeatLimits::default() }, ..opts() });
+    b.seq.call_cq(None).expect("cq");
+    b.tx(0);
+    b.rx(1, &[("IU3ABC LZ2KSQ KN23", -12)]);
+    b.tx(2);
+    b.rx(3, &[("IU3ABC LZ2KSQ R-10", -12)]);
+    assert_eq!(b.tx(4).as_deref(), Some("LZ2KSQ IU3ABC RR73"));
+    for slot in [6, 8, 10, 12] {
+        b.idle(slot - 1);
+        b.tx(slot);
+    }
+    assert!(b.records().is_empty(), "senza il 73 dell'altro non si registra");
+}
+
 /// Senza registrazione automatica, dopo l'RR73 (registrato) e con la stazione sulla nostra frequenza di CQ, JTDX non aspetta il 73: libera il DX
 /// al primo fine decodifica e passa al CQ o al prossimo (`process_Auto`, primo ramo).
 #[test]

@@ -1119,7 +1119,9 @@ impl Sequencer {
                 // anche senza limite scelto, un QSO gia' a log non ripete la chiusura all'infinito: dopo 3 tentativi si pulisce tutto
                 // il nostro RRR e' gia' partito: il QSO e' valido anche se il suo 73 non arriva mai
                 && let rrr_sent = self.tx4_is_rrr() && self.ntx == 4
-                && let Some(limit) = limits.closing.or((logged || rrr_sent).then_some(LOGGED_CLOSING_TRIES))
+                // con «Registra solo dopo il 73» il nostro RR73 e' partito ma non e' a log: si smette dopo gli stessi tentativi, senza registrare
+                && let rr73_waiting = self.opts.log_after_73 && !self.tx4_is_rrr() && self.ntx == 4
+                && let Some(limit) = limits.closing.or((logged || rrr_sent || rr73_waiting).then_some(LOGGED_CLOSING_TRIES))
                 && limit as i32 <= count
             {
                 // molte stazioni non rispondono al RRR: dopo l'ultimo tentativo il QSO si registra lo stesso (o si chiede conferma)
@@ -1272,7 +1274,8 @@ impl Sequencer {
                     }
                 }
                 Status::Srr73 => {
-                    let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
+                    // con «Registra solo dopo il 73» l'RR73 partito vale come chiusura anche se non e' ancora a log (si aspetta il suo 73)
+                    let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call) || self.opts.log_after_73;
                     if !self.opts.single_qso && !self.opts.autolog && logged {
                         self.auto_stop_tx(StopReason::QsoFinished, false);
                     } else if logged {
@@ -1307,9 +1310,19 @@ impl Sequencer {
                         self.clear_dx_inner();
                     }
                 }
-                Status::R73 => self.txb(5),
+                Status::R73 => {
+                    // «Registra solo dopo il 73»: il 73 dell'altro e' arrivato, adesso il QSO si registra (una volta sola)
+                    if self.opts.log_after_73 && self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call) {
+                        self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    }
+                    self.txb(5)
+                }
                 Status::S73 => self.auto_stop_tx(StopReason::QsoFinished, false),
                 Status::Fin => {
+                    // «Registra solo dopo il 73»: il suo 73 dopo il nostro RR73 chiude il QSO, ora si registra (una volta sola)
+                    if self.opts.log_after_73 && self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call) {
+                        self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
+                    }
                     // tutti i rami di JTDX (1 QSO, registrazione automatica, non registrato, non titolare della frequenza) fermano la trasmissione
                     let reason = if self.opts.single_qso { StopReason::SingleQso } else { StopReason::QsoFinished };
                     self.auto_stop_tx(reason, false);
@@ -1459,7 +1472,9 @@ impl Sequencer {
         let sent_first_73 = is_73
             && self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call)
             && (!last_is_73 || !self.last_message_sent.contains(self.his_call.as_str()));
-        if sent_first_73 && !self.his_call.is_empty() {
+        // con «Registra solo dopo il 73» il nostro RR73 (Tx4) non registra: il QSO si registra quando arriva il 73 dell'altro
+        let wait_for_73 = self.opts.log_after_73 && n == 4;
+        if sent_first_73 && !wait_for_73 && !self.his_call.is_empty() {
             let period = self.mode.period_s();
             if self.last_logged.as_ref().is_none_or(|(c, t)| *c != self.his_call || (now - *t).abs() > period.floor() * 2.0) {
                 self.log_qso(slot, now);

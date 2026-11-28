@@ -161,6 +161,9 @@ pub struct Options {
     /// Registrazione automatica del QSO (`AutoQSOLogging`): a fine QSO (FIN, 73 inviato) JTDX **ferma la trasmissione**. Spento, passa da solo al
     /// prossimo chiamante o al CQ.
     pub autolog: bool,
+    /// «Registra solo dopo il 73» (opzione di Aurora, spenta di fabbrica = come WSJT-X): se chiudiamo noi con l'RR73 il QSO si registra solo quando
+    /// arriva il 73 dell'altro; se l'altro ha gia' chiuso (si risponde con il nostro 73) si registra come sempre.
+    pub log_after_73: bool,
     /// «Cancella i dati dopo aver loggato il QSO» (`ClearCallGrid`): a fine QSO (`autoStopTx`) il DX si libera anche senza registrazione automatica; senza
     /// AutoSeq ne AutoTX lo libera anche il timer di fine periodo dopo il log (`logClearDXTimer`).
     pub clear_dx: bool,
@@ -213,6 +216,7 @@ impl Default for Options {
             abandon_if_dx_answers_other: true,
             split_active: false,
             autolog: true,
+            log_after_73: false,
             clear_dx: false,
             tx_even: true,
             tx_freq_hz: 1500,
