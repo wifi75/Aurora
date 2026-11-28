@@ -4,5 +4,5 @@ pub mod brain;
 pub mod ghost;
 pub mod runner;
 
-pub use brain::{Brain, BrainState, Decision, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, NewStateMatcher, Prefer, Rules, WantedMatcher, CONTINENTS};
+pub use brain::{Brain, BrainState, Decision, DecisionKind, Limits, LiveNotAllowed, Mode, NewModeMatcher, NewStateMatcher, Prefer, Rules, WantedMatcher, CONTINENTS, SPECIAL_CQ_TAGS};
 pub use runner::{Automation, AutomationConfig, ClientGuard, LocalOffset, TxSwitch};

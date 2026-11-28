@@ -90,7 +90,14 @@ pub struct Rules {
     /// Dopo tanti minuti senza nessun CQ a cui rispondere Aurora chiama CQ da sola (0 = mai). Trasmette solo in modo reale.
     #[serde(default)]
     pub auto_cq_after_min: u32,
+    /// Risponde ai CQ speciali di questi tipi («CQ POTA IU3ABC IO91»: POTA, SOTA, IOTA, WWFF, QRP; richiesta #115), solo se la stazione non e'
+    /// gia' stata lavorata su questa banda. Vuoto di fabbrica: nessuna risposta.
+    #[serde(default)]
+    pub reply_to_special: Vec<String>,
 }
+
+/// I tipi di CQ speciale a cui si puo' rispondere (gli stessi che l'interfaccia riconosce ed etichetta).
+pub const SPECIAL_CQ_TAGS: [&str; 5] = ["POTA", "SOTA", "IOTA", "WWFF", "QRP"];
 
 fn default_cooldown_secs() -> u64 {
     900
@@ -154,6 +161,7 @@ impl Default for Rules {
             reply_to_new_state: false,
             reply_to_new_state_band: false,
             auto_cq_after_min: 0,
+            reply_to_special: Vec::new(),
         }
     }
 }
@@ -162,7 +170,7 @@ impl Rules {
     /// Regole sensate: niente CQ comuni (si risponderebbe a tutti), soglie in un intervallo plausibile.
     pub fn is_valid(&self) -> bool {
         // senza etichette si risponde solo ai desiderati (o ai modi nuovi); nessuna delle tre vorrebbe dire non rispondere mai
-        let tags_ok = (!self.reply_to.is_empty() || self.reply_to_wanted || self.reply_to_new_mode || self.reply_to_new_state || self.reply_to_new_state_band)
+        let tags_ok = (!self.reply_to.is_empty() || self.reply_to_wanted || self.reply_to_new_mode || self.reply_to_new_state || self.reply_to_new_state_band || !self.reply_to_special.is_empty())
             && self
                 .reply_to
                 .iter()
@@ -181,10 +189,11 @@ impl Rules {
                 .all(|c| (3..=13).contains(&c.trim().len()) && c.trim().chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/'));
         let countries_ok = self.excluded_countries.len() <= 400 && self.excluded_countries.iter().all(|c| (1..=64).contains(&c.trim().len()));
         let continents_ok = self.continents.len() <= CONTINENTS.len() && self.continents.iter().all(|c| CONTINENTS.contains(&c.trim().to_uppercase().as_str()));
+        let special_ok = self.reply_to_special.len() <= SPECIAL_CQ_TAGS.len() && self.reply_to_special.iter().all(|t| SPECIAL_CQ_TAGS.contains(&t.as_str()));
         let window_ok = self.window_from_min < 1440 && self.window_to_min < 1440;
         // il CQ da solo: o spento, o almeno due minuti (non si chiama CQ a raffica)
         let cq_ok = self.auto_cq_after_min == 0 || (2..=120).contains(&self.auto_cq_after_min);
-        tags_ok && calls_ok && countries_ok && continents_ok && window_ok && cq_ok
+        tags_ok && special_ok && calls_ok && countries_ok && continents_ok && window_ok && cq_ok
             && (-30..=20).contains(&self.min_snr)
             && (1..=10).contains(&self.max_attempts_per_call)
             && (self.cooldown_secs == 0 || (60..=7200).contains(&self.cooldown_secs))
@@ -853,7 +862,13 @@ impl Brain {
         } else {
             None
         };
-        if !(tag_wanted || list_reason.is_some() || new_mode || new_state.is_some()) || !parsed.is_cq {
+        // CQ speciale scelto (POTA, SOTA...): mai a chi e' gia' stato lavorato su questa banda
+        let special = if parsed.is_cq && !rules.reply_to_special.is_empty() && d.tag != Some(DecodeTag::WorkedCall) {
+            cq_modifier(&d.text).filter(|m| rules.reply_to_special.iter().any(|t| t == m))
+        } else {
+            None
+        };
+        if !(tag_wanted || list_reason.is_some() || new_mode || new_state.is_some() || special.is_some()) || !parsed.is_cq {
             return Screened::Ignore;
         }
         let Some(call) = parsed.sender else {
@@ -904,6 +919,7 @@ impl Brain {
                 Some((st, false)) => format!("stato nuovo sulla banda ({st})"),
                 None => String::new(),
             },
+            _ if special.is_some() => format!("CQ speciale {}", special.as_deref().unwrap_or_default()),
             _ => "CQ di interesse".to_string(),
         };
         let tag_rank = if tag_wanted { d.tag.map_or(0, rank_of) } else { 0 };
@@ -912,6 +928,7 @@ impl Brain {
             Some((_, false)) => NEW_MODE_RANK.saturating_sub(1),
             None => 0,
         });
+        let mode_rank = if special.is_some() { mode_rank.max(SPECIAL_RANK) } else { mode_rank };
         let rank = if list_reason.is_some() { WISHLIST_RANK.max(tag_rank) } else { tag_rank.max(mode_rank) };
         Screened::Candidate(Candidate { call, decode_id: d.id, snr: d.snr, rank, why })
     }
@@ -1035,6 +1052,9 @@ enum Screened {
 
 /// Una stazione della lista dei desiderati vale piu' di qualunque novita': l'ha scelta l'operatore.
 const WISHLIST_RANK: u8 = 5;
+
+/// Un CQ speciale scelto (POTA, SOTA...) vale quanto una zona nuova: sotto i paesi nuovi, sopra le griglie.
+const SPECIAL_RANK: u8 = 2;
 
 /// Un paese nuovo nel modo in uso vale quanto un paese nuovo sulla banda.
 const NEW_MODE_RANK: u8 = 3;
