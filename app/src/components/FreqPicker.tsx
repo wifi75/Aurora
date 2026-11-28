@@ -19,8 +19,8 @@ interface Props {
   rows?: readonly FrequencyEntry[];
 }
 
-/** Frequenza in MHz con tre decimali (quattro se serve: 7,0475). */
-const mhz = (hz: number) => (hz / 1e6).toFixed(hz % 1000 === 0 ? 3 : 4);
+/** Frequenza in MHz con tre decimali (quattro solo per le frequenze a centinaia di Hz: 7,0475; la manopola che segna 14,2290 per qualche hertz di scarto si legge 14,229). */
+const mhz = (hz: number) => (hz / 1e6).toFixed(hz % 100 === 0 && hz % 1000 !== 0 ? 4 : 3);
 
 /**
  * Come in WSJT-X, tutte le frequenze del modo in uso dalla tabella delle Frequenze: un pulsante con la frequenza attuale apre un pannello
