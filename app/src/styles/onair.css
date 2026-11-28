@@ -7921,3 +7921,63 @@ html[data-theme='light'] .freq-picker-menu.glass {
 .txcheck-list { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
 .txcheck-item { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.85rem; }
 .txcheck-item .tx-chain-dot { flex: none; transform: translateY(-1px); }
+
+/* Avvisi della trasmissione: barra a tutta larghezza sotto i comandi in alto della pagina, a sinistra, che lampeggia piano (~1,2 s).
+   Rossa per ROS alto e trasmissione fermata, ambra per gli altri; senza avvisi non c'e' e non lascia spazio. */
+.tx-alert-bar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.tx-alert-bar-row {
+  --tx-alert-color: var(--warn);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0.35rem 0.9rem;
+  border-left: 6px solid var(--tx-alert-color);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tx-alert-color) 38%, var(--panel, var(--bg, transparent)));
+  color: var(--text, inherit);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
+  overflow-wrap: anywhere;
+  animation: tx-alert-bar-blink 1.2s ease-in-out infinite;
+}
+
+.tx-alert-bar-row--danger {
+  --tx-alert-color: var(--danger);
+}
+
+.tx-alert-bar-icon {
+  flex: none;
+  font-size: 1.3rem;
+  color: var(--tx-alert-color);
+}
+
+.tx-alert-bar-text {
+  min-width: 0;
+}
+
+@keyframes tx-alert-bar-blink {
+  0%, 100% { background: color-mix(in srgb, var(--tx-alert-color) 40%, var(--panel, var(--bg, transparent))); }
+  50% { background: color-mix(in srgb, var(--tx-alert-color) 12%, var(--panel, var(--bg, transparent))); }
+}
+
+/* con «riduci animazioni»: niente lampeggio, sfondo pieno e bordo marcato */
+@media (prefers-reduced-motion: reduce) {
+  .tx-alert-bar-row {
+    animation: none;
+    background: color-mix(in srgb, var(--tx-alert-color) 40%, var(--panel, var(--bg, transparent)));
+    border: 3px solid var(--tx-alert-color);
+    border-left-width: 8px;
+  }
+}

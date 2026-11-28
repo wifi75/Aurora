@@ -11,6 +11,7 @@ import { DecodeList, gridOfSender } from '../components/DecodeList';
 import { ActivityTagPills } from '../components/ActivityTagPills';
 import { distanceKm, gridCenter } from '../lib/geo';
 import { isCallToMe } from '../lib/mycall';
+import { TxAlertBar } from '../components/TxAlertBar';
 import { DiagnosisBar } from '../components/DiagnosisBar';
 import { GridBoard, type Cell } from '../components/GridBoard';
 import { DetachButton } from '../components/DetachButton';
@@ -566,7 +567,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         </section>
       </div>
     ) : id === 'tx' ? (
-      <TxPanel part="combo" txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />
+      <TxPanel part="combo" alerts="bar" txAllowed={info.data?.tx_allowed ?? false} decodes={decodes} />
     ) : (
       renderPanel(id)
     );
@@ -680,6 +681,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         </div>
         <RadioDisplayHeader />
       </div>
+      <TxAlertBar />
       <DiagnosisBar />
       {phone ? null : <NewDxAlert onReply={(id) => void onReply(id)} />}
       {phone ? (

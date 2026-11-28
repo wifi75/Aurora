@@ -12,6 +12,7 @@ import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
 import { TxChainDots } from './TxChainDots';
 import { replyErrorMessage } from '../lib/replyError';
+import { visibleTxAlerts } from '../lib/txAlerts';
 import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
   decodes?: DecodedMessage[];
   /** `messages`: solo i sei messaggi con lo stato; `qso`: solo gli interruttori del QSO e i livelli audio; di base tutto insieme. */
   part?: 'all' | 'messages' | 'qso' | 'combo';
+  /** `bar`: gli avvisi di trasmissione stanno nella barra sotto i comandi della pagina (`TxAlertBar`) e qui non si ripetono; di base restano nel riquadro. */
+  alerts?: 'inline' | 'bar';
 }
 
 /** Il testo di un avviso di sicurezza della trasmissione. */
@@ -161,7 +164,7 @@ function TxMessageField({ value, disabled, label, onCommit }: { value: string; d
 }
 
 /** Stato del QSO: stazione DX, i sei messaggi Tx con la fase in corso e il livello audio di uscita. */
-export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'all' }: Props) {
+export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'all', alerts = 'inline' }: Props) {
   // senza stato passato lo legge da solo: cosi' chi lo contiene non deve ridisegnarsi a ogni arrivo dello stato
   const ownStatus = useStation((st) => st.status);
   const status = statusProp === undefined ? ownStatus : statusProp;
@@ -234,9 +237,9 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
             {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi */}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
-          {status.tx_alerts && status.tx_alerts.some((a) => a.kind !== 'ptt_stuck' && a.kind !== 'ptt_abandoned') ? (
+          {alerts === 'inline' && visibleTxAlerts(status.tx_alerts).length > 0 ? (
             <div className="tx-alerts" role="alert">
-              {status.tx_alerts.filter((a) => a.kind !== 'ptt_stuck' && a.kind !== 'ptt_abandoned').map((a) => (
+              {visibleTxAlerts(status.tx_alerts).map((a) => (
                 <p key={a.kind} className="tx-alert" title={t('tip.tx.alert')}>
                   {alertText(a, t)}
                 </p>
