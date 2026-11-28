@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.362',
-    released: '2026-11-28T08:36:17Z',
+    released: '2026-11-28T08:40:26Z',
     kind: 'new',
     title: [
       'Nuova opzione: registra solo dopo il 73',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.362',
-    released: '2026-11-28T08:12:53Z',
+    released: '2026-11-28T08:40:26Z',
     kind: 'new',
     title: [
       'Zoom fluido nelle mappe',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.362',
-    released: '2026-11-28T08:12:53Z',
+    released: '2026-11-28T08:40:26Z',
     kind: 'fixed',
     title: [
       'Modi testuali, SSTV e FST4: frequenze e avvio corretti',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.362',
-    released: '2026-11-28T08:12:53Z',
+    released: '2026-11-28T08:40:26Z',
     kind: 'changed',
     title: [
       'Allineamento a WSJT-X 3.3 beta 11: OSD, FT4 e UltraFOX',
