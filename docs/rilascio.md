@@ -4,7 +4,7 @@ L'elenco dei compiti da chiudere a ogni versione e' in `TASK.md`; qui i comandi.
 
 1. Alzare la versione in `core/Cargo.toml`, `desktop/src-tauri/Cargo.toml`, `desktop/src-tauri/tauri.conf.json`, `desktop/package.json`, `app/package.json` e nei lock, nei README (riga dello stato), riga 3 di `memory.md` e `docs/mancante.md`.
 2. Le voci di `## Non rilasciato` del CHANGELOG diventano la sezione della versione. Novita' in `app/src/lib/novita.ts`: titolo e testo nelle sei lingue, data e ora UTC; restano le ultime 40 (una prova controlla che la prima sia della versione di `app/package.json`).
-3. Compilazione: `cargo check --workspace` (core e `desktop/src-tauri`), `cd app && npx tsc --noEmit`. Commit e push.
+3. **Nel commit della versione ci devono essere TUTTI i file del punto 1, `desktop/` compreso** (controllare con `git status` che non resti niente di modificato prima del tag: Linux e macOS si compilano dal tag e senza i file di `desktop/` escono con la versione vecchia; successo con la 0.11.363, rimediato spostando il tag e ripubblicando la release). Compilazione: `cargo check --workspace` (core e `desktop/src-tauri`), `cd app && npx tsc --noEmit`. Commit e push.
 4. **Windows sul PC** (dal 2026-11-12, chiave privata in `%USERPROFILE%\.aurora-signing\aurora.key`, senza password): `.\scripts
 ilascio-windows.ps1`
    compila interfaccia e programma con Hamlib e `cty.dat`, firma gli aggiornamenti e mette in `dist-release\` l'installatore `Aurora_X.Y.Z_x64-setup.exe`,
