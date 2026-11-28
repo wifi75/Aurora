@@ -23,6 +23,27 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.362',
+    released: '2026-11-28T08:36:17Z',
+    kind: 'new',
+    title: [
+      'Nuova opzione: registra solo dopo il 73',
+      'New option: log only after the 73',
+      'Neue Option: erst nach der 73 loggen',
+      'Nouvelle option : enregistrer seulement après le 73',
+      'Nueva opción: registrar solo después del 73',
+      'Nova opção: registar só depois do 73',
+    ],
+    text: [
+      'In Impostazioni › Modi › Comune a tutti i modi › Registrazione e comportamento c’è «Registra solo dopo il 73», spenta di fabbrica (come WSJT-X). Accesa, se chiudi tu con l’RR73 il QSO si registra solo quando arriva il 73 dell’altro. Nel CW la cascata mostra anche la larghezza del filtro come banda sfumata attorno al cursore.',
+      'In Settings › Modes › Common to all modes › Logging and behavior there is «Log only after the 73», off by default (like WSJT-X). On, if you close with the RR73 the QSO is logged only when the other station’s 73 arrives. In CW the waterfall also shows the filter width as a soft band around the cursor.',
+      'Unter Einstellungen › Betriebsarten › Für alle Betriebsarten › Protokollierung und Verhalten gibt es «Erst nach der 73 loggen», standardmäßig aus (wie WSJT-X). Ein: Schließt du mit dem RR73, wird das QSO erst gespeichert, wenn die 73 der Gegenstation eintrifft. Im CW zeigt das Wasserfalldiagramm außerdem die Filterbreite als weiches Band um den Cursor.',
+      'Dans Réglages › Modes › Commun à tous les modes › Enregistrement et comportement, il y a « Enregistrer seulement après le 73 », désactivée par défaut (comme WSJT-X). Activée, si vous clôturez avec le RR73 le QSO n’est enregistré que lorsque le 73 de l’autre station arrive. En CW, la cascade montre aussi la largeur du filtre comme une bande estompée autour du curseur.',
+      'En Ajustes › Modos › Común a todos los modos › Registro y comportamiento hay «Registrar solo después del 73», apagada de fábrica (como WSJT-X). Encendida, si cierras tú con el RR73 el QSO se registra solo cuando llega el 73 de la otra estación. En CW la cascada muestra también el ancho del filtro como una banda difuminada alrededor del cursor.',
+      'Em Definições › Modos › Comum a todos os modos › Registo e comportamento há «Registar só depois do 73», desligada de fábrica (como o WSJT-X). Ligada, se fechares tu com o RR73 o QSO só se regista quando chega o 73 da outra estação. No CW a cascata mostra também a largura do filtro como uma banda esbatida em volta do cursor.',
+    ],
+  },
+  {
+    version: '0.11.362',
     released: '2026-11-28T08:12:53Z',
     kind: 'new',
     title: [
@@ -840,27 +861,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec Hamlib, la nouvelle case « En émission, lire aussi l’ALC » (Réglages › Radio, désactivée d’usine) fait lire à Aurora le niveau ALC de la radio pendant l’émission : il apparaît dans le champ ALC de l’afficheur, à côté de la puissance et du ROS, et dit si l’audio est trop fort. Avant, le champ restait toujours « — ». Pas encore essayé avec une vraie radio.',
       'Con Hamlib, la nueva casilla «En transmisión leer también el ALC» (Ajustes › Radio, apagada de fábrica) hace que Aurora lea el nivel ALC de la radio mientras transmites: aparece en el campo ALC de la pantalla, junto a potencia y ROE, y dice si el audio es demasiado fuerte. Antes el campo quedaba siempre «—». Aún no probado con una radio real.',
       'Com Hamlib, a nova caixa «Na transmissão ler também o ALC» (Definições › Rádio, desligada de fábrica) faz o Aurora ler o nível ALC do rádio enquanto transmite: aparece no campo ALC do visor, ao lado de potência e ROE, e diz se o áudio é demasiado forte. Antes o campo ficava sempre «—». Ainda não testado com um rádio real.',
-    ],
-  },
-  {
-    version: '0.11.335',
-    released: '2026-11-23T09:05:43Z',
-    kind: 'changed',
-    title: [
-      'Log: all’apertura nessun QSO selezionato',
-      'Log: no QSO selected on opening',
-      'Log: beim Öffnen ist kein QSO ausgewählt',
-      'Journal : aucun QSO sélectionné à l’ouverture',
-      'Log: ningún QSO seleccionado al abrir',
-      'Log: nenhum QSO selecionado ao abrir',
-    ],
-    text: [
-      'La pagina del log si apre senza nessun QSO selezionato, e anche dopo una cancellazione non resta selezionato niente: così non si può cancellare tutto per sbaglio. Per esportare l’intero log si usa «Seleziona tutti». Su richiesta di Luc, ON7KEC.',
-      'The log page opens with no QSO selected, and nothing stays selected after a deletion either: this way you cannot delete everything by mistake. To export the whole log use “Select all”. Requested by Luc, ON7KEC.',
-      'Die Log-Seite öffnet sich ohne ausgewähltes QSO, und auch nach einem Löschen bleibt nichts ausgewählt: So lässt sich nicht aus Versehen alles löschen. Um das ganze Log zu exportieren, „Alle auswählen“ benutzen. Auf Wunsch von Luc, ON7KEC.',
-      'La page du journal s’ouvre sans aucun QSO sélectionné, et rien ne reste sélectionné non plus après une suppression : on ne peut ainsi pas tout effacer par erreur. Pour exporter tout le journal, on utilise « Tout sélectionner ». À la demande de Luc, ON7KEC.',
-      'La página del log se abre sin ningún QSO seleccionado, y tampoco queda nada seleccionado tras un borrado: así no se puede borrar todo por error. Para exportar todo el log se usa «Seleccionar todos». A petición de Luc, ON7KEC.',
-      'A página do log abre sem nenhum QSO selecionado, e também depois de um apagamento não fica nada selecionado: assim não se pode apagar tudo por engano. Para exportar o log inteiro usa-se «Selecionar todos». A pedido de Luc, ON7KEC.',
     ],
   },
 ];

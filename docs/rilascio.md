@@ -20,6 +20,7 @@ ilascio-windows.ps1`
    Controllare dopo 10-15 minuti che Linux e macOS siano verdi.
    **Note multilingua**: le leggono da tutto il mondo. In cima la sezione del CHANGELOG in inglese, poi un blocco
    `<details><summary>🇮🇹 Italiano</summary>` … `</details>` per italiano, tedesco, francese, spagnolo, portoghese e olandese.
+   **Riga «bug minori»** (dal 2026-11-28): in ogni sezione, in inglese e in ciascun blocco `<details>`, l'ultima voce e' sempre «Minor bug fixes and small improvements.» (it «Correzioni di bug minori e piccoli miglioramenti.», de «Kleinere Fehlerbehebungen und kleine Verbesserungen.», fr «Corrections de bugs mineurs et petites améliorations.», es «Correcciones de errores menores y pequeñas mejoras.», pt «Correções de erros menores e pequenas melhorias.», nl «Kleine bugfixes en kleine verbeteringen.»): raccoglie le cose piccole che non si descrivono, cosi' le note restano corte.
    **Riga fissa in fondo, sempre** (per dare un link in ingresso al sito da ogni release), in inglese, dopo l'ultimo blocco `</details>` e una riga vuota:
    `Official site, manuals and downloads: https://aurora.iu3wjq.com`
 6. Ora vera nelle Novita' (`gh release view vX.Y.Z --json publishedAt`), commit e push; pagina web con `scripts/pubblica-sito.ps1`.
