@@ -21,6 +21,9 @@ import { CallsignTip, prefetchCallsigns } from './CallsignTip';
 import { CallMenu, callMenuAt, type CallMenuState } from './CallMenu';
 import { cleanCall } from '../lib/callsignPage';
 import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
+import { parseSpecialCq } from '../lib/specialCq';
+import { useSpecialCq } from '../lib/specialCqPrefs';
+import { spotFor, usePotaSpots } from '../lib/potaSpots';
 import '../styles/decode-grid.css';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
@@ -371,6 +374,9 @@ function DecodeListView({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxG
   const wishlist = useWishlist((s) => s.list);
   const view = useNotifyView((s) => s.view);
   const lotwView = useLotwView((s) => s.view);
+  // CQ speciali (POTA, SOTA, IOTA, WWFF, QRP; #115): solo con l'opzione accesa nelle Impostazioni, spenta di fabbrica
+  const specialPrefs = useSpecialCq((s) => s.prefs);
+  const potaByCall = usePotaSpots((s) => s.byCall);
   const lotwMark = (d: DecodedMessage): LotwMark | undefined => {
     const date = d.id < 0 ? null : lotwDateToShow(d.lotw_last_upload, lotwView, new Date());
     return date ? { color: lotwView.color, date } : undefined;
@@ -634,12 +640,27 @@ function DecodeListView({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxG
         const snrCell = <span className="c-snr num">{own ? 'Tx' : d.snr}</span>;
         const freqCell = <span className="c-freq num muted">{d.freq_hz}</span>;
         const dtCell = <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span>;
+        // CQ speciale: la pillola con il tag (e il parco POTA, se si conosce dagli spot); se la colonna ha gia' un'etichetta, una pillola
+        // piccola prima del messaggio, con il parco nel suggerimento
+        const special = !own && specialPrefs.enabled ? parseSpecialCq(d.text) : null;
+        const specialOn = special !== null && specialPrefs.show[special.tag];
+        const park = specialOn && special.tag === 'POTA' ? spotFor(potaByCall, special.call, special.base) : null;
+        const specialText = special ? (park ? `${special.tag} ${park.reference}` : special.tag) : '';
+        const specialTip = special ? (park ? t('scq.tip.park', { tag: special.tag, ref: park.reference, name: park.name }) : t('scq.tip.row', { tag: special.tag })) : '';
+        const columnBusy = inQueue || fox || !!badge;
+        const specialMark =
+          specialOn && columnBusy ? (
+            <span className="special-cq-mark" title={specialTip}>
+              {special.tag}
+            </span>
+          ) : null;
         // passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta)
         const lotw = own ? undefined : lotwMark(d);
         const msgCell = (
           <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={lotw?.date ?? null} grid={own ? targetGrid : gridOfSender(d.text)}>
             <span className="decode-text">
               {queueMark}
+              {specialMark}
               <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotw)}</span>
             </span>
           </CallsignTip>
@@ -678,6 +699,10 @@ function DecodeListView({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxG
             style={quiet ? undefined : { background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
           >
             {t(badge.label)}
+          </span>
+        ) : specialOn ? (
+          <span className="badge badge--tag badge-cell badge--special" title={specialTip}>
+            {specialText}
           </span>
         ) : (
           <span className="badge-cell" />

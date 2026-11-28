@@ -136,3 +136,41 @@
 .decode-list.decode-list--cols .dl-cell--tag {
   justify-content: center;
 }
+
+/* CQ speciali (POTA, SOTA, IOTA, WWFF, QRP; #115): una pillola verde-acqua tenue con il testo pieno, nei due temi. I colori sono variabili,
+   cosi' il tema chiaro ha la sua tinta scura leggibile sul fondo chiaro. */
+:root {
+  --special-cq: #2fd29a;
+  --special-cq-ink: #a6f3d6;
+}
+html[data-theme='light'] {
+  --special-cq: #0a7d57;
+  --special-cq-ink: #05553a;
+}
+.decode-list .badge.badge--special,
+.dock-panel--all .decode-list .badge.badge--special,
+.dock-panel--cq .decode-list .badge.badge--special {
+  background: color-mix(in srgb, var(--special-cq) 18%, transparent) !important;
+  color: var(--special-cq-ink) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--special-cq) 60%, transparent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 1;
+}
+/* accanto a un'altra etichetta: la pillola piccola prima del messaggio */
+.special-cq-mark {
+  display: inline-block;
+  flex: none;
+  margin-right: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--special-cq) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--special-cq) 60%, transparent);
+  color: var(--special-cq-ink);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  cursor: help;
+}

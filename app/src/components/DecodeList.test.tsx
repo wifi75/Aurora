@@ -5,6 +5,8 @@ import { usePrefs } from '../lib/prefs';
 import { useNotifyView } from '../lib/notifyView';
 import { useStation } from '../state/station';
 import { DecodeList } from './DecodeList';
+import { defaultSpecialCq, useSpecialCq } from '../lib/specialCqPrefs';
+import { usePotaSpots } from '../lib/potaSpots';
 
 // il paese chiesto al core per i nominativi senza paese (le Fox nelle righe DXpedition): qui risponde solo per 3X4U
 vi.mock('../api/client', async (importOriginal) => ({
@@ -24,6 +26,23 @@ describe('DecodeList', () => {
     expect(screen.getByRole('button', { name: /JA1XYZ/ }).style.getPropertyValue('--row-accent')).toBe('var(--tag-new-dxcc)');
     expect(screen.getByRole('button', { name: /K1ABC/ }).style.getPropertyValue('--row-accent')).toBe('var(--tag-cq)');
     if (columnsKey) localStorage.removeItem(columnsKey);
+  });
+
+  // richiesta #115: i CQ speciali hanno la loro etichetta solo con l'opzione accesa
+  it('shows the special CQ label only when the option is on, with the POTA park when known', () => {
+    const rows = [decode({ id: 1, text: 'CQ POTA IU3ABC/P IO91' }), decode({ id: 2, text: 'CQ SOTA IU3ABD IO91' }), decode({ id: 3, text: 'CQ DX IU3ABE IO91' })];
+    const { unmount } = render(<DecodeList decodes={rows} onReply={() => {}} />);
+    expect(screen.queryByText('POTA')).toBeNull();
+    unmount();
+    const on = { ...defaultSpecialCq(), enabled: true };
+    useSpecialCq.setState({ prefs: { ...on, show: { ...on.show, SOTA: false } } });
+    usePotaSpots.getState().set([{ activator: 'IU3ABC', reference: 'IT-0001', name: 'Parco di prova', freq_khz: 14074, mode: 'FT8' }]);
+    render(<DecodeList decodes={rows} onReply={() => {}} />);
+    expect(screen.getByText('POTA IT-0001')).toHaveAttribute('title', expect.stringContaining('Parco di prova'));
+    expect(screen.queryByText('SOTA')).toBeNull();
+    expect(screen.queryByText('DX')).toBeNull();
+    useSpecialCq.setState({ prefs: defaultSpecialCq() });
+    usePotaSpots.getState().set([]);
   });
 
   it('shows NUOVO DXCC badge', () => {
