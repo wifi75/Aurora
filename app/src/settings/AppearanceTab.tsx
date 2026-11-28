@@ -17,6 +17,7 @@ import {
 import { browserStorage, chooseTheme, readThemeChoice, resolveTheme, THEME_EVENT, type ThemeChoice } from '../lib/theme';
 import { useUiScale } from '../lib/uiScale';
 import { useEditLayout } from '../lib/bottomLayout';
+import { useThemeEffects } from '../lib/themeEffects';
 import { clearLayouts } from '../lib/resetLayouts';
 import { toast } from '../lib/toast';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
@@ -39,6 +40,8 @@ export function AppearanceTab() {
   const [choice, setChoice] = useState<ThemeChoice>(() => readThemeChoice(browserStorage()));
   const scale = useUiScale((s) => s.scale);
   const editLayout = useEditLayout((s) => s.on);
+  const fx = useThemeEffects((s) => s.fx);
+  const setFx = useThemeEffects((s) => s.set);
 
   // le scelte fatte in un'altra finestra (o dall'interruttore della testata) si vedono anche qui
   useEffect(() => {
@@ -107,6 +110,27 @@ export function AppearanceTab() {
           <Field label={t('ap.contrast')} hint={t('tip.ap.contrast')} wide>
             <input type="checkbox" checked={a.contrast === 'high'} onChange={(e) => update({ contrast: e.target.checked ? 'high' : 'normal' })} />
           </Field>
+        </Cells>
+      </Group>
+
+      <Group title={t('fx.title')}>
+        <Message kind="muted">{t('fx.lead')}</Message>
+        <Cells>
+          {(['snow', 'lights'] as const).map((k) => (
+            <Cell key={k} label={t(k === 'snow' ? 'fx.snow' : 'fx.lights')} hint={t(k === 'snow' ? 'tip.fx.snow' : 'tip.fx.lights')} wide>
+              {(['auto', 'on', 'off'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={`glass chip${fx[k] === m ? ' glass--on' : ''}`}
+                  aria-pressed={fx[k] === m}
+                  onClick={() => setFx({ ...fx, [k]: m })}
+                >
+                  {t(m === 'auto' ? 'fx.auto' : m === 'on' ? 'fx.on' : 'fx.off')}
+                </button>
+              ))}
+            </Cell>
+          ))}
         </Cells>
       </Group>
 
