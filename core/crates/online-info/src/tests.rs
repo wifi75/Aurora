@@ -46,15 +46,15 @@ fn service(name: &str, fake: &Arc<Fake>) -> (Arc<OnlineService>, PathBuf) {
 }
 
 fn on(psk: bool, solar: bool) -> Settings {
-    Settings { psk, solar, dxped: false }
+    Settings { psk, solar, dxped: false, pota: false }
 }
 
 #[test]
 fn everything_is_on_from_the_factory_and_nothing_is_asked_once_switched_off() {
     let fake = Fake::new();
     let (s, path) = service("off", &fake);
-    assert_eq!(s.settings(), Settings { psk: true, solar: true, dxped: true }, "accesi di fabbrica");
-    s.set_settings(Settings { psk: false, solar: false, dxped: false }).expect("salvato");
+    assert_eq!(s.settings(), Settings { psk: true, solar: true, dxped: true, pota: false }, "accesi di fabbrica, POTA spento");
+    s.set_settings(Settings { psk: false, solar: false, dxped: false, pota: false }).expect("salvato");
     assert!(!s.refresh_due(1_000_000, "IU3ABC"));
     assert!(!s.refresh_now(1_000_000, "IU3ABC"));
     assert_eq!((fake.psk_calls.load(Ordering::SeqCst), fake.solar_calls.load(Ordering::SeqCst)), (0, 0));
@@ -181,5 +181,51 @@ fn turning_a_service_off_forgets_what_it_had_downloaded() {
     s.set_settings(on(false, true)).unwrap();
     assert_eq!(s.psk(), PskSnapshot::default());
     assert!(s.solar().data.is_some());
+    std::fs::remove_file(path).ok();
+}
+
+/// Rete finta per POTA: risponde solo all'indirizzo degli spot e conta le richieste.
+struct PotaFake {
+    calls: AtomicUsize,
+    body: Mutex<Result<String, String>>,
+}
+
+impl Fetch for PotaFake {
+    fn get(&self, url: &str) -> Result<String, String> {
+        if url != pota::URL {
+            return Err("non usato".into());
+        }
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        self.body.lock().unwrap().clone()
+    }
+}
+
+#[test]
+fn pota_spots_are_read_only_when_switched_on_every_90_seconds() {
+    let body = r#"[{"activator":"IU3ABC/P","frequency":"14074","mode":"FT8","reference":"IT-0001","name":"Parco di prova"}]"#;
+    let fake = Arc::new(PotaFake { calls: AtomicUsize::new(0), body: Mutex::new(Ok(body.into())) });
+    let path = std::env::temp_dir().join(format!("aurora-online-{}-pota.json", std::process::id()));
+    std::fs::remove_file(&path).ok();
+    let s = OnlineService::open(&path, fake.clone());
+    let off = Settings { psk: false, solar: false, dxped: false, pota: false };
+    s.set_settings(off).unwrap();
+    assert!(!s.refresh_due(1_000_000, "IU3ABC"));
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 0, "spento: nessuna richiesta");
+    s.set_settings(Settings { pota: true, ..off }).unwrap();
+    assert!(s.refresh_due(1_000_000, "IU3ABC"));
+    let snap = s.pota();
+    assert_eq!(snap.fetched_ms, 1_000_000);
+    assert_eq!(snap.spots["IU3ABC/P"].reference, "IT-0001");
+    assert!(!s.refresh_due(1_000_000 + POTA_EVERY_MS - 1, "IU3ABC"), "non prima di 90 s");
+    assert!(s.refresh_due(1_000_000 + POTA_EVERY_MS, "IU3ABC"));
+    assert_eq!(fake.calls.load(Ordering::SeqCst), 2);
+    // un errore tiene gli spot di prima e lo dice
+    *fake.body.lock().unwrap() = Ok("<html>busy</html>".into());
+    assert!(s.refresh_due(1_000_000 + 2 * POTA_EVERY_MS, "IU3ABC"));
+    let snap = s.pota();
+    assert!(snap.error.is_some() && snap.spots.contains_key("IU3ABC/P"));
+    // spegnere dimentica tutto
+    s.set_settings(off).unwrap();
+    assert_eq!(s.pota(), PotaSnapshot::default());
     std::fs::remove_file(path).ok();
 }

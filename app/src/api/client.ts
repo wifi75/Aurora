@@ -1,4 +1,5 @@
 import { AutomationCountriesSchema, AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
+import type { PotaSpot } from '../lib/potaSpots';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
 import { DigiSignalSchema, EngineSettingsSchema, FilesCheckSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type DigiSignal, type EngineSettings, type FoxLogEntry, type WavelogStation, type FilesCheck, type Health, type SpotResult, type WantedAlert } from './schemas';
@@ -409,6 +410,8 @@ export interface OnlineSettings {
   solar: boolean;
   /** Calendario delle DXpedition da NG3K. */
   dxped?: boolean;
+  /** Spot pubblici degli attivatori POTA (spenti di fabbrica, dalla pagina «CQ speciali»). */
+  pota?: boolean;
 }
 
 export interface PskReport {
@@ -483,6 +486,15 @@ export interface DxpedState {
 export async function getDxped(): Promise<DxpedState> {
   return (await (await request('/online/dxped')).json()) as DxpedState;
 }
+export interface PotaState {
+  enabled: boolean;
+  pota: { fetched_ms: number; spots: Record<string, PotaSpot>; error: string | null };
+}
+
+export async function getPota(): Promise<PotaState> {
+  return (await (await request('/online/pota')).json()) as PotaState;
+}
+
 /** Chiede subito i dati ai servizi accesi (al massimo una volta al minuto per servizio). */
 export async function refreshOnline(): Promise<{ asked: boolean }> {
   return (await (await request('/online/refresh', { method: 'POST' })).json()) as { asked: boolean };

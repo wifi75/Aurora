@@ -3,6 +3,7 @@
 //! - **PSK Reporter** (`pskreporter.info`): chi ha ricevuto il proprio nominativo. Il sito vede il nominativo e l'indirizzo IP.
 //! - **hamqsl.com**: condizioni di propagazione. Il sito vede solo l'indirizzo IP.
 //! - **NG3K** (`ng3k.com`): il calendario delle DXpedition annunciate. Il sito vede solo l'indirizzo IP.
+//! - **POTA** (`api.pota.app`): gli spot pubblici degli attivatori, per il parco dei «CQ POTA». Spento di fabbrica; il sito vede solo l'indirizzo IP.
 //!
 //! Sono richieste di sola lettura, rare (PSK Reporter chiede di non insistere: al massimo una ogni 5 minuti, qui anche meno) e
 //! nulla di cio' che Aurora riceve o trasmette viene inviato: non si mandano spot ne' messaggi.
@@ -12,6 +13,7 @@ mod xml;
 pub mod dxped;
 pub mod foxcheck;
 pub mod lotw;
+pub mod pota;
 pub mod psk;
 pub mod psk_live;
 pub mod solar;
@@ -25,6 +27,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 pub use dxped::Dxpedition;
+pub use pota::PotaSpot;
 pub use psk::Report;
 pub use solar::Solar;
 
@@ -34,6 +37,8 @@ pub const PSK_EVERY_MS: u64 = 5 * 60_000;
 pub const SOLAR_EVERY_MS: u64 = 30 * 60_000;
 /// Ogni quanto si chiede il calendario delle DXpedition: cambia poche volte al giorno.
 pub const DXPED_EVERY_MS: u64 = 6 * 60 * 60_000;
+/// Ogni quanto si leggono gli spot POTA (se accesi): cambiano di continuo, ma non serve insistere.
+pub const POTA_EVERY_MS: u64 = 90_000;
 /// Con «Aggiorna ora» non si chiede piu' di una volta al minuto.
 pub const MANUAL_MIN_MS: u64 = 60_000;
 /// Quante ore indietro si guardano i rapporti di PSK Reporter.
@@ -82,18 +87,20 @@ pub fn probe(url: &str, timeout: Duration, app_version: &str) -> Result<String, 
     response.body_mut().read_to_string().map_err(|e| e.to_string())
 }
 
-/// Quali servizi sono accesi. Tutti accesi di fabbrica (PSK Reporter, propagazione, calendario delle DXpedition); si spengono dalla pagina.
+/// Quali servizi sono accesi. Accesi di fabbrica PSK Reporter, propagazione e calendario delle DXpedition (si spengono dalla pagina);
+/// gli spot POTA sono spenti di fabbrica e si accendono solo dalla pagina «CQ speciali».
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub psk: bool,
     pub solar: bool,
     pub dxped: bool,
+    pub pota: bool,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
-        Settings { psk: true, solar: true, dxped: true }
+        Settings { psk: true, solar: true, dxped: true, pota: false }
     }
 }
 
@@ -121,6 +128,14 @@ pub struct DxpedSnapshot {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+pub struct PotaSnapshot {
+    pub fetched_ms: u64,
+    /// Nominativo dell'attivatore (maiuscolo) -> il suo spot piu' recente.
+    pub spots: std::collections::BTreeMap<String, PotaSpot>,
+    pub error: Option<String>,
+}
+
 #[derive(Default)]
 struct State {
     settings: Settings,
@@ -130,6 +145,8 @@ struct State {
     solar_attempt_ms: u64,
     dxped: DxpedSnapshot,
     dxped_attempt_ms: u64,
+    pota: PotaSnapshot,
+    pota_attempt_ms: u64,
 }
 
 pub struct OnlineService {
@@ -171,6 +188,10 @@ impl OnlineService {
         if !settings.dxped {
             state.dxped = DxpedSnapshot::default();
             state.dxped_attempt_ms = 0;
+        }
+        if !settings.pota {
+            state.pota = PotaSnapshot::default();
+            state.pota_attempt_ms = 0;
         }
         state.settings = settings;
         Ok(settings)
@@ -225,6 +246,26 @@ impl OnlineService {
 
     pub fn dxped(&self) -> DxpedSnapshot {
         lock(&self.state).dxped.clone()
+    }
+
+    pub fn pota(&self) -> PotaSnapshot {
+        lock(&self.state).pota.clone()
+    }
+
+    fn fetch_pota(&self, now_ms: u64) {
+        lock(&self.state).pota_attempt_ms = now_ms;
+        let result = self.fetch.get(pota::URL).and_then(|body| pota::parse(&body));
+        let mut state = lock(&self.state);
+        if !state.settings.pota {
+            return;
+        }
+        match result {
+            Ok(spots) => state.pota = PotaSnapshot { fetched_ms: now_ms, spots, error: None },
+            Err(e) => {
+                tracing::warn!("POTA: {e}");
+                state.pota.error = Some(e);
+            }
+        }
     }
 
     fn fetch_dxped(&self, now_ms: u64) {
@@ -310,6 +351,11 @@ impl OnlineService {
             self.fetch_dxped(now_ms);
             done = true;
         }
+        let pota_attempt = lock(&self.state).pota_attempt_ms;
+        if settings.pota && (pota_attempt == 0 || now_ms.saturating_sub(pota_attempt) >= POTA_EVERY_MS) {
+            self.fetch_pota(now_ms);
+            done = true;
+        }
         done
     }
 
@@ -330,6 +376,11 @@ impl OnlineService {
         }
         if settings.dxped && (dxped_attempt == 0 || now_ms.saturating_sub(dxped_attempt) >= MANUAL_MIN_MS) {
             self.fetch_dxped(now_ms);
+            done = true;
+        }
+        let pota_attempt = lock(&self.state).pota_attempt_ms;
+        if settings.pota && (pota_attempt == 0 || now_ms.saturating_sub(pota_attempt) >= MANUAL_MIN_MS) {
+            self.fetch_pota(now_ms);
             done = true;
         }
         done

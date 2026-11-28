@@ -14,6 +14,7 @@ import { useT } from './i18n';
 import { useEngineOsSync } from './lib/engineOs';
 import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
+import { PotaFeeder } from './components/PotaFeeder';
 import { COLORS_STORAGE_KEY, applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
 import { lastPageToRestore, rememberRoute } from './lib/lastPage';
@@ -268,6 +269,7 @@ export function App() {
       </header>
       )}
       {session.data ? <PageGuard resetKey={route.name}><WantedBar /></PageGuard> : null}
+      {session.data ? <PotaFeeder /> : null}
       <main className="app-main">
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>

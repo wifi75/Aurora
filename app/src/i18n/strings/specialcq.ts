@@ -29,4 +29,13 @@ export const specialCqStrings = {
     'Suena con el primer CQ de este tipo de un indicativo, no más de una vez cada 10 minutos para el mismo indicativo. Hacen falta los «Avisos sonoros» encendidos; el sonido se elige en Avisos y sonidos.',
     'Toca no primeiro CQ deste tipo de um indicativo, no máximo uma vez a cada 10 minutos para o mesmo indicativo. É preciso ter os «Avisos sonoros» ligados; o som escolhe-se em Avisos e sons.',
   ],
+  'scq.pota': ['Cerca il parco negli spot POTA', 'Look up the park in POTA spots', 'Park in den POTA-Spots suchen', 'Chercher le parc dans les spots POTA', 'Buscar el parque en los spots POTA', 'Procurar o parque nos spots POTA'],
+  'tip.scq.pota': [
+    'Accanto ai «CQ POTA» mostra il parco (es. «POTA IT-0001»), preso dagli spot pubblici di api.pota.app letti ogni 90 secondi. Non manda niente di personale: il sito vede solo l’indirizzo IP. Spento di fabbrica; serve l’interruttore generale acceso.',
+    'Next to “CQ POTA” it shows the park (e.g. “POTA IT-0001”), taken from the public spots of api.pota.app read every 90 seconds. Nothing personal is sent: the site only sees the IP address. Off by default; the main switch must be on.',
+    'Zeigt neben „CQ POTA“ den Park (z. B. „POTA IT-0001“), aus den öffentlichen Spots von api.pota.app, alle 90 Sekunden gelesen. Es wird nichts Persönliches gesendet: die Seite sieht nur die IP-Adresse. Standard: aus; der Hauptschalter muss an sein.',
+    'À côté des « CQ POTA », affiche le parc (ex. « POTA IT-0001 »), pris dans les spots publics d’api.pota.app lus toutes les 90 secondes. Rien de personnel n’est envoyé : le site ne voit que l’adresse IP. Désactivé par défaut ; l’interrupteur général doit être activé.',
+    'Junto a los «CQ POTA» muestra el parque (p. ej. «POTA IT-0001»), tomado de los spots públicos de api.pota.app leídos cada 90 segundos. No se envía nada personal: el sitio solo ve la dirección IP. Apagado de fábrica; hace falta el interruptor general encendido.',
+    'Junto aos «CQ POTA» mostra o parque (ex. «POTA IT-0001»), tirado dos spots públicos de api.pota.app lidos a cada 90 segundos. Não se envia nada pessoal: o site só vê o endereço IP. Desligado de origem; é preciso o interruptor geral ligado.',
+  ],
 } as const;

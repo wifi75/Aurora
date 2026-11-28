@@ -46,6 +46,11 @@ sito. Le richieste partono fra 0 e 20 s dopo la decodifica; se WSPRnet non rispo
 perdere; spegnendo l'opzione la coda si svuota e non parte più niente. A differenza di WSJT-X 3.3, Aurora non manda gli spot anche al secondo
 indirizzo `wsprnet.eu`.
 
+**Spot POTA** (spento di fabbrica, Impostazioni → Modi → FT8 · FT4 → CQ speciali → «Cerca il parco negli spot POTA»). Acceso solo da te,
+Aurora legge ogni 90 secondi gli spot pubblici degli attivatori da `api.pota.app` per mostrare il parco accanto ai «CQ POTA»; non manda
+niente di personale (nessun nominativo, nessuno spot): il sito vede solo il tuo indirizzo IP. Spegnendo l'opzione la lettura si ferma e gli
+spot letti si dimenticano.
+
 Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,
 ricerca dei nominativi su QRZ.com e HamQTH. Con la ricerca accesa Aurora manda a quei servizi solo il nominativo da cercare (anche in
 anticipo, per i nominativi visibili nel DX Cluster e in Attivita' di banda); se sono accese tutte e due e QRZ.com non da' le informazioni
