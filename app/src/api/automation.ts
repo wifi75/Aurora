@@ -29,6 +29,8 @@ export const AutomationStateSchema = z.object({
     continents_exclude: z.boolean().default(false),
     filter_callers_always: z.boolean().default(false),
     auto_cq_after_min: z.number().default(0),
+    /** Risposta automatica ai CQ speciali (POTA, SOTA, IOTA, WWFF, QRP; #115): un core piu' vecchio non la manda, vuota. */
+    reply_to_special: z.array(z.string()).default([]),
   }),
   limits: z.object({
     max_consecutive_cycles: z.number(),
