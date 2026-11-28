@@ -1,4 +1,5 @@
 import * as L from 'leaflet';
+import { enableSmoothZoom } from '../lib/smoothZoom';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
@@ -197,7 +198,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     const m = whole
       ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
         L.map(el, { fadeAnimation: false, zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
-      : L.map(el, { fadeAnimation: false, zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, zoomDelta: 0.5, wheelPxPerZoomLevel: 140, wheelDebounceTime: 25, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
+      : L.map(el, { fadeAnimation: false, zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, zoomDelta: 0.5, scrollWheelZoom: false, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
@@ -257,9 +258,11 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
       m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
     }
     map.current = m;
+    const stopSmooth = whole ? () => {} : enableSmoothZoom(m);
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => {
+      stopSmooth();
       ro.disconnect();
       m.remove();
       map.current = null;

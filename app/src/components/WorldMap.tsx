@@ -1,4 +1,5 @@
 import * as L from 'leaflet';
+import { enableSmoothZoom } from '../lib/smoothZoom';
 import 'leaflet/dist/leaflet.css';
 import { mapStyle } from '../lib/mapStyles';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -114,8 +115,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
       // zoom continuo con la rotella (a scatti di un quarto di livello sembrava a scatti): piccoli passi, raccolti ogni 25 ms
       zoomSnap: 0,
       zoomDelta: 0.5,
-      wheelPxPerZoomLevel: 140,
-      wheelDebounceTime: 25,
+      scrollWheelZoom: false,
       maxBounds: WORLD,
       maxBoundsViscosity: 1,
     });
@@ -155,6 +155,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     const start = m.getMinZoom();
     m.setView([25, 10], Number.isFinite(start) && start > 0 ? start : 2, { animate: false });
     map.current = m;
+    const stopSmooth = enableSmoothZoom(m);
     let observer: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(fit);
@@ -162,6 +163,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     }
     return () => {
       observer?.disconnect();
+      stopSmooth();
       m.remove();
       map.current = null;
     };
