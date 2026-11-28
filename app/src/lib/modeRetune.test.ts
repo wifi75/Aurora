@@ -27,6 +27,13 @@ describe('targetDial', () => {
     expect(targetDial(FT8, 'ALL', 14_074_000)).toBeNull();
   });
 
+  it('FST4 dai 20 m non salta a 136 kHz: la radio resta ferma', () => {
+    const fst4 = [row('2200m', 'FST4', 136_000), row('630m', 'FST4', 474_200), row('160m', 'FST4', 1_839_000)];
+    expect(targetDial(fst4, 'ALL', 14_028_030)).toBeNull();
+    // sulla banda che ha la riga si va li'
+    expect(targetDial(fst4, 'ALL', 1_840_000)).toBe(1_839_000);
+  });
+
   it('senza righe o senza frequenza della radio non si muove', () => {
     expect(targetDial([], 'ALL', 14_074_000)).toBeNull();
     expect(targetDial(MSK, 'ALL', 0)).toBeNull();

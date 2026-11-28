@@ -36,6 +36,8 @@ function seenBy(chosen: IaruRegion, row: IaruRegion): boolean {
  * - La banda di adesso ha una frequenza del modo (FT8 -> FT4, MSK144 -> FT8 sui 6 m): si resta sulla banda, sulla frequenza principale del modo.
  * - La banda di adesso non ha il modo (MSK144 sui 15 m: esiste solo da 6 m in su): si va alla prima banda dove esiste, la piu' bassa, e li' sulla
  *   frequenza principale della Regione scelta (R1 -> 6 m 50.380).
+ * - Il modo ha righe solo su onde lunghe o medie (FST4 sui 2200, 630 e 160 m) e la banda di adesso no: la radio resta dov'e' (il modo lavora su
+ *   qualunque banda, non si va a 136 kHz). Il salto alla prima banda vale solo per i modi che esistono dai VHF in su.
  */
 export function targetDial(rows: readonly FrequencyEntry[], region: IaruRegion, nowHz: number): number | null {
   const seen = rows.filter((r) => seenBy(region, r.region));
@@ -50,6 +52,7 @@ export function targetDial(rows: readonly FrequencyEntry[], region: IaruRegion, 
   const here = band ? use.filter((r) => r.band === band) : [];
   if (here.length > 0) return main(here)?.hz ?? null;
   const first = byHz(use)[0];
+  if (first && first.hz < 30_000_000) return null;
   return first ? (main(use.filter((r) => r.band === first.band))?.hz ?? null) : null;
 }
 
