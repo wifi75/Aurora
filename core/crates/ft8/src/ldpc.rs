@@ -20,7 +20,8 @@
 //! - LLR non finiti (NaN, infinito) danno `None`.
 //! - OSD usa vettori di bit a 128 bit al posto di matrici di byte: stessi passi, stessi risultati a parte l'ordine delle somme
 //!   in virgola mobile e lo spareggio tra bit di pari affidabilita' (qui resta l'ordine di posizione). Se l'eliminazione di
-//!   Gauss non trova un pivot entro le prime 111 colonne (`K+20`, mai visto con codeword reali) restituisce `None`.
+//!   Gauss non trova un pivot entro le prime 111 colonne (`K+20`) la riga si salta e le distanze si calcolano su tutti i bit
+//!   (correzione di WSJT-X 3.3.0 beta 11, "pivot mancanti"; prima si scartava la decodifica).
 //! - Nella seconda regola di pre-elaborazione (`npre2`) la tabella di ricerca e' un vettore ordinato per modello, con lo stesso
 //!   ordine di inserimento nelle liste e la stessa memoria dell'ultimo modello cercato (`lastpat`/`inext`) di `fetchit91`.
 
@@ -264,11 +265,14 @@ struct Mrb {
     rows: [u128; K],
     /// Posizione originale di ogni colonna.
     indices: [usize; N],
+    /// `false` se qualche riga non ha trovato il pivot (colonne piu' sicure dipendenti): la matrice non e' in forma
+    /// sistematica e le distanze vanno calcolate su tutti i bit.
+    systematic: bool,
 }
 
 impl Mrb {
     /// Ordina le colonne per affidabilita' decrescente e fa l'eliminazione di Gauss.
-    fn new(absrx: &[f32; N]) -> Option<Mrb> {
+    fn new(absrx: &[f32; N]) -> Mrb {
         let mut indices = [0usize; N];
         for (i, slot) in indices.iter_mut().enumerate() {
             *slot = i;
@@ -282,9 +286,15 @@ impl Mrb {
             *col = if c < K { 1u128 << c } else { GENERATOR_ROWS[c - K] };
         }
 
+        let mut systematic = true;
         for id in 0..K {
             let last = (K + PIVOT_SLACK).min(N);
-            let icol = id + cols[id..last].iter().position(|&c| (c >> id) & 1 == 1)?;
+            // pivot mancante (correzione di WSJT-X 3.3.0 beta 11): si salta la riga e si segna la matrice come non sistematica
+            let Some(found) = cols[id..last].iter().position(|&c| (c >> id) & 1 == 1) else {
+                systematic = false;
+                continue;
+            };
+            let icol = id + found;
             if icol != id {
                 cols.swap(id, icol);
                 indices.swap(id, icol);
@@ -307,7 +317,25 @@ impl Mrb {
                 }
             }
         }
-        Some(Mrb { cols, rows, indices })
+        Mrb { cols, rows, indices, systematic }
+    }
+
+    /// Parola di codice completa (un bit per posizione, nell'ordine di affidabilita') del messaggio `me`.
+    fn codeword_bits(&self, me: u128) -> [bool; N] {
+        std::array::from_fn(|i| parity(self.cols[i] & me) == 1)
+    }
+
+    /// Distanza (somma delle affidabilita' dei bit diversi dalle decisioni dure) della parola completa di `me`: vale anche a
+    /// matrice non sistematica, dove i primi K bit della parola non coincidono con `me`.
+    fn full_distance(&self, me: u128, m0: u128, hpar: u128, absrx: &[f32; N]) -> f32 {
+        let mut sum = 0.0;
+        for (i, bit) in self.codeword_bits(me).into_iter().enumerate() {
+            let hard = if i < K { (m0 >> i) & 1 == 1 } else { hpar & parity_bit(i - K) != 0 };
+            if bit != hard {
+                sum += absrx[i];
+            }
+        }
+        sum
     }
 
     /// Parita' (83 bit) del messaggio `me` (un bit per posizione K nel nuovo ordine).
@@ -399,7 +427,7 @@ pub fn osd_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], order: usize) -
     for (a, &l) in absrx_orig.iter_mut().zip(llr.iter()) {
         *a = l.abs();
     }
-    let mrb = Mrb::new(&absrx_orig)?;
+    let mrb = Mrb::new(&absrx_orig);
     let indices = mrb.indices;
 
     // decisioni dure e affidabilita' nel nuovo ordine
@@ -426,7 +454,13 @@ pub fn osd_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], order: usize) -
     }
 
     // distanza da una parola messaggio `me` data la sua parita' esclusa dai confronti
-    let distance = |me: u128, par: u128| weight_message(me ^ m0, &absrx) + weight_parity(par ^ hpar, &absrx);
+    let distance = |me: u128, par: u128| {
+        if mrb.systematic {
+            weight_message(me ^ m0, &absrx) + weight_parity(par ^ hpar, &absrx)
+        } else {
+            mrb.full_distance(me, m0, hpar, &absrx)
+        }
+    };
 
     let mut best = m0;
     let mut dmin = distance(m0, mrb.parity_of(m0));
@@ -459,7 +493,11 @@ pub fn osd_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], order: usize) -
                         continue;
                     }
                     if nd1kpt <= OSD_NTHETA {
-                        let dd = weight_message(mi, &absrx) + weight_parity(e2, &absrx);
+                        let dd = if mrb.systematic {
+                            weight_message(mi, &absrx) + weight_parity(e2, &absrx)
+                        } else {
+                            mrb.full_distance(me, m0, hpar, &absrx)
+                        };
                         if dd < dmin {
                             dmin = dd;
                             best = me;
@@ -477,9 +515,16 @@ pub fn osd_decode_masked(llr: &[f32; 174], apmask: &[bool; 174], order: usize) -
 
     // la parola migliore, riportata all'ordine originale
     let par = mrb.parity_of(best);
+    let full = if mrb.systematic { [false; N] } else { mrb.codeword_bits(best) };
     let mut codeword = [0u8; N];
     for (i, &orig) in indices.iter().enumerate() {
-        let bit = if i < K { (best >> i) & 1 == 1 } else { par & parity_bit(i - K) != 0 };
+        let bit = if !mrb.systematic {
+            full[i]
+        } else if i < K {
+            (best >> i) & 1 == 1
+        } else {
+            par & parity_bit(i - K) != 0
+        };
         codeword[orig] = u8::from(bit);
     }
     let message = accept(&codeword)?;
@@ -742,6 +787,41 @@ mod tests {
             assert_eq!(d.iterations, 0);
             assert!(crc::check(&d.message));
         }
+    }
+
+    /// Pivot mancanti (WSJT-X 3.3.0 beta 11): le colonne piu' sicure sono dipendenti perche' una parola di codice a peso basso sta
+    /// tutta tra i bit meno sicuri. Prima la decodifica era scartata, ora l'OSD prosegue e calcola le distanze su tutti i bit.
+    #[test]
+    fn osd_con_pivot_mancanti_decodifica() {
+        let mut rng = Rng::new(77);
+        // parola di codice di un solo bit di messaggio: il suo supporto va messo tra i bit meno sicuri
+        let mut unit = [0u8; 91];
+        unit[10] = 1;
+        let support = encode(&unit);
+        let weight: usize = support.iter().map(|&b| usize::from(b)).sum();
+        assert!(weight <= N - (K + PIVOT_SLACK), "peso {weight}: il supporto non sta tra i bit scartati");
+        let (mut senza_pivot, mut decodificati) = (0, 0);
+        for _ in 0..30 {
+            let (message, cw) = random_codeword(&mut rng);
+            let mut llr = [0f32; N];
+            for (i, l) in llr.iter_mut().enumerate() {
+                let mag = if support[i] == 1 { 0.3 } else { 4.0 + rng.uniform() as f32 };
+                *l = if cw[i] == 1 { mag } else { -mag };
+            }
+            let mut absrx = [0f32; N];
+            for (a, l) in absrx.iter_mut().zip(llr.iter()) {
+                *a = l.abs();
+            }
+            if Mrb::new(&absrx).systematic {
+                continue;
+            }
+            senza_pivot += 1;
+            if osd_decode(&llr, 3).is_some_and(|d| d.message == message && d.codeword == cw) {
+                decodificati += 1;
+            }
+        }
+        assert!(senza_pivot > 0, "la prova non produce pivot mancanti");
+        assert_eq!(decodificati, senza_pivot, "decodificati {decodificati} su {senza_pivot} senza pivot");
     }
 
     #[test]
