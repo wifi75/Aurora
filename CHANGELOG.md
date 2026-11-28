@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- ROS alto in trasmissione: l'avviso «Trasmissione fermata: ROS ... oltre la soglia» sparisce subito quando il ROS letto dalla radio, in trasmissione (per esempio nel Tune dopo aver sistemato l'accordatore), torna sotto la soglia, senza aspettare i due minuti. In ricezione una lettura buona non lo toglie.
+
 - Nuova sezione «Effetti a tema» in Impostazioni › Aspetto: neve con pochi fiocchi piccoli solo dentro il nome «AURORA by IU3WJQ» e luci a filo (verde, viola, ambra, azzurro, lampeggio lento) in uno spazio loro sul bordo alto dell'intestazione, che non copre niente. Ognuno ha «Automatico / Acceso / Spento»: di fabbrica la neve e' Automatica (dal 1° dicembre al 6 gennaio e solo sui PC potenti: almeno 6 processori, 4 GB e una misura dei fotogrammi sopra 45 al secondo) e le luci Spente. Solo CSS, fermi con la finestra nascosta e immobili con il movimento ridotto; colori per tema chiaro e scuro (`lib/themeEffects.ts` con prove, `components/ThemeEffects.tsx`, `styles/themeEffects.css`). Guida e traduzioni.
 
 ## 0.11.364 - 2026-11-28
