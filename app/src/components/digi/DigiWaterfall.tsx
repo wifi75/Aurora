@@ -20,6 +20,8 @@ interface Props {
   bandwidthHz: number;
   /** Il filtro BPF acceso: la banda che lascia passare al decodificatore (Hz, centrata sulla ricezione); 0 = spento. */
   passbandHz?: number;
+  /** CW: la larghezza del filtro del decodificatore (Hz) come banda sfumata attorno al cursore, senza bordi ne' scritte; 0 = niente. */
+  shadeHz?: number;
   /** Split acceso: la coppia rossa della trasmissione sta altrove e il clic la sposta; con Maiusc si sposta la ricezione. */
   split?: boolean;
   /** «Show hairlines»: due righe sottili su tutta la cascata alle frequenze di ricezione (e di trasmissione in split). */
@@ -60,7 +62,7 @@ interface Props {
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu, pileup = true, hideScale = false }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, shadeHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu, pileup = true, hideScale = false }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -351,6 +353,13 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
             <b>BPF</b>
           </span>
         </>
+      ) : null}
+      {shadeHz > 0 ? (
+        <span
+          className="digi-wf-shade"
+          style={{ left: xOf(rxShown - shadeHz / 2), width: Math.max(6, xOf(rxShown + shadeHz / 2) - xOf(rxShown - shadeHz / 2)), top: SCALE_H }}
+          aria-hidden="true"
+        />
       ) : null}
       {flag(rxShown)}
       {hairlines && rxShown >= minHz && rxShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxShown) }} aria-hidden="true" /> : null}

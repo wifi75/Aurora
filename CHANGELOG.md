@@ -3,6 +3,10 @@
 ## Non rilasciato
 
 ## 0.11.362 - 2026-11-28
+- Nuova opzione «Registra solo dopo il 73» (Impostazioni › Modi › Comune a tutti i modi › Registrazione e comportamento, chiave `LogAfter73`, #125 di Pere): spenta di fabbrica come WSJT-X (il QSO si registra al primo 73/RR73 trasmesso); accesa, se chiudi tu con l'RR73 il QSO si registra solo quando arriva il 73 dell'altro (stato `Fin`/`R73` del sequenziatore) e, se non arriva, non si registra; se rispondi a un CQ e l'altro ha chiuso con RR73 si registra come sempre. Prove in `scenari.rs`, Guida e traduzioni.
+
+- Cascata del CW: la larghezza del filtro del decodificatore si vede come banda sfumata attorno al cursore (`shadeHz` in `DigiWaterfall`).
+
 - Mappe (Mappa DX, Mappa e Propagazione): zoom fluido. La rotella e i pulsanti + e - non saltano piu' di mezzo livello alla volta ma scorrono verso il livello voluto fotogramma per fotogramma, restando fermi sul punto sotto il cursore (`lib/smoothZoom.ts`; l'animazione di Leaflet resta spenta).
 
 - Modi testuali: cambiando modo dal menu, da una macro (`<MODE:...>`) o dai pulsanti, la radio va sulla frequenza del piano di banda del nuovo modo, nella banda di adesso (prima succedeva solo entrando da un'altra pagina). Elenco dei piani in `textPlanOf` (`lib/modeRetune.ts`).
