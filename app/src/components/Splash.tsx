@@ -9,7 +9,11 @@ declare const __AURORA_UI_VERSION__: string;
 const UI_VERSION = typeof __AURORA_UI_VERSION__ === 'string' ? __AURORA_UI_VERSION__ : '';
 
 /** I modi che Aurora decodifica e trasmette oggi: sigle tecniche, uguali in tutte le lingue. */
-const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR', 'PSK', 'RTTY', 'CW', 'SSTV'] as const;
+const MODES = [
+  'FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR',
+  'PSK', 'QPSK31', 'RTTY', 'Amtor', 'CW', 'Olivia', 'Contestia', 'Throb', 'MT63',
+  'SSTV', 'WEFAX', 'SAT',
+] as const;
 
 /** Mostrata una sola volta per avvio del programma: anche quando la finestra si ricarica (aggiornamento, ricollegamento, Ctrl+R)
  *  la schermata e il saluto sonoro non tornano (lo si ricorda per la sessione della finestra). */
