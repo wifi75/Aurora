@@ -73,12 +73,28 @@ pub struct Decoded {
 }
 
 /// Decodifica 15 s di audio a 12 kHz (il periodo intero, dall'inizio). `fsync` e `ftol`: dove cercare il tono di sincronismo.
+/// Prima toglie i segnali FT8 e la portante fissa (`ultrafox_clean`, come `sfrx_sub.f90`).
 pub fn decode(audio: &[f32], fsync: f32, ftol: f32) -> Option<Decoded> {
     decode_with(audio, fsync, ftol, &CallHashes::default())
 }
 
 /// Come [`decode`] con la memoria degli hash dei nominativi: i nominativi non standard («<IU3ABC/P>») tornano per nome se gia' noti.
+/// I segnali FT8 da togliere si cercano con il decodificatore leggero.
 pub fn decode_with(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes) -> Option<Decoded> {
+    decode_with_known(audio, fsync, ftol, hashes, None)
+}
+
+/// Come [`decode_with`], ma con i messaggi FT8 che il decodificatore FT8 ha gia' trovato in questo periodo (`Some`): si sottraggono
+/// quelli, senza decodificare FT8 una seconda volta. Con `None` si usa il decodificatore leggero.
+pub fn decode_with_known(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes, ft8: Option<&[ft8::decode::Decoded]>) -> Option<Decoded> {
+    match crate::ultrafox_clean::clean(audio, fsync, ft8, hashes).audio {
+        Some(cleaned) => decode_raw(&cleaned, fsync, ftol, hashes),
+        None => decode_raw(audio, fsync, ftol, hashes),
+    }
+}
+
+/// La decodifica vera e propria, sull'audio cosi' com'e' (senza togliere FT8 ne' portanti).
+pub fn decode_raw(audio: &[f32], fsync: f32, ftol: f32, hashes: &CallHashes) -> Option<Decoded> {
     let n9 = 9 * RATE as usize;
     if audio.len() < n9 {
         return None;
@@ -548,6 +564,151 @@ mod tests {
         }
         let d = decode(&audio, 750.0, 100.0).expect("decodificato con la portante");
         assert_eq!(d.messages[0], "K1ABC IU3ABC RR73");
+    }
+
+    /// Un segnale FT8 (messaggio vero, codice LDPC e GFSK) che comincia a `dt` secondi, sommato al periodo.
+    fn add_ft8(audio: &mut [f32], text: &str, hz: f32, amp: f32, dt: f32) {
+        let w = ft8::modem::encode_message(text, hz, &mut CallHashes::default()).expect("onda FT8");
+        let at = (dt * RATE) as usize;
+        for (k, v) in w.iter().enumerate() {
+            if let Some(a) = audio.get_mut(at + k) {
+                *a += amp * v;
+            }
+        }
+    }
+
+    /// Il periodo della Fox a ampiezza 0,3 con poco rumore, senza altro.
+    fn fox_period() -> Vec<f32> {
+        period(&hounds(), &Extras::default(), 0.5 - NSPS as f32 / RATE, 0.3, 0.05)
+    }
+
+    /// `sfox_remove_ft8`: un FT8 forte dentro i 100 Hz del sincronismo ruba il picco e la Fox non si aggancia; tolto l'FT8 si decodifica.
+    /// La prova richiede che senza pulizia non decodifichi, altrimenti non proverebbe niente.
+    #[test]
+    fn a_strong_ft8_signal_near_the_sync_tone_is_removed() {
+        let mut audio = fox_period();
+        add_ft8(&mut audio, "CQ IU3ABC IO91", 790.0, 1.0, 0.5);
+        let hashes = CallHashes::default();
+        assert!(decode_raw(&audio, 750.0, 100.0, &hashes).is_none(), "senza pulizia dovrebbe fallire");
+        let d = decode(&audio, 750.0, 100.0).expect("decodificato dopo aver tolto l'FT8");
+        assert_eq!(d.messages[0], "K1ABC IU3ABC RR73");
+        // lo stesso con l'elenco gia' decodificato dal decodificatore FT8 completo (il percorso del Hound)
+        let mut o = ft8::decode::Options::depth(1);
+        o.threads = 1;
+        let found = ft8::decode::decode_slot(&audio, &o, &mut CallHashes::default());
+        assert!(found.iter().any(|f| f.text == "CQ IU3ABC IO91"), "{found:?}");
+        let d = decode_with_known(&audio, 750.0, 100.0, &hashes, Some(&found)).expect("decodificato con l'elenco noto");
+        assert_eq!(d.messages[0], "K1ABC IU3ABC RR73");
+    }
+
+    /// `sfox_remove_tone`: una portante forte vicino al sincronismo (non esattamente a 750 Hz) lo copre; tolta la portante si decodifica.
+    #[test]
+    fn a_steady_carrier_near_the_sync_tone_is_removed() {
+        let mut audio = fox_period();
+        for (k, a) in audio.iter_mut().enumerate() {
+            *a += (std::f32::consts::TAU * 781.3 * k as f32 / RATE).sin();
+        }
+        assert!(decode_raw(&audio, 750.0, 100.0, &CallHashes::default()).is_none(), "senza pulizia dovrebbe fallire");
+        let (hz, _) = crate::ultrafox_clean::remove_tone(&audio, 750.0).expect("portante trovata");
+        assert!((hz - 781.3).abs() < 0.2, "{hz}");
+        let d = decode(&audio, 750.0, 100.0).expect("decodificato dopo aver tolto la portante");
+        assert_eq!(d.messages[0], "K1ABC IU3ABC RR73");
+    }
+
+    /// Una Fox sola non deve essere toccata: il mini decodificatore non trova FT8 e il sincronismo (acceso e spento) non e' una portante.
+    #[test]
+    fn a_fox_alone_is_left_untouched() {
+        let audio = fox_period();
+        assert!(crate::ultrafox_clean::mini_decode(&audio, &CallHashes::default()).is_empty());
+        assert!(crate::ultrafox_clean::remove_tone(&audio, 750.0).is_none());
+        let c = crate::ultrafox_clean::clean(&audio, 750.0, None, &CallHashes::default());
+        assert!(c.audio.is_none() && c.ft8_removed == 0 && c.tone_hz.is_none());
+        assert!(decode(&audio, 750.0, 100.0).is_some());
+        // anche nel rumore forte, dove le false portanti sarebbero piu' facili
+        let noisy = period(&hounds(), &Extras::default(), 0.5 - NSPS as f32 / RATE, 0.3, 1.0);
+        assert!(crate::ultrafox_clean::remove_tone(&noisy, 750.0).is_none());
+    }
+
+    /// Il rumore solo non produce falsi FT8 da togliere ne' portanti.
+    #[test]
+    fn noise_alone_has_nothing_to_remove() {
+        let audio = noise(15 * 12_000, 1.0, 11);
+        let c = crate::ultrafox_clean::clean(&audio, 750.0, None, &CallHashes::default());
+        assert!(c.audio.is_none(), "{c:?}");
+    }
+
+    /// Messaggi che non si ricostruiscono (nominativo in hash non risolto, testo a priori) non si sottraggono.
+    #[test]
+    fn unresolvable_ft8_texts_are_not_subtracted() {
+        let mut audio = vec![0.0f32; 15 * 12_000];
+        let d = |text: &str, hint: bool| ft8::decode::Decoded { freq_hz: 1000.0, dt_s: 0.0, snr_db: -10, text: text.into(), hint };
+        let list = [d("<...> IU3ABC RR73", false), d("CQ IU3ABC IO91", true), d("CQ IU3ABC IO91", false)];
+        // solo l'ultimo e' valido: il segnale non c'e' nell'audio, ma la sottrazione si conta lo stesso
+        assert_eq!(crate::ultrafox_clean::remove_ft8(&mut audio, &list, &CallHashes::default()), 1);
+        let far = ft8::decode::Decoded { freq_hz: 3000.0, ..d("CQ IU3ABC IO91", false) };
+        assert_eq!(crate::ultrafox_clean::remove_ft8(&mut audio, &[far], &CallHashes::default()), 0);
+    }
+
+    /// Misura dei tempi della pulizia: cargo test --release -j 2 -p engine-native pulizia -- --ignored --nocapture --test-threads=1
+    #[test]
+    #[ignore = "misura del tempo"]
+    fn pulizia() {
+        use std::time::Instant;
+        let hashes = CallHashes::default();
+        let texts = ["CQ IU3ABC IO91", "K1ABC DL1ABC JO62", "JA1XYZ VK2AB -12", "DL1ABC K1ABC RR73", "CQ DX VK2AB QF56", "IU3ABC JA1XYZ R-05", "W1AW K1ABC FN31", "OH2BH DL1ABC 73"];
+        let mut busy = noise(15 * 12_000, 0.05, 5);
+        for (i, t) in texts.iter().enumerate() {
+            add_ft8(&mut busy, t, 600.0 + 230.0 * i as f32, 0.2, 0.3 + 0.1 * i as f32);
+        }
+        let fox = {
+            let mut a = fox_period();
+            add_ft8(&mut a, "CQ IU3ABC IO91", 790.0, 1.0, 0.5);
+            a
+        };
+        let runs = 3;
+        let time = |f: &dyn Fn()| {
+            let t = Instant::now();
+            (0..runs).for_each(|_| f());
+            t.elapsed().as_secs_f64() * 1000.0 / runs as f64
+        };
+        let mut o = ft8::decode::Options::depth(1);
+        o.threads = 1;
+        let full = time(&|| {
+            ft8::decode::decode_slot(&busy, &o, &mut CallHashes::default());
+        });
+        let found = ft8::decode::decode_slot(&busy, &o, &mut CallHashes::default());
+        println!("FT8 completo (profondita' 1, un thread): {full:.0} ms, {} messaggi", found.len());
+        let mini = time(&|| {
+            crate::ultrafox_clean::mini_decode(&busy, &hashes);
+        });
+        let mini_found = crate::ultrafox_clean::mini_decode(&busy, &hashes);
+        println!("mini decodificatore FT8: {mini:.0} ms, {} messaggi", mini_found.len());
+        let sub = time(&|| {
+            let mut c = busy.clone();
+            crate::ultrafox_clean::remove_ft8(&mut c, &found, &hashes);
+        });
+        println!("sottrazione di {} FT8 gia' noti: {sub:.0} ms", found.len());
+        let tone = time(&|| {
+            crate::ultrafox_clean::remove_tone(&busy, 750.0);
+        });
+        println!("ricerca/rimozione portante: {tone:.1} ms");
+        let before = time(&|| {
+            decode_raw(&busy, 750.0, 200.0, &hashes);
+        });
+        let known = time(&|| {
+            decode_with_known(&busy, 750.0, 200.0, &hashes, Some(&found));
+        });
+        let own = time(&|| {
+            decode_with_known(&busy, 750.0, 200.0, &hashes, None);
+        });
+        println!("periodo affollato, senza Fox: prima {before:.0} ms, ora con elenco noto {known:.0} ms, con mini decodificatore {own:.0} ms");
+        let fb = time(&|| {
+            decode_raw(&fox, 750.0, 100.0, &hashes);
+        });
+        let fa = time(&|| {
+            decode(&fox, 750.0, 100.0);
+        });
+        println!("Fox con FT8 vicino: prima (fallisce) {fb:.0} ms, ora (decodifica) {fa:.0} ms");
     }
 
     #[test]
