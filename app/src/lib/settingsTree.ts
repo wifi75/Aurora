@@ -66,6 +66,7 @@ export const SETTINGS_TREE: readonly TreeFamily[] = [
         page('macros', 'sw.tab.macros'),
         page('automation', 'nav.automation'),
         page('messages', 'sw.pg.messages'),
+        page('specialcq', 'sw.pg.specialCq'),
         page('contest', 'sw.sub.contest'),
       ]),
       page('jt', 'sw.sub.jt'),

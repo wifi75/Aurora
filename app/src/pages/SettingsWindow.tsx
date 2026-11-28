@@ -41,6 +41,7 @@ import { AgentTab } from '../settings/AgentTab';
 import { AppearanceTab } from '../settings/AppearanceTab';
 import { WaterfallTab } from '../settings/WaterfallTab';
 import { WishlistTab } from '../settings/WishlistTab';
+import { SpecialCqTab } from '../settings/SpecialCqTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
 import { SessionDraft, type SharedDraft } from '../settings/session';
 import { PersonalTab } from '../settings/PersonalTab';
@@ -84,6 +85,7 @@ const RENDER: Readonly<Record<string, () => ReactNode>> = {
       <GeneralWindowTab part="screen" />
     </div>
   ),
+  specialcq: () => <SpecialCqTab />,
   // Modi › gli altri modi del motore
   jt: () => <FiltersTab part="jtdecode" />,
   vhf: () => <FiltersTab part="vhfdecode" />,
