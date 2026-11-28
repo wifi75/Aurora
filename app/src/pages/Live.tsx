@@ -51,7 +51,7 @@ import { useT } from '../i18n';
 import { applyActivityFilters, applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
-import { pickSpecialCq } from '../lib/specialCqSound';
+import { markSpecial, pickSpecialCq, specialYieldsTo } from '../lib/specialCqSound';
 import { useSpecialCq } from '../lib/specialCqPrefs';
 import { armAudio } from '../lib/soundBank';
 import { playAlert } from '../lib/voice';
@@ -221,15 +221,16 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       const st = ringState(transmitting);
       const picked = pickSoundEvent(state.decodes, lastId, st, state.status?.de_call, state.status?.dx_call);
       lastId = picked.lastId;
-      if (picked.sound) playAlert(picked.sound, st.volume, { event: picked.event ?? undefined, call: picked.call });
-      // CQ speciali (POTA, SOTA...; #115): al primo CQ di un nominativo, una volta ogni 10 minuti; se nello stesso giro ha gia' suonato
-      // un'altra funzione tace (il nominativo resta segnato)
-      const special = pickSpecialCq(state.decodes, lastSpecial, useSpecialCq.getState().prefs, specialSeen, Date.now());
+      // CQ speciali (POTA, SOTA...; #115): al primo CQ di un nominativo, una volta ogni 10 minuti. Vince sulle funzioni generiche (CQ,
+      // nuovo nominativo...); cede solo alle chiamate a me, al DX scelto e al DXCC nuovo, e allora non si segna e suona al CQ dopo
+      const now = Date.now();
+      const special = pickSpecialCq(state.decodes, lastSpecial, useSpecialCq.getState().prefs, specialSeen, now);
       lastSpecial = special.lastId;
-      if (special.call && !picked.sound) {
-        const id = soundFor('special_cq', st);
-        if (id) playAlert(id, st.volume, { event: 'special_cq', call: special.call });
-      }
+      const specialSound = special.call && !(picked.sound && specialYieldsTo(picked.event)) ? soundFor('special_cq', st) : null;
+      if (specialSound) {
+        playAlert(specialSound, st.volume, { event: 'special_cq', call: special.call });
+        markSpecial(specialSeen, special.keys, now);
+      } else if (picked.sound) playAlert(picked.sound, st.volume, { event: picked.event ?? undefined, call: picked.call });
       // «Mio messaggio in trasmissione»: una riga Tx nuova
       const txTop = state.txLog[0]?.id ?? null;
       if (lastTx !== undefined && txTop !== null && txTop !== lastTx) {
