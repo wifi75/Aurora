@@ -100,6 +100,8 @@ struct Rx {
     image: RgbImage,
     missed: u32,
     phase_known: bool,
+    /// Partita dal periodo delle righe, senza VIS: finche' i sincronismi trovati sono pochi puo' essere rumore.
+    auto_sync: bool,
 }
 
 /// Quanti secondi di fila senza sincronismo chiudono la ricezione. Un'interruzione piu' breve (evanescenza, disturbo, un VFO girato) non chiude
@@ -109,6 +111,10 @@ const MAX_LOST_S: f64 = 30.0;
 /// ...ma negli ultimi tratti dell'immagine (dal 90 %) bastano 6 secondi: il segnale e' quasi certamente finito (la trasmissione e' stata presa a
 /// meta' o si e' fermata prima della fine) e l'immagine si chiude e si salva subito, come prima.
 const MAX_LOST_END_S: f64 = 6.0;
+/// Un'immagine partita senza VIS con meno di questi sincronismi trovati non e' ancora confermata...
+const UNCONFIRMED_SYNCS: usize = 6;
+/// ...e senza sincronismo da questi secondi si lascia (il riconoscimento era sul rumore), invece dei 30 s di un'interruzione vera.
+const UNCONFIRMED_LOST_S: f64 = 4.0;
 /// Parte minima dell'immagine per salvarla quando la ricezione si interrompe.
 const MIN_SAVE: f32 = 0.3;
 /// Un VIS nuovo chiude l'immagine in corso solo se questa e' senza sincronismo da tanto: una trasmissione nuova ha comunque davanti
@@ -355,6 +361,7 @@ impl Decoder {
             image: RgbImage { width: spec.width, height: spec.height, data: vec![0; (spec.width * spec.height * 3) as usize] },
             missed: 0,
             phase_known: !forced,
+            auto_sync: false,
         }
     }
 
@@ -442,6 +449,7 @@ impl Decoder {
         let back = (spec.sync_offset() * f64::from(RATE)).round() as u64 + margin;
         let Some(past) = hit.syncs.iter().find_map(|&s| s.checked_sub(back).and_then(|start| self.history_since(start))) else { return };
         let mut rx = self.new_rx(hit.mode, hit.offset_hz, true);
+        rx.auto_sync = true;
         rx.buf.extend(past);
         tracing::info!("SSTV: {} riconosciuto dal periodo delle righe, senza VIS (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
         events.push(DecoderEvent::Started { mode: hit.mode, offset_hz: hit.offset_hz, forced: false, by_sync: true });
@@ -585,6 +593,10 @@ impl Decoder {
 impl Rx {
     /// Dopo quanti secondi senza sincronismo si chiude la ricezione: tanti a meta' immagine (un'interruzione), pochi verso la fine.
     fn max_lost_s(&self) -> f64 {
+        // senza VIS e con pochi sincronismi trovati e' quasi certamente un falso riconoscimento sul rumore: si lascia dopo pochi secondi
+        if self.auto_sync && self.syncs.len() < UNCONFIRMED_SYNCS {
+            return UNCONFIRMED_LOST_S;
+        }
         if self.next_group * 10 >= self.spec.groups() * 9 { MAX_LOST_END_S } else { MAX_LOST_S }
     }
 

@@ -18,6 +18,11 @@ const TOL_MS: f64 = 3.0;
 const KEEP: usize = 32;
 /// Una media sotto questa frequenza (tolta la correzione manuale) e' sincronismo: fra 1200 Hz e il nero a 1500 Hz.
 const SYNC_BELOW_HZ: f32 = 1350.0;
+/// Quanto possono allargarsi le medie di 1 ms dentro un impulso di sincronismo (Hz): un tono fermo, anche con un po' di rumore, resta dentro.
+const PULSE_SPREAD_HZ: f32 = 160.0;
+/// Quanto possono differire fra loro le frequenze degli impulsi usati (Hz) e le loro durate (ms).
+const MAX_PULSE_HZ_DEV: f32 = 60.0;
+const MAX_PULSE_LEN_DEV_MS: f32 = 2.0;
 /// Scarto di sintonia massimo accettato.
 const MAX_OFFSET_HZ: f32 = 200.0;
 
@@ -46,8 +51,8 @@ pub struct SyncDetector {
     at: u64,
     /// Correzione manuale della sintonia.
     manual: f32,
-    /// Impulso in corso: (inizio, medie, somma delle frequenze dalla seconda media).
-    run: Option<(u64, u32, f32)>,
+    /// Impulso in corso: (inizio, medie, somma delle frequenze dalla seconda media, minima e massima di quelle medie).
+    run: Option<(u64, u32, f32, f32, f32)>,
     pulses: VecDeque<Pulse>,
 }
 
@@ -94,15 +99,22 @@ impl SyncDetector {
             let bin_start = self.at - BIN as u64;
             if mean - self.manual < SYNC_BELOW_HZ {
                 self.run = Some(match self.run {
-                    Some((s, n, sum)) => (s, n + 1, sum + mean),
+                    // dalla seconda media in poi: somma, minima e massima (il tono vero sta fermo, il rumore balla)
+                    Some((s, n, sum, _, _)) if n == 1 => (s, n + 1, sum + mean, mean, mean),
+                    Some((s, n, sum, lo, hi)) => (s, n + 1, sum + mean, lo.min(mean), hi.max(mean)),
                     // la prima media e' spesso a cavallo del fronte: non entra nella frequenza dell'impulso
-                    None => (bin_start, 1, 0.0),
+                    None => (bin_start, 1, 0.0, f32::MAX, f32::MIN),
                 });
                 continue;
             }
-            let Some((start, n, sum)) = self.run.take() else { continue };
+            let Some((start, n, sum, lo, hi)) = self.run.take() else { continue };
             // impulsi da 3 a 40 ms: piu' corti e' rumore, piu' lunghi non e' un sincronismo (leader del VIS, un tono fisso)
             if !(3..=40).contains(&n) {
+                continue;
+            }
+            // un sincronismo e' un tono fermo a 1200 Hz: se le medie di 1 ms dentro l'impulso si allargano oltre PULSE_SPREAD_HZ e' rumore
+            // che per caso sta sotto 1350 Hz (di notte, senza segnale, bastava per riconoscere un modo e aprire una ricezione a vuoto)
+            if hi - lo > PULSE_SPREAD_HZ {
                 continue;
             }
             if self.pulses.len() == KEEP {
@@ -134,10 +146,12 @@ impl SyncDetector {
     /// appena finito si va indietro di riga in riga; gli impulsi in mezzo (rumore su un nero, un disturbo) si saltano.
     fn fit(&self, spec: &ModeSpec) -> Option<(u32, f64, SyncHit)> {
         let line_ms = spec.group_seconds() * 1000.0;
-        // come MMSSTV: tre intervalli di fila, quattro per i modi veloci (piu' facili da imitare per caso)
-        let need = if line_ms < 400.0 { 4 } else { 3 };
+        // MMSSTV vuole tre intervalli di fila, quattro per i modi veloci; qui quattro sempre: sul solo rumore tre bastavano per caso
+        // e si apriva una ricezione senza nessun segnale
+        let need = 4;
         let sync_ms = (spec.sync * 1000.0) as f32;
-        let fits_width = |p: &Pulse| p.len_ms >= sync_ms * 0.5 - 1.5 && p.len_ms <= sync_ms * 1.5 + 2.0;
+        // la durata contata in medie da 1 ms: quella vera piu' al massimo due medie (il fronte e un bordo che sfora)
+        let fits_width = |p: &Pulse| p.len_ms >= sync_ms - 1.0 && p.len_ms <= sync_ms + 2.5;
         let ms = |a: &Pulse, b: &Pulse| (b.start - a.start) as f64 / f64::from(crate::RATE) * 1000.0;
         let all: Vec<Pulse> = self.pulses.iter().copied().collect();
         let mut used = vec![*all.last()?];
@@ -176,7 +190,12 @@ impl SyncDetector {
         }
         let mut freqs: Vec<f32> = used.iter().map(|p| p.hz).collect();
         let hz = median(&mut freqs);
-        if used.iter().any(|p| (p.hz - hz).abs() > 80.0) {
+        if used.iter().any(|p| (p.hz - hz).abs() > MAX_PULSE_HZ_DEV) {
+            return None;
+        }
+        // i sincronismi di una trasmissione hanno tutti la stessa durata (a meno di una media da 1 ms): il rumore no
+        let (short, long) = used.iter().fold((f32::MAX, f32::MIN), |(lo, hi), p| (lo.min(p.len_ms), hi.max(p.len_ms)));
+        if long - short > MAX_PULSE_LEN_DEV_MS {
             return None;
         }
         let offset = hz - 1200.0;
@@ -186,5 +205,51 @@ impl SyncDetector {
         let n = used.len();
         let syncs = [used[n - 3].start, used[n - 2].start, used[n - 1].start];
         Some((ones, err / need as f64, SyncHit { mode: spec.mode, syncs, offset_hz: offset }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Frequenze demodulate di solo rumore: una passeggiata correlata attorno a 1500 Hz, da 250 a 2750 Hz, come il discriminatore sul fruscio.
+    fn noise(seconds: usize, seed: u64) -> Vec<f32> {
+        let mut state = seed;
+        let mut f = 1500.0f32;
+        (0..seconds * 12_000)
+            .map(|_| {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                let u = ((state >> 33) as f32 / (1u64 << 31) as f32) * 2500.0 + 250.0;
+                f = 0.995 * f + 0.005 * u + (u - 1500.0) * 0.02;
+                f.clamp(250.0, 2750.0)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn noise_alone_never_starts_an_image() {
+        for seed in 1..=6u64 {
+            let mut det = SyncDetector::new(0.0);
+            let hits: Vec<_> = noise(180, seed).chunks(12_000).enumerate().filter_map(|(i, c)| det.push(c, (i * 12_000) as u64, None)).collect();
+            assert!(hits.is_empty(), "seme {seed}: rumore preso per {:?}", hits.first().map(|h| h.mode));
+        }
+    }
+
+    /// Impulsi veri: sincronismi da 9 ms a 1200 Hz ogni riga di Martin 1 su un nero a 1500 Hz.
+    #[test]
+    fn real_sync_pulses_are_still_found() {
+        let spec = crate::modes::SstvMode::Martin1.spec();
+        let line = (spec.group_seconds() * 12_000.0).round() as usize;
+        let mut samples = Vec::new();
+        for _ in 0..6 {
+            let mut one = vec![1500.0f32; line];
+            for v in one.iter_mut().take((spec.sync * 12_000.0) as usize) {
+                *v = 1200.0;
+            }
+            samples.extend(one);
+        }
+        let mut det = SyncDetector::new(0.0);
+        let hit = det.push(&samples, 0, None);
+        assert_eq!(hit.map(|h| h.mode), Some(crate::modes::SstvMode::Martin1));
     }
 }
