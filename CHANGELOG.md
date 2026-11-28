@@ -1,6 +1,22 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.362 - 2026-11-28
+- Mappe (Mappa DX, Mappa e Propagazione): zoom fluido. La rotella e i pulsanti + e - non saltano piu' di mezzo livello alla volta ma scorrono verso il livello voluto fotogramma per fotogramma, restando fermi sul punto sotto il cursore (`lib/smoothZoom.ts`; l'animazione di Leaflet resta spenta).
+
+- Modi testuali: cambiando modo dal menu, da una macro (`<MODE:...>`) o dai pulsanti, la radio va sulla frequenza del piano di banda del nuovo modo, nella banda di adesso (prima succedeva solo entrando da un'altra pagina). Elenco dei piani in `textPlanOf` (`lib/modeRetune.ts`).
+
+- Cambiando a FST4 da una banda senza righe FST4 (per esempio i 20 m) la radio non salta piu' a 136 kHz (2200 m, la prima banda dove il modo esiste): il salto alla prima banda vale solo per i modi che esistono dai VHF in su (MSK144), con prova in `modeRetune.test.ts`.
+
+- Cascata del CW: un solo cursore sulla frequenza (come il PSK) invece della coppia di marcatori larga come il filtro, che e' quella dell'RTTY (mark e space).
+
+- SSTV: la ricezione non parte piu' da sola sul rumore (modo riconosciuto «dal ritmo delle righe, senza VIS» con sincronismo all'8 %). Gli impulsi di sincronismo devono essere un tono fermo (medie di 1 ms entro 160 Hz), della durata giusta del modo e uguali tra loro (frequenza entro 60 Hz, durata entro 2 ms), con quattro intervalli di fila (prima tre); un'immagine partita senza VIS con meno di sei sincronismi trovati e senza sincronismo da 4 s si lascia (prima 30 s). Prova su rumore in `syncdetect.rs`.
+
+- Selettore delle frequenze: tre decimali (14,229 invece di 14,2290 per qualche hertz di scarto della manopola); quattro solo per le frequenze a centinaia di Hz (7,0475).
+
+- FT4: la trasmissione parte a 0,3 s dall'inizio del periodo come WSJT-X (`Modulator.cpp`, `m_nsps == 576`), non a 0,5 s come l'FT8.
+
 - UltraFOX, ricezione: prima di cercare il sincronismo si ripulisce l'audio come `sfrx_sub.f90` di WSJT-X 3.3 (nuovo `engine-native/src/ultrafox_clean.rs`). `sfox_remove_ft8`: si sottraggono i segnali FT8 tra 500 e 2500 Hz; il Hound riusa i messaggi che il decodificatore FT8 ha gia' trovato nello stesso periodo (toni ricostruiti dal testo, sottrazione adattiva), quindi FT8 non si decodifica due volte; senza elenco gira un mini decodificatore (una passata, sincronismo 1,5, 100 candidati, solo propagazione di credenze). `sfox_remove_tone`: una portante fissa (picco stretto, larghezza sotto 2,5 Hz) tra `fsync - 50` e `fsync + 1550` Hz si toglie con filtro a coseno quadro di 8001 campioni, sull'audio reale. Prima un FT8 forte o un tono vicino a 750 Hz rubavano il picco del sincronismo e la Fox non si agganciava. Misurato in release: 43 ms per sottrarre 8 FT8 gia' noti, 5 ms per la portante, 81 ms il mini decodificatore (solo senza elenco). Da provare in onda con una Fox SuperFox vera.
 
 - OSD (LDPC di FT8, FT4, FST4): corretti i «pivot mancanti» come in WSJT-X 3.3.0 beta 11. Quando le colonne piu' sicure sono dipendenti e una riga dell'eliminazione di Gauss non trova il pivot, la riga si salta e le distanze dei candidati si calcolano su tutti i bit (prima in FT8/FT4 la decodifica era scartata, in FST4 si usava una scorciatoia valida solo a matrice sistematica). Prova automatica con parola di codice il cui supporto sta tra i bit meno sicuri (`osd_con_pivot_mancanti_decodifica`).
