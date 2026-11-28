@@ -142,6 +142,52 @@ export const GUIDE_ASPETTO: readonly GuideSection[] = [
     ],
   },
   {
+    id: 's-effetti-tema',
+    title: ['[[fx.title]]', '[[fx.title]]', '[[fx.title]]', '[[fx.title]]', '[[fx.title]]', '[[fx.title]]'],
+    text: [
+      'In [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]] il riquadro «[[fx.title]]» decide due piccoli effetti invernali nell’intestazione in alto: la neve dentro il nome «AURORA» e le luci a filo sul bordo alto. Non coprono niente e non rallentano la ricezione.',
+      'In [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]] the “[[fx.title]]” box controls two small winter effects in the top header: snow inside the “AURORA” name and string lights along the top edge. They cover nothing and do not slow down reception.',
+      'Unter [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]] steuert der Bereich „[[fx.title]]“ zwei kleine Wintereffekte in der Kopfleiste oben: Schnee im Namen „AURORA“ und eine Lichterkette am oberen Rand. Sie verdecken nichts und bremsen den Empfang nicht.',
+      'Dans [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]], le cadre « [[fx.title]] » règle deux petits effets d’hiver dans l’en-tête en haut : la neige dans le nom « AURORA » et la guirlande le long du bord supérieur. Ils ne masquent rien et ne ralentissent pas la réception.',
+      'En [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]] el recuadro «[[fx.title]]» controla dos pequeños efectos de invierno en la cabecera superior: la nieve dentro del nombre «AURORA» y la guirnalda a lo largo del borde superior. No tapan nada y no ralentizan la recepción.',
+      'Em [[nav.settings]] › [[sw.sec.look]] › [[sw.tab.appearance]] o quadro «[[fx.title]]» controla dois pequenos efeitos de inverno no cabeçalho superior: a neve dentro do nome «AURORA» e o fio de luzes ao longo do bordo superior. Não tapam nada e não abrandam a receção.',
+    ],
+    steps: [
+      [
+        'Ogni effetto ha tre pulsanti: «[[fx.auto]]», «[[fx.on]]» e «[[fx.off]]». La scelta vale subito, su questo computer.',
+        'Each effect has three buttons: “[[fx.auto]]”, “[[fx.on]]” and “[[fx.off]]”. The choice applies at once, on this computer.',
+        'Jeder Effekt hat drei Schalter: „[[fx.auto]]“, „[[fx.on]]“ und „[[fx.off]]“. Die Wahl gilt sofort, auf diesem Computer.',
+        'Chaque effet a trois boutons : « [[fx.auto]] », « [[fx.on]] » et « [[fx.off]] ». Le choix s’applique aussitôt, sur cet ordinateur.',
+        'Cada efecto tiene tres botones: «[[fx.auto]]», «[[fx.on]]» y «[[fx.off]]». La elección vale al instante, en este ordenador.',
+        'Cada efeito tem três botões: «[[fx.auto]]», «[[fx.on]]» e «[[fx.off]]». A escolha vale logo, neste computador.',
+      ],
+      [
+        '«[[fx.auto]]» mostra l’effetto da solo dal 1° dicembre al 6 gennaio (compresi), secondo la data del PC, e solo se il PC è potente: almeno 6 processori, 4 GB di memoria e un’animazione fluida nei primi secondi. Se il PC risulta lento l’effetto resta spento.',
+        '“[[fx.auto]]” shows the effect by itself from 1 December to 6 January (inclusive), by the PC date, and only if the PC is powerful: at least 6 processors, 4 GB of memory and smooth animation in the first seconds. If the PC turns out slow the effect stays off.',
+        '„[[fx.auto]]“ zeigt den Effekt von selbst vom 1. Dezember bis 6. Januar (einschließlich), nach dem Datum des PCs, und nur auf einem leistungsstarken PC: mindestens 6 Prozessoren, 4 GB Speicher und flüssige Animation in den ersten Sekunden. Ist der PC langsam, bleibt der Effekt aus.',
+        '« [[fx.auto]] » affiche l’effet tout seul du 1er décembre au 6 janvier (inclus), selon la date du PC, et seulement si le PC est puissant : au moins 6 processeurs, 4 Go de mémoire et une animation fluide dans les premières secondes. Si le PC s’avère lent, l’effet reste éteint.',
+        '«[[fx.auto]]» muestra el efecto solo del 1 de diciembre al 6 de enero (incluidos), según la fecha del PC, y solo si el PC es potente: al menos 6 procesadores, 4 GB de memoria y una animación fluida en los primeros segundos. Si el PC resulta lento el efecto queda apagado.',
+        '«[[fx.auto]]» mostra o efeito sozinho de 1 de dezembro a 6 de janeiro (inclusive), segundo a data do PC, e só se o PC for potente: pelo menos 6 processadores, 4 GB de memória e uma animação fluida nos primeiros segundos. Se o PC se revelar lento o efeito fica desligado.',
+      ],
+      [
+        'Di fabbrica c’è solo la [[fx.snow]] su «[[fx.auto]]»; le [[fx.lights]] sono su «[[fx.off]]». Per accenderle premi «[[fx.on]]» accanto a «[[fx.lights]]» (o «[[fx.auto]]» per averle solo nel periodo invernale).',
+        'By default only the [[fx.snow]] is on “[[fx.auto]]”; the [[fx.lights]] are “[[fx.off]]”. To turn them on press “[[fx.on]]” next to “[[fx.lights]]” (or “[[fx.auto]]” to have them only in the winter period).',
+        'Ab Werk steht nur der [[fx.snow]] auf „[[fx.auto]]“; die [[fx.lights]] steht auf „[[fx.off]]“. Zum Einschalten „[[fx.on]]“ neben „[[fx.lights]]“ drücken (oder „[[fx.auto]]“, um sie nur in der Winterzeit zu haben).',
+        'Par défaut seule la [[fx.snow]] est sur « [[fx.auto]] » ; la [[fx.lights]] est sur « [[fx.off]] ». Pour l’allumer, appuie sur « [[fx.on]] » à côté de « [[fx.lights]] » (ou « [[fx.auto]] » pour l’avoir seulement en hiver).',
+        'De fábrica solo la [[fx.snow]] está en «[[fx.auto]]»; la [[fx.lights]] está en «[[fx.off]]». Para encenderla pulsa «[[fx.on]]» junto a «[[fx.lights]]» (o «[[fx.auto]]» para tenerla solo en el periodo de invierno).',
+        'De origem só a [[fx.snow]] está em «[[fx.auto]]»; o [[fx.lights]] está em «[[fx.off]]». Para o ligar carrega em «[[fx.on]]» junto a «[[fx.lights]]» (ou «[[fx.auto]]» para o ter só no período de inverno).',
+      ],
+      [
+        '«[[fx.on]]» mostra l’effetto in qualunque data, anche su un PC lento; «[[fx.off]]» lo toglie sempre. Con il movimento ridotto di Windows gli effetti restano fermi: pochi fiocchi immobili e lampadine accese fisse.',
+        '“[[fx.on]]” shows the effect on any date, even on a slow PC; “[[fx.off]]” always removes it. With Windows reduced motion the effects stay still: a few motionless flakes and steadily lit bulbs.',
+        '„[[fx.on]]“ zeigt den Effekt an jedem Datum, auch auf einem langsamen PC; „[[fx.off]]“ entfernt ihn immer. Mit reduzierter Bewegung von Windows bleiben die Effekte still: ein paar ruhende Flocken und dauerhaft leuchtende Lämpchen.',
+        '« [[fx.on]] » affiche l’effet à n’importe quelle date, même sur un PC lent ; « [[fx.off]] » l’enlève toujours. Avec le mouvement réduit de Windows, les effets restent immobiles : quelques flocons fixes et des ampoules allumées en continu.',
+        '«[[fx.on]]» muestra el efecto en cualquier fecha, incluso en un PC lento; «[[fx.off]]» lo quita siempre. Con el movimiento reducido de Windows los efectos quedan quietos: unos pocos copos inmóviles y bombillas encendidas fijas.',
+        '«[[fx.on]]» mostra o efeito em qualquer data, mesmo num PC lento; «[[fx.off]]» tira-o sempre. Com o movimento reduzido do Windows os efeitos ficam parados: alguns flocos imóveis e lâmpadas acesas fixas.',
+      ],
+    ],
+  },
+  {
     id: 's-colori',
     title: ['[[sw.tab.colors]]', '[[sw.tab.colors]]', '[[sw.tab.colors]]', '[[sw.tab.colors]]', '[[sw.tab.colors]]', '[[sw.tab.colors]]'],
     text: [
