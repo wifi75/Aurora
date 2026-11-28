@@ -56,6 +56,7 @@ export const engineSettingsStrings = {
   'ens.g.net': ['Servizi di rete', 'Network services', 'Netzwerkdienste', 'Services réseau', 'Servicios de red', 'Serviços de rede'],
   'ens.g.udp': ['Server UDP primario', 'Primary UDP server', 'Primärer UDP-Server', 'Serveur UDP primaire', 'Servidor UDP primario', 'Servidor UDP primário'],
   // voci della scheda Segnalazioni (stessi nomi della schermata di JTDX)
+  'ens.k.LogAfter73': ['Registra solo dopo il 73', 'Log only after the 73', 'Erst nach der 73 loggen', 'Enregistrer seulement après le 73', 'Registrar solo después del 73', 'Registar só depois do 73'],
   'ens.k.PromptToLog': ['Richiedimi di loggare il QSO', 'Prompt me to log the QSO', 'Vor dem Loggen nachfragen', 'Demander avant de loguer le QSO', 'Preguntarme antes de registrar el QSO', 'Perguntar antes de registar o QSO'],
   'ens.k.AutoQSOLogging': ['Messa a log automatica del QSO', 'Log QSO automatically', 'QSO automatisch loggen', 'Enregistrer le QSO automatiquement', 'Registrar el QSO automáticamente', 'Registar o QSO automaticamente'],
   'ens.k.toRTTY': ['Converti il modo in RTTY', 'Convert mode to RTTY', 'Betriebsart in RTTY umwandeln', 'Convertir le mode en RTTY', 'Convertir el modo a RTTY', 'Converter o modo para RTTY'],

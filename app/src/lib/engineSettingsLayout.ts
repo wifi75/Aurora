@@ -208,6 +208,7 @@ export const QSO_LOG_GROUPS: readonly SettingGroup[] = [
     title: 'ens.g.log',
     rows: [
       { key: 'PromptToLog', kind: 'bool' },
+      { key: 'LogAfter73', kind: 'bool' },
       { key: 'AutoQSOLogging', kind: 'bool' },
       { key: 'toRTTY', kind: 'bool' },
       { key: 'dBtoComments', kind: 'bool' },

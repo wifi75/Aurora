@@ -5,6 +5,7 @@ export const engineConfigStrings = {
   'jx.MyCall': ['Nominativo', 'Callsign', 'Rufzeichen', 'Indicatif', 'Indicativo', 'Indicativo'],
   'jx.MyGrid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],
   'jx.Language': ['Lingua del motore', 'Engine language', 'Sprache der Engine', 'Langue du moteur', 'Idioma del motor', 'Idioma do motor'],
+  'jx.LogAfter73': ['Registra solo dopo il 73', 'Log only after the 73', 'Erst nach der 73 loggen', 'Enregistrer seulement après le 73', 'Registrar solo después del 73', 'Registar só depois do 73'],
   'jx.PromptToLog': ['Chiedi conferma prima di registrare', 'Prompt me to log the QSO', 'Vor dem Loggen nachfragen', 'Confirmer avant d’enregistrer', 'Confirmar antes de registrar', 'Confirmar antes de registar'],
   'jx.AutoQSOLogging': ['Registra i QSO in automatico', 'Log QSOs automatically', 'QSOs automatisch loggen', 'Enregistrer les QSO automatiquement', 'Registrar los QSO automáticamente', 'Registar os QSO automaticamente'],
   'jx.ClearCallGrid': ['Pulisci nominativo e griglia dopo il log', 'Clear call and grid after logging', 'Rufzeichen und Grid nach dem Loggen löschen', 'Effacer indicatif et grille après le log', 'Borrar indicativo y locator tras el log', 'Limpar indicativo e locator após o log'],

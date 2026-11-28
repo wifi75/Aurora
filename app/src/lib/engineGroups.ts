@@ -12,6 +12,7 @@ export const ENGINE_GROUPS = {
     { key: 'MyGrid', kind: 'text' },
     { key: 'Language', kind: 'text' },
     { key: 'PromptToLog', kind: 'bool' },
+    { key: 'LogAfter73', kind: 'bool' },
     { key: 'AutoQSOLogging', kind: 'bool' },
     { key: 'ClearCallGrid', kind: 'bool' },
     { key: 'TxWatchdogTimer', kind: 'num' },

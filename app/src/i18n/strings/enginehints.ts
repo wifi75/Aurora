@@ -29,6 +29,14 @@ export const engineHintStrings = {
     'El idioma de los textos del motor. El idioma de las páginas de Aurora se elige aparte, en General.',
     'A língua dos textos do motor. A língua das páginas da Aurora escolhe-se à parte, em Geral.',
   ],
+  'jxh.LogAfter73': [
+    'Spento (di fabbrica, come WSJT-X) il QSO si registra quando parte il tuo primo 73 o RR73. Acceso, se chiudi tu con l’RR73 il QSO si registra solo quando arriva il 73 dell’altro; se non arriva non viene registrato. Se rispondi a un CQ e l’altro ha già chiuso con RR73, si registra come sempre.',
+    'Off (the factory setting, like WSJT-X) the QSO is logged when your first 73 or RR73 starts. On, if you close with the RR73 the QSO is logged only when the other station’s 73 arrives; if it never arrives it is not logged. If you answer a CQ and the other station has already closed with RR73, it is logged as usual.',
+    'Aus (Werkseinstellung, wie WSJT-X) wird das QSO gespeichert, wenn deine erste 73 oder RR73 startet. Ein: Schließt du mit dem RR73, wird das QSO erst gespeichert, wenn die 73 der Gegenstation eintrifft; kommt sie nie, wird es nicht gespeichert. Antwortest du auf ein CQ und die Gegenstation hat schon mit RR73 geschlossen, wird wie immer gespeichert.',
+    'Désactivé (réglage d’usine, comme WSJT-X), le QSO est enregistré quand part votre premier 73 ou RR73. Activé, si vous clôturez avec le RR73 le QSO n’est enregistré que lorsque le 73 de l’autre station arrive ; s’il n’arrive jamais, il n’est pas enregistré. Si vous répondez à un CQ et que l’autre a déjà clôturé avec RR73, il est enregistré comme d’habitude.',
+    'Apagado (ajuste de fábrica, como WSJT-X) el QSO se registra cuando sale tu primer 73 o RR73. Encendido, si cierras tú con el RR73 el QSO se registra solo cuando llega el 73 de la otra estación; si no llega nunca, no se registra. Si respondes a un CQ y la otra estación ya cerró con RR73, se registra como siempre.',
+    'Desligado (definição de fábrica, como o WSJT-X) o QSO regista-se quando sai o teu primeiro 73 ou RR73. Ligado, se fechares tu com o RR73 o QSO só se regista quando chega o 73 da outra estação; se nunca chegar, não se regista. Se responderes a um CQ e a outra estação já fechou com RR73, regista-se como sempre.',
+  ],
   'jxh.PromptToLog': [
     'A fine QSO si apre una finestra per controllare i dati prima di salvarli nel log. Spento, il QSO si salva senza domande.',
     'At the end of a QSO a window lets you check the data before it is logged. Off, the QSO is saved without asking.',
