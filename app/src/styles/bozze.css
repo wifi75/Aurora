@@ -1743,6 +1743,10 @@ html:root:root[data-bozza] .digi-classica :is(.digi-rxbar-btn, .digi-tool) { bor
 /* barra in basso delle pagine testuali: i numeri (frequenza, larghezza, baud) si leggono per intero nelle caselle */
 html:root:root[data-bozza] .digi-status input:not([type='checkbox']):not([type='range']) { padding: 0 6px; min-width: 5.4rem; text-align: center; font-variant-numeric: tabular-nums; }
 html:root:root[data-bozza] .digi-status select { padding: 0 22px 0 8px; min-width: 5.4rem; }
+/* la casella (frequenza, larghezza, baud) ha gia' il suo bordo: il contenitore non ne disegna un secondo (sembravano due schede una dentro l'altra) */
+html:root:root[data-bozza] .digi-status :is(label.digi-st--select, label.digi-st--freq) {
+  border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; gap: 4px;
+}
 
 /* ---- riquadri di tutte le pagine identici a quelli della Stazione (FT8): stesso filo con i colori dell'aurora, angoli di 10, barra del titolo alta 25
    con il gradiente, titolo a 12 senza grassetto, maniglia a puntini; vale per Satelliti, WEFAX, SSTV, Propagazione e Statistiche, nei due temi ---- */
