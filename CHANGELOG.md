@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- Mappe, zoom fluido: durante lo scorrimento non compare piu' lo sfondo blu con le linee (le tessere venivano scartate e ricaricate a ogni fotogramma). Ora la vista si sposta come lo zoom a due dita di Leaflet (`pinch`): le tessere gia' presenti si scalano e quelle del livello giusto si caricano una sola volta, alla fine (`lib/smoothZoom.ts`).
+
 - Schermata di avvio: l'elenco dei modi comprende ora anche QPSK31, Amtor, Olivia, Contestia, Throb, MT63, WEFAX e i satelliti (SAT).
 
 

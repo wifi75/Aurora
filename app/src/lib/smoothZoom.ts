@@ -1,12 +1,27 @@
-import type * as L from 'leaflet';
+import * as L from 'leaflet';
 
 /**
  * Zoom fluido per una mappa Leaflet: la rotella e i pulsanti + e - non saltano di mezzo livello alla volta ma scorrono
  * verso il livello voluto, fotogramma per fotogramma, restando fermi sul punto sotto il cursore (o al centro per i pulsanti).
  * L'animazione di Leaflet resta spenta (con `zoomAnimation` attiva i pulsanti e la rotella non cambiavano il livello): qui ogni
- * fotogramma e' un `setZoomAround` senza animazione, con un piccolo avvicinamento esponenziale al livello finale.
+ * fotogramma sposta la vista come lo zoom a due dita di Leaflet (`pinch`): le tessere gia' presenti si ingrandiscono o si riducono senza
+ * essere scartate e ricaricate (prima, a ogni fotogramma, si vedeva lo sfondo blu finche' non arrivavano quelle nuove); le tessere del
+ * livello giusto si caricano una volta sola, alla fine. Con un piccolo avvicinamento esponenziale al livello finale.
  * Restituisce la funzione che toglie tutto.
  */
+type Internals = L.Map & {
+  _move?: (center: L.LatLng, zoom: number, data?: object) => L.Map;
+  _resetView?: (center: L.LatLng, zoom: number) => L.Map;
+  _limitCenter?: (center: L.LatLng, zoom: number, bounds?: L.LatLngBoundsExpression) => L.LatLng;
+};
+
+/** Il centro che tiene fermo il punto `at` (pixel del contenitore) passando al livello `zoom`, come `Map.setZoomAround`. */
+function centerAround(map: L.Map, at: L.Point, zoom: number): L.LatLng {
+  const scale = map.getZoomScale(zoom);
+  const half = map.getSize().divideBy(2);
+  const offset = at.subtract(half).multiplyBy(1 - 1 / scale);
+  return map.containerPointToLatLng(half.add(offset));
+}
 export function enableSmoothZoom(map: L.Map, options: { pxPerLevel?: number; ease?: number } = {}): () => void {
   const pxPerLevel = options.pxPerLevel ?? 160;
   const ease = options.ease ?? 0.2;
@@ -17,19 +32,31 @@ export function enableSmoothZoom(map: L.Map, options: { pxPerLevel?: number; eas
 
   const clamp = (z: number) => Math.min(map.getMaxZoom(), Math.max(map.getMinZoom(), z));
 
+  const inner = map as Internals;
+  const move = (zoom: number, final: boolean) => {
+    const at = anchor ?? map.getSize().divideBy(2);
+    let center = centerAround(map, at, zoom);
+    if (inner._limitCenter) center = inner._limitCenter(center, zoom, map.options.maxBounds);
+    if (!inner._move || !inner._resetView) {
+      map.setZoomAround(at, zoom, { animate: false });
+      return;
+    }
+    // durante lo scorrimento solo lo spostamento «a pizzico» (nessuna tessera scartata); alla fine si ricarica il livello giusto
+    if (final) inner._resetView(center, zoom);
+    else inner._move(center, zoom, { pinch: true, round: false });
+  };
+
   const step = () => {
     raf = 0;
     const cur = map.getZoom();
     const goal = clamp(target);
     const diff = goal - cur;
     if (!Number.isFinite(diff) || Math.abs(diff) < 0.004) {
-      if (Number.isFinite(goal) && goal !== cur) {
-        map.setZoomAround(anchor ?? map.getSize().divideBy(2), goal, { animate: false });
-      }
+      if (Number.isFinite(goal)) move(goal, true);
       target = map.getZoom();
       return;
     }
-    map.setZoomAround(anchor ?? map.getSize().divideBy(2), cur + diff * ease, { animate: false });
+    move(cur + diff * ease, false);
     raf = window.requestAnimationFrame(step);
   };
 
