@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.364',
-    released: '2026-11-28T12:55:09Z',
+    released: '2026-11-28T13:00:31Z',
     kind: 'new',
     title: [
       'CQ speciali: POTA, SOTA, IOTA, WWFF e QRP (opzione)',
