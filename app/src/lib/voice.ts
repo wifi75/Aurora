@@ -79,7 +79,9 @@ const base = (): string => import.meta.env.BASE_URL ?? '/';
 
 /** I pezzi da dire: la frase della funzione e il nominativo lettera per lettera (alfabeto fonetico, uguale in tutte le lingue). */
 export function voiceParts(event: SoundEvent, call: string | undefined, lang: string): string[] {
-  const parts = [`${base()}voice/${lang}/${event}.ogg`];
+  // i CQ speciali non hanno una frase registrata: si dice quella del CQ
+  const phrase = event === 'special_cq' ? 'cq' : event;
+  const parts = [`${base()}voice/${lang}/${phrase}.ogg`];
   for (const ch of (call ?? '').toUpperCase()) {
     if (/[A-Z0-9]/.test(ch)) parts.push(`${base()}voice/nato/${ch}.ogg`);
     else if (ch === '/') parts.push(`${base()}voice/nato/slash.ogg`);

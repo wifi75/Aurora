@@ -8,6 +8,7 @@ import { isCallToMe } from './mycall';
 import { readNotify, useNotify } from './notify';
 import { readNotifyView, useNotifyView, type AlertKey, type NotifyView } from './notifyView';
 import { hasSound } from './soundBank';
+import { anySpecialSound, useSpecialCq } from './specialCqPrefs';
 import { browserStorage } from './theme';
 
 /**
@@ -39,13 +40,14 @@ export const SOUND_EVENTS = [
   'first_message',
   'wanted',
   'new_dx_popup',
+  'special_cq',
   'qso_logged',
 ] as const;
 export type SoundEvent = (typeof SOUND_EVENTS)[number];
 export type Assign = Record<SoundEvent, string | null>;
 
 /** Le funzioni che non sono un tipo di messaggio con colore: il loro nome sta nei testi `snd.ev.*`. */
-export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted', 'new_dx_popup', 'qso_logged'] as const satisfies readonly SoundEvent[];
+export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted', 'new_dx_popup', 'special_cq', 'qso_logged'] as const satisfies readonly SoundEvent[];
 export type ExtraEvent = (typeof EXTRA_EVENTS)[number];
 
 export function isTagEvent(event: SoundEvent): event is Extract<SoundEvent, ColorKey> {
@@ -67,6 +69,8 @@ export function legacySound(event: SoundEvent, alertSound: string): string {
       return 'rise4';
     case 'new_dx_popup':
       return 'dxalarm';
+    case 'special_cq':
+      return 'cwcq';
     case 'qso_logged':
       return 'fanfare';
     case 'alert_my_call':
@@ -101,6 +105,7 @@ export const AUTO_SOUNDS: Record<SoundEvent, string> = {
   first_message: 'chirp',
   wanted: 'rise4',
   new_dx_popup: 'dxalarm',
+  special_cq: 'cwcq',
   // con «suoni diversi automaticamente» ognuno ha il suo (la fanfara e' gia' del DXCC nuovo); di fabbrica resta la fanfara
   qso_logged: 'trumpet',
 };
@@ -145,6 +150,9 @@ export function gateOn(event: SoundEvent, sound: Partial<Record<string, boolean>
       return true;
     case 'new_dx_popup':
       return view.popNew || view.popNewBand;
+    // CQ speciali (#115): acceso se la pagina «CQ speciali» ha l'interruttore e almeno un avviso sonoro accesi (spenti di fabbrica)
+    case 'special_cq':
+      return anySpecialSound(useSpecialCq.getState().prefs);
     // il QSO a log suona sempre (se ha un suono): «Nessun suono» lo spegne
     case 'qso_logged':
       return true;
@@ -240,6 +248,8 @@ export function enableGate(event: SoundEvent): void {
       break;
     case 'new_dx_popup':
       useNotifyView.getState().set({ popNew: true });
+      break;
+    case 'special_cq':
       break;
     case 'qso_logged':
       break;

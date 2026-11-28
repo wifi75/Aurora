@@ -1,6 +1,7 @@
 import { useT, type Key } from '../i18n';
 import { SPECIAL_TAGS, type SpecialTag } from '../lib/specialCq';
-import { useSpecialCq, type SpecialCqPrefs } from '../lib/specialCqPrefs';
+import { anySpecialSound, useSpecialCq, type SpecialCqPrefs } from '../lib/specialCqPrefs';
+import { useSoundAssign } from '../lib/soundAssign';
 import { Check, Help } from './common';
 import { Cells, Group, Notes, Page } from './layout';
 
@@ -12,7 +13,11 @@ export function SpecialCqTab() {
   const t = useT();
   const prefs = useSpecialCq((s) => s.prefs);
   const save = useSpecialCq((s) => s.set);
-  const change = (next: SpecialCqPrefs) => save(next);
+  const change = (next: SpecialCqPrefs) => {
+    save(next);
+    // un avviso acceso deve suonare: se l'evento non ha ancora un suono, gli si da' quello di fabbrica (il telegrafo «CQ»)
+    if (anySpecialSound(next)) useSoundAssign.getState().ensure(['special_cq']);
+  };
   const flag = (kind: 'show' | 'sound', tag: SpecialTag, value: boolean) => change({ ...prefs, [kind]: { ...prefs[kind], [tag]: value } });
 
   return (

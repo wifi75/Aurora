@@ -2,6 +2,7 @@
 export const specialCqStrings = {
   'scq.tip.row': ['CQ speciale {tag}', 'Special CQ {tag}', 'Spezieller CQ {tag}', 'CQ spécial {tag}', 'CQ especial {tag}', 'CQ especial {tag}'],
   'scq.tip.park': ['CQ speciale {tag} · {ref} {name}', 'Special CQ {tag} · {ref} {name}', 'Spezieller CQ {tag} · {ref} {name}', 'CQ spécial {tag} · {ref} {name}', 'CQ especial {tag} · {ref} {name}', 'CQ especial {tag} · {ref} {name}'],
+  'snd.ev.special_cq': ['CQ speciale (POTA, SOTA...)', 'Special CQ (POTA, SOTA...)', 'Spezieller CQ (POTA, SOTA...)', 'CQ spécial (POTA, SOTA...)', 'CQ especial (POTA, SOTA...)', 'CQ especial (POTA, SOTA...)'],
   'sw.pg.specialCq': ['CQ speciali', 'Special CQs', 'Spezielle CQs', 'CQ spéciaux', 'CQ especiales', 'CQ especiais'],
   'scq.title': ['CQ speciali (POTA, SOTA, IOTA, WWFF, QRP)', 'Special CQs (POTA, SOTA, IOTA, WWFF, QRP)', 'Spezielle CQs (POTA, SOTA, IOTA, WWFF, QRP)', 'CQ spéciaux (POTA, SOTA, IOTA, WWFF, QRP)', 'CQ especiales (POTA, SOTA, IOTA, WWFF, QRP)', 'CQ especiais (POTA, SOTA, IOTA, WWFF, QRP)'],
   'scq.enabled': ['Riconosci i CQ speciali', 'Recognise special CQs', 'Spezielle CQs erkennen', 'Reconnaître les CQ spéciaux', 'Reconocer los CQ especiales', 'Reconhecer os CQ especiais'],

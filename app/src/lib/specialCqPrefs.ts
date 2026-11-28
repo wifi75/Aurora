@@ -79,3 +79,10 @@ export const useSpecialCq = create<SpecialCqState>((set) => ({
     set({ prefs: next });
   },
 }));
+
+// le scelte fatte in un'altra finestra (Impostazioni staccate) valgono subito anche qui
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key === SPECIAL_CQ_KEY) useSpecialCq.setState({ prefs: readSpecialCq(browserStorage()) });
+  });
+}

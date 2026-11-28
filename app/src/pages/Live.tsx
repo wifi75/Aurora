@@ -51,6 +51,8 @@ import { useT } from '../i18n';
 import { applyActivityFilters, applyFilters, callOf, useFilters } from '../lib/filters';
 import { useAlertPrefs } from '../lib/alerts';
 import { pickSoundEvent, ringState, soundFor } from '../lib/soundAssign';
+import { pickSpecialCq } from '../lib/specialCqSound';
+import { useSpecialCq } from '../lib/specialCqPrefs';
 import { armAudio } from '../lib/soundBank';
 import { playAlert } from '../lib/voice';
 import { loadWorkedStates, prefetchUsStations, stateTag, useUsStates } from '../lib/usStates';
@@ -211,6 +213,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   // suona solo per i messaggi arrivati dopo l'apertura della pagina, con il suono assegnato alla funzione (senza suono assegnato tace)
   useEffect(() => {
     let lastId: number | null = null;
+    let lastSpecial: number | null = null;
+    const specialSeen = new Map<string, number>();
     let lastTx: number | null | undefined;
     return useStation.subscribe((state) => {
       const transmitting = state.status?.transmitting ?? false;
@@ -218,6 +222,14 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       const picked = pickSoundEvent(state.decodes, lastId, st, state.status?.de_call, state.status?.dx_call);
       lastId = picked.lastId;
       if (picked.sound) playAlert(picked.sound, st.volume, { event: picked.event ?? undefined, call: picked.call });
+      // CQ speciali (POTA, SOTA...; #115): al primo CQ di un nominativo, una volta ogni 10 minuti; se nello stesso giro ha gia' suonato
+      // un'altra funzione tace (il nominativo resta segnato)
+      const special = pickSpecialCq(state.decodes, lastSpecial, useSpecialCq.getState().prefs, specialSeen, Date.now());
+      lastSpecial = special.lastId;
+      if (special.call && !picked.sound) {
+        const id = soundFor('special_cq', st);
+        if (id) playAlert(id, st.volume, { event: 'special_cq', call: special.call });
+      }
       // «Mio messaggio in trasmissione»: una riga Tx nuova
       const txTop = state.txLog[0]?.id ?? null;
       if (lastTx !== undefined && txTop !== null && txTop !== lastTx) {
