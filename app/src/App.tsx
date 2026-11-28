@@ -10,6 +10,7 @@ import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
 import { SplitExternalWatcher } from './components/SplitExternalWatcher';
 import { ModeNav } from './components/ModeNav';
+import { LightsStrip, SnowLayer, useHeaderEffects } from './components/ThemeEffects';
 import { useT } from './i18n';
 import { useEngineOsSync } from './lib/engineOs';
 import { UpdateBar } from './components/UpdateBar';
@@ -110,6 +111,7 @@ export function App() {
   }, []);
   // finche' il dispositivo non e' associato si riprova: se dal PC si accende l'accesso senza codice, il telefono entra da solo
   const [barLabelOn] = useBarLabel();
+  const fx = useHeaderEffects();
   const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false, refetchInterval: (q) => (q.state.data === false ? 3000 : false) });
   // appena entra si ricarica la pagina: cosi' prende dal server le impostazioni di Aurora (bande, macro, filtri, tema, lingua)
   const wasUnpaired = useRef(false);
@@ -241,10 +243,13 @@ export function App() {
     <>
     <div className="app-shell" inert={settingsOpen ? true : undefined}>
       {REMOTE_TOUCH ? null : (
-      <header className="app-header">
-        <a className="app-brand" href="#/">
+      <header className={`app-header${fx.lights ? ' fx-lights-on' : ''}`}>
+        {/* effetti a tema (Impostazioni › Aspetto): luci sul bordo alto, neve solo dentro il nome */}
+        {fx.lights ? <LightsStrip paused={fx.paused} /> : null}
+        <a className={`app-brand${fx.snow ? ' fx-snow-on' : ''}`} href="#/">
           AURORA
           <span className="app-brand-by">by IU3WJQ</span>
+          {fx.snow ? <SnowLayer paused={fx.paused} /> : null}
         </a>
         <nav className="app-nav" aria-label={t('nav.pages')}>
           <ModeNav route={route} showQmap={showQmap} remote={REMOTE} />

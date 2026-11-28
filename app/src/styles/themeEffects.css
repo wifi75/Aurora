@@ -1,0 +1,127 @@
+/* Effetti a tema dell'intestazione (Impostazioni › Aspetto › Effetti a tema): neve nel nome, luci a filo sul bordo alto.
+   Colori solo da qui, per tema: la neve sul chiaro e' grigio-azzurra per restare visibile. */
+:root {
+  --fx-snow: rgba(240, 246, 255, 0.92);
+  --fx-snow-glow: rgba(200, 220, 255, 0.55);
+  --fx-wire: rgba(170, 185, 210, 0.55);
+  --fx-light-1: #34e3a0; /* verde */
+  --fx-light-2: #a77bff; /* viola */
+  --fx-light-3: #ffc04d; /* ambra */
+  --fx-light-4: #4fc8ff; /* azzurro */
+  --fx-lights-h: 13px;
+}
+:root[data-theme='light'] {
+  --fx-snow: rgba(84, 112, 150, 0.85);
+  --fx-snow-glow: rgba(84, 112, 150, 0.3);
+  --fx-wire: rgba(70, 85, 110, 0.5);
+  --fx-light-1: #0fa868;
+  --fx-light-2: #7a4ee6;
+  --fx-light-3: #e09000;
+  --fx-light-4: #1593d6;
+}
+
+/* Neve: solo dentro il riquadro del nome, mai fuori, nessun clic intercettato */
+.app-brand.fx-snow-on {
+  position: relative;
+  overflow: hidden;
+}
+.fx-snow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fx-flake {
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: var(--fx-snow);
+  box-shadow: 0 0 2px var(--fx-snow-glow);
+  opacity: 0.85;
+  will-change: transform;
+  animation: fx-fall var(--dur) linear var(--delay) infinite;
+}
+@keyframes fx-fall {
+  from { transform: translate(0, -6px); }
+  to { transform: translate(var(--dx), 64px); }
+}
+/* velo di neve sulle lettere: una striscia morbida e smerlata sul bordo alto del nome */
+.fx-snowcap {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 1px;
+  height: 3px;
+  border-radius: 2px;
+  background: radial-gradient(circle at 3px 3px, var(--fx-snow) 2px, transparent 2.5px) 0 0 / 6px 4px repeat-x;
+  opacity: 0.6;
+}
+
+/* Luci a filo: uno spazio loro sul bordo alto (bordo trasparente aggiunto solo quando sono accese, niente coperto) */
+.app-header.fx-lights-on {
+  border-top: var(--fx-lights-h) solid transparent;
+  background-clip: border-box;
+}
+.fx-lights {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--fx-lights-h) * -1);
+  height: var(--fx-lights-h);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 10px;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fx-lights::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 3px;
+  border-top: 1px solid var(--fx-wire);
+}
+.fx-bulb {
+  position: relative;
+  width: 5px;
+  height: 7px;
+  margin-top: 3px;
+  border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%;
+  background: var(--fx-c);
+  box-shadow: 0 0 4px var(--fx-c);
+  opacity: 0.35;
+  animation: fx-blink 3.2s ease-in-out var(--delay) infinite;
+}
+.fx-bulb:nth-child(even) { margin-top: 4px; }
+.fx-bulb--1 { --fx-c: var(--fx-light-1); }
+.fx-bulb--2 { --fx-c: var(--fx-light-2); }
+.fx-bulb--3 { --fx-c: var(--fx-light-3); }
+.fx-bulb--4 { --fx-c: var(--fx-light-4); }
+@keyframes fx-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* finestra nascosta: tutto fermo */
+.fx-paused .fx-flake,
+.fx-paused .fx-bulb {
+  animation-play-state: paused;
+}
+
+/* movimento ridotto: pochi fiocchi fermi al loro posto, lampadine accese fisse */
+@media (prefers-reduced-motion: reduce) {
+  .fx-flake {
+    animation: none !important;
+    top: var(--y);
+  }
+  .fx-flake:nth-child(3n) { display: none; }
+  .fx-bulb {
+    animation: none !important;
+    opacity: 0.9;
+  }
+}
